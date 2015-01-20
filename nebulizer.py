@@ -2,6 +2,7 @@
 #
 # nebulizer: Python lib for Galaxy bootstrapping functionality
 
+import sys
 from bioblend import galaxy
 
 class Nebulizer:
