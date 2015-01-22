@@ -3,6 +3,7 @@
 # nebulizer: Python lib for Galaxy bootstrapping functionality
 
 import sys
+import re
 from bioblend import galaxy
 
 class Nebulizer:
@@ -41,7 +42,7 @@ def check_username_format(username):
     """Check that format of 'username' is valid
 
     """
-    return bool(re.match("^[a-z0-9\-]+$",name))
+    return bool(re.match("^[a-z0-9\-]+$",username))
 
 def get_username_from_login(email):
     """Create a public user name from an email address
