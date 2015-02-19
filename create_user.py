@@ -11,7 +11,7 @@ create_user.py
 
 """
 
-__version__ = '0.0.2'
+__version__ = '0.0.3'
 
 def get_passwd():
     """Prompt user for a password
@@ -33,7 +33,8 @@ def get_passwd():
     return passwd
 
 def create_user(ni,email,name=None,passwd=None,only_check=False):
-    """Creates a new Galaxy user
+    """
+    Create a new Galaxy user
 
     Attempts to create a single user in a Galaxy instance with the
     supplied credentials.
@@ -143,9 +144,82 @@ def create_users_from_template(ni,template,start,end,passwd=None,
         print "Created new account for %s" % email
     return 0
 
+def create_batch_of_users(ni,tsv,only_check=False):
+    """
+    Create a batch of users in Galaxy from a list in a TSV file
+
+    Attempts to create multiple users in a Galaxy instance, using
+    a list of email addresses, passwords and (optionally) names
+    supplied via a TSV file.
+
+    The file should consist of lines of the form e.g.:
+
+    a.user@galaxy.ac.uk	p@ssw0rd	a-user
+
+    The last value (the public name) can be missing, in which case
+    the name will be generated from the email address.
+
+    If an email address is already used for an account in the
+    target Galaxy instance then it will be skipped.
+
+    Blank lines and lines starting with '#' are ignored.
+
+    Arguments:
+      ni : Nebulizer instance associated with a Galaxy instance
+      tsv: Name of TSV file to read user data from
+      only_check: if True then only run the checks, don't try to
+        make the users on the system.
+
+    Returns:
+      0 on success, 1 on failure.
+    
+    """
+    # Open file
+    print "Reading data from file '%s'" % tsv
+    users = {}
+    for line in open(tsv,'r'):
+        # Skip blank or comment lines
+        if line.startswith('#') or not line.strip():
+            continue
+        # Extract data
+        items = line.strip().split('\t')
+        passwd = None
+        name = None
+        try:
+            email = items[0].lower().strip()
+            passwd = items[1].strip()
+            name = items[2].strip()
+        except IndexError:
+            pass
+        # Do checks
+        if email in users:
+            sys.stderr.write("%s: appears multiple times\n")
+            return 1
+        if passwd is None:
+            sys.stderr.write("%s: no password supplied\n")
+            return 1
+        if name is None:
+            name = nebulizer.get_username_from_login(email)
+        if ni.check_new_user_info(email,name):
+            users[email] = { 'name': name, 'passwd': passwd }
+            print "%s\t%s\t%s" % (email,'*****',name)
+    if only_check:
+        return 0
+    # Make the accounts
+    for email in users:
+        name = users[email]['name']
+        passwd = users[email]['passwd']
+        if not ni.create_user(email,name,passwd):
+            return 1
+        print "Created new account for %s" % email
+    return 0
+
 if __name__ == "__main__":
     # Collect arguments
-    p = optparse.OptionParser(usage="\n%prog options GALAXY_URL API_KEY EMAIL [PUBLIC_NAME]",
+    p = optparse.OptionParser(usage=\
+                              "\n\t%prog [options] GALAXY_URL API_KEY EMAIL [PUBLIC_NAME]"
+                              "\n\t%prog -t [options] GALAXY_URL API_KEY TEMPLATE START [END]"
+                              "\n\t%prog -b GALAXY_URL API_KEY FILE",
                               version="%%prog %s" % __version__,
                               description="Create new user(s) in the specified Galaxy "
                               "instance.")
@@ -159,15 +233,14 @@ if __name__ == "__main__":
                  "includes a '#' symbol as a placeholder where an integer index should be "
                  "substituted to make multiple accounts (e.g. 'student#@galaxy.ac.uk'). "
                  "The --range option supplies the range of integer indices.")
-    p.add_option('-r','--range',action='store',dest='range',default=None,
-                 help="RANGE defines a set of integer indices to use when the --template "
-                 "option is specified. RANGE is of the form 'START[,END]' e.g. '1', '20,25'")
+    p.add_option('-b','--batch',action='store_true',dest='batch',default=False,
+                 help="create multiple users reading details from TSV file (columns "
+                 "should be: email,password[,public_name])")
     options,args = p.parse_args()
-    if len(args) < 3 or len(args) > 4:
+    if len(args) < 3:
         p.error("Wrong arguments")
     galaxy_url = args[0]
     api_key = args[1]
-    email = args[2]
     passwd = options.passwd
 
     # Set up Nebulizer instance to interact with Galaxy
@@ -176,20 +249,24 @@ if __name__ == "__main__":
     # Determine mode of operation
     print "Create new users in Galaxy instance at %s" % galaxy_url
     if options.template:
-        # Get the range of integer indices
-        if options.range is None:
-            sys.stderr.write("No range: use --range to specify start and end ID indices\n")
-            sys.exit(1)
-        start = int(options.range.split(',')[0])
+        # Get the template and range of indices
+        template = args[2]
+        start = int(args[3])
         try:
-            end = int(options.range.split(',')[1])
+            end = int(args[4])
         except IndexError:
             end = start
         # Create users
-        retval = create_users_from_template(ni,email,start,end,passwd,
+        retval = create_users_from_template(ni,template,start,end,passwd,
                                             only_check=options.check)
+    elif options.batch:
+        # Get the file with the user data
+        tsvfile = args[2]
+        # Create users
+        retval = create_batch_of_users(ni,tsvfile,only_check=options.check)
     else:
-        # Collect public name
+        # Collect email and (optionally) public name
+        email = args[2]
         try:
             name = args[3]
             if not nebulizer.check_username_format(name):
