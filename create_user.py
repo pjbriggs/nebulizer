@@ -1,15 +1,22 @@
 #!/bin/env python
 #
-# Create a new user
+# Create new user accounts in a Galaxy instance
 import sys
-import re
 import getpass
 import optparse
 import nebulizer
 
+"""
+create_user.py
+
+"""
+
+__version__ = '0.0.1'
+
 if __name__ == "__main__":
     # Collect arguments
     p = optparse.OptionParser(usage="%prog options GALAXY_URL API_KEY EMAIL [PUBLIC_NAME]",
+                              version="%%prog %s" % __version__,
                               description="Create new user(s) in the specified Galaxy "
                               "instance")
     p.add_option('-p','--password',action='store',dest='passwd',default=None,
