@@ -73,26 +73,27 @@ def create_user(ni,email,name=None,passwd=None,only_check=False):
 
 def create_users_from_template(ni,template,start,end,passwd=None,
                                only_check=False):
-    """Creates a batch of users in Galaxy, based on template email
+    """
+    Create a batch of users in Galaxy, based on template email
 
-    Attempts to create a multiple users in a Galaxy instance, using
+    Attempts to create multiple users in a Galaxy instance, using
     a template email address and a range of integer indices to
     generate the names.
 
-    The 'template' email should contain a single hash character (i.e.
-    '#') within the leading name part of the address, for example:
+    'template' should include a '#' symbol indicating where an integer
+    index should be substituted (e.g. 'student#@galaxy.ac.uk').
+    'start' and 'end' are the range of ids to create (e.g. 1 to 10).
 
-    student#@galaxy.ac.uk
+    All accounts will be created with the same password; names will
+    be generated automatically from the email addresses
 
-    'start' and 'end' together define a range of indices that will
-    replace the '#' to generate emails of the form:
+    For example: the template 'student#@galaxy.ac.uk' with a range of
+    1 to 5 will generate:
 
     student1@galaxy.ac.uk
     student2@galaxy.ac.uk
-    ...etc...
-
-    Names will be generated automatically from the email addresses;
-    the same password will be used for all the new accounts.
+    ...
+    student5@galaxy.ac.uk
 
     Arguments:
       ni       : Nebulizer instance associated with a Galaxy instance
@@ -121,7 +122,7 @@ def create_users_from_template(ni,template,start,end,passwd=None,
             sys.stderr.write("%s\n" % ex)
             return 1
     # Generate emails
-    emails = [template.replace('#',str(i)) for i in range(start,end)]
+    emails = [template.replace('#',str(i)) for i in range(start,end+1)]
     # Check that these are available
     print "Checking availability"
     for email in emails:
