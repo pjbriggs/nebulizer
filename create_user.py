@@ -25,7 +25,7 @@ def get_passwd():
 
     """
     passwd = getpass.getpass("Enter password for new user: ")
-    if len(passwd) < 6:
+    if not nebulizer.validate_password(passwd):
         raise Exception("Invalid password: must be 6 or more characters")
     passwd2 = getpass.getpass("Confirm password: ")
     if passwd2 != passwd:
@@ -115,8 +115,12 @@ def create_users_from_template(ni,template,start,end,passwd=None,
     if name.count('#') != 1 or domain.count('#') != 0:
         sys.stderr.write("Incorrect email template format\n")
         return 1
-    # Prompt for password
-    if passwd is None:
+    # Deal with password
+    if passwd is not None:
+        if not nebulizer.validate_password(passwd):
+            sys.stderr.write("Invalid password\n")
+            return 1
+    else:
         try:
             passwd = get_passwd()
         except Exception, ex:
