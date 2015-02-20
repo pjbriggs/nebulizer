@@ -11,7 +11,7 @@ create_user.py
 
 """
 
-__version__ = '0.0.3'
+__version__ = '0.0.4'
 
 def get_passwd():
     """Prompt user for a password
@@ -224,12 +224,15 @@ def create_batch_of_users(ni,tsv,only_check=False):
 if __name__ == "__main__":
     # Collect arguments
     p = optparse.OptionParser(usage=\
-                              "\n\t%prog [options] GALAXY_URL API_KEY EMAIL [PUBLIC_NAME]"
-                              "\n\t%prog -t [options] GALAXY_URL API_KEY TEMPLATE START [END]"
-                              "\n\t%prog -b GALAXY_URL API_KEY FILE",
+                              "\n\t%prog [options] GALAXY_URL EMAIL [PUBLIC_NAME]"
+                              "\n\t%prog -t [options] GALAXY_URL TEMPLATE START [END]"
+                              "\n\t%prog -b GALAXY_URL FILE",
                               version="%%prog %s" % __version__,
                               description="Create new user(s) in the specified Galaxy "
                               "instance.")
+    p.add_option('-k','--api_key',action='store',dest='api_key',default=None,
+                 help="specify API key for GALAXY_URL (otherwise will try to "
+                 "look up from .nebulizer file)")
     p.add_option('-p','--password',action='store',dest='passwd',default=None,
                  help="specify password for new user account (otherwise program will "
                  "prompt for password)")
@@ -244,23 +247,23 @@ if __name__ == "__main__":
                  help="create multiple users reading details from TSV file (columns "
                  "should be: email,password[,public_name])")
     options,args = p.parse_args()
-    if len(args) < 3:
+    if len(args) < 2:
         p.error("Wrong arguments")
     galaxy_url = args[0]
-    api_key = args[1]
+    api_key = options.api_key
     passwd = options.passwd
 
     # Set up Nebulizer instance to interact with Galaxy
     ni = nebulizer.Nebulizer(galaxy_url,api_key)
 
     # Determine mode of operation
-    print "Create new users in Galaxy instance at %s" % galaxy_url
+    print "Create new users in Galaxy instance at %s" % ni.galaxy_url
     if options.template:
         # Get the template and range of indices
-        template = args[2]
-        start = int(args[3])
+        template = args[1]
+        start = int(args[2])
         try:
-            end = int(args[4])
+            end = int(args[3])
         except IndexError:
             end = start
         # Create users
@@ -268,14 +271,14 @@ if __name__ == "__main__":
                                             only_check=options.check)
     elif options.batch:
         # Get the file with the user data
-        tsvfile = args[2]
+        tsvfile = args[1]
         # Create users
         retval = create_batch_of_users(ni,tsvfile,only_check=options.check)
     else:
         # Collect email and (optionally) public name
-        email = args[2]
+        email = args[1]
         try:
-            name = args[3]
+            name = args[2]
             if not nebulizer.check_username_format(name):
                 sys.stderr.write("Invalid name: must contain only lower-case letters, "
                                  "numbers and '-'\n")
