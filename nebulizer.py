@@ -50,3 +50,10 @@ def get_username_from_login(email):
     """
     return str(email).split('@')[0].lower().replace('.','-').replace('_','-')
 
+def validate_password(passwd):
+    """Check if password format is valid
+
+    """
+    if len(passwd) < 6:
+        return False
+    return True
