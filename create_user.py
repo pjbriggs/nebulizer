@@ -197,10 +197,13 @@ def create_batch_of_users(ni,tsv,only_check=False):
             pass
         # Do checks
         if email in users:
-            sys.stderr.write("%s: appears multiple times\n")
+            sys.stderr.write("%s: appears multiple times\n" % email)
             return 1
         if passwd is None:
-            sys.stderr.write("%s: no password supplied\n")
+            sys.stderr.write("%s: no password supplied\n" % email)
+            return 1
+        elif not nebulizer.validate_password(passwd):
+            sys.stderr.write("%s: invalid password\n" % email)
             return 1
         if name is None:
             name = nebulizer.get_username_from_login(email)
