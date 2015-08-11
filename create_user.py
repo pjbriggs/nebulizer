@@ -246,15 +246,21 @@ if __name__ == "__main__":
     p.add_option('-b','--batch',action='store_true',dest='batch',default=False,
                  help="create multiple users reading details from TSV file (columns "
                  "should be: email,password[,public_name])")
+    p.add_option('-n','--no-verify',action='store_true',dest='no_verify',default=False,
+                 help="don't verify HTTPS connections")
     options,args = p.parse_args()
     if len(args) < 2:
         p.error("Wrong arguments")
     galaxy_url = args[0]
     api_key = options.api_key
     passwd = options.passwd
+    verify = not options.no_verify
+    if not verify:
+        sys.stderr.write("WARNING SSL certificate verification has been disabled\n")
+        nebulizer.turn_off_urllib3_warnings()
 
     # Set up Nebulizer instance to interact with Galaxy
-    ni = nebulizer.Nebulizer(galaxy_url,api_key)
+    ni = nebulizer.Nebulizer(galaxy_url,api_key,verify=verify)
 
     # Determine mode of operation
     print "Create new users in Galaxy instance at %s" % ni.galaxy_url
