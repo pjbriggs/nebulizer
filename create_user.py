@@ -1,4 +1,4 @@
-#!/bin/env python
+#!/usr/bin/env python
 #
 # Create new user accounts in a Galaxy instance
 import sys

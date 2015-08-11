@@ -1,4 +1,4 @@
-#!/bin/env python
+#!/usr/bin/env python
 #
 # nebulizer: Python lib for Galaxy bootstrapping functionality
 
