@@ -5,6 +5,7 @@ import sys
 import getpass
 import optparse
 import nebulizer
+from mako.template import Template
 
 """
 create_user.py
@@ -32,7 +33,24 @@ def get_passwd():
         raise Exception("Passwords don't match")
     return passwd
 
-def create_user(ni,email,name=None,passwd=None,only_check=False):
+def render_mako_template(filename,email,password=None):
+    """Render Mako template
+
+    Render a Mako template from a file. The following variables are
+    supplied to the template:
+
+    first_name
+    email
+    password
+
+    """
+    first_name = email.split('.')[0].title()
+    return Template(filename=filename).render(first_name=first_name,
+                                              email=email,
+                                              password=password)
+
+def create_user(ni,email,name=None,passwd=None,only_check=False,
+                mako_template=None):
     """
     Create a new Galaxy user
 
@@ -48,6 +66,8 @@ def create_user(ni,email,name=None,passwd=None,only_check=False):
         the user will be prompted to supply a password.
       only_check: if True then only run the checks, don't try to
         make the user on the system.
+      mako_template (optional): Mako template that will be populated
+        and printed
 
     Returns:
       0 on success, 1 on failure.
@@ -70,6 +90,8 @@ def create_user(ni,email,name=None,passwd=None,only_check=False):
     if not ni.create_user(email,name,passwd):
         return 1
     print "Created new account for %s" % email
+    if mako_template:
+        print render_mako_template(mako_template,email,passwd)
     return 0
 
 def create_users_from_template(ni,template,start,end,passwd=None,
@@ -148,7 +170,7 @@ def create_users_from_template(ni,template,start,end,passwd=None,
         print "Created new account for %s" % email
     return 0
 
-def create_batch_of_users(ni,tsv,only_check=False):
+def create_batch_of_users(ni,tsv,only_check=False,mako_template=None):
     """
     Create a batch of users in Galaxy from a list in a TSV file
 
@@ -173,6 +195,8 @@ def create_batch_of_users(ni,tsv,only_check=False):
       tsv: Name of TSV file to read user data from
       only_check: if True then only run the checks, don't try to
         make the users on the system.
+      mako_template (optional): Mako template that will be populated
+        and printed
 
     Returns:
       0 on success, 1 on failure.
@@ -219,6 +243,8 @@ def create_batch_of_users(ni,tsv,only_check=False):
         if not ni.create_user(email,name,passwd):
             return 1
         print "Created new account for %s" % email
+        if mako_template:
+            print render_mako_template(mako_template,email,passwd)
     return 0
 
 if __name__ == "__main__":
@@ -248,6 +274,8 @@ if __name__ == "__main__":
                  "should be: email,password[,public_name])")
     p.add_option('-n','--no-verify',action='store_true',dest='no_verify',default=False,
                  help="don't verify HTTPS connections")
+    p.add_option('-m','--message',action='store',dest='message_template',default=None,
+                 help="populate and output Mako template MESSAGE_TEMPLATE")
     options,args = p.parse_args()
     if len(args) < 2:
         p.error("Wrong arguments")
@@ -279,7 +307,8 @@ if __name__ == "__main__":
         # Get the file with the user data
         tsvfile = args[1]
         # Create users
-        retval = create_batch_of_users(ni,tsvfile,only_check=options.check)
+        retval = create_batch_of_users(ni,tsvfile,only_check=options.check,
+                                       mako_template=options.message_template)
     else:
         # Collect email and (optionally) public name
         email = args[1]
@@ -296,7 +325,8 @@ if __name__ == "__main__":
         print "Email : %s" % email
         print "Name  : %s" % name
         retval = create_user(ni,email,name,passwd,
-                             only_check=options.check)
+                             only_check=options.check,
+                             mako_template=options.message_template)
 
     # Finished
     sys.exit(retval)
