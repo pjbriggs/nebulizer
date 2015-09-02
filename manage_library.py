@@ -87,8 +87,8 @@ if __name__ == "__main__":
             p.error("Usage: create_folder PATH")
     elif command == 'add_datasets':
         # Add a dataset to a library
-        if len(args) != 2:
-            p.error("Usage: add_dataset DEST FILE [FILE...]")
+        if len(args) < 2:
+            p.error("Usage: add_datasets DEST FILE [FILE...]")
         ni.add_library_datasets(args[0],args[1:],
                                 from_server=options.from_server,
                                 link_only=options.link,
