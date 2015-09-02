@@ -147,9 +147,7 @@ class Nebulizer:
 
         """
         lib_client = galaxy.libraries.LibraryClient(self._gi)
-        folder_name = folder_name.rstrip('/')
-        if not folder_name.startswith('/'):
-            folder_name = '/'+folder_name
+        folder_name = normalise_folder_path(folder_name)
         ##print "Looking for '%s'" % folder_name
         for folder in lib_client.get_folders(library_id):
             ##print "Checking '%s'" % folder['name']
@@ -175,14 +173,12 @@ class Nebulizer:
         # Get library contents
         library_contents = lib_client.show_library(library_id,contents=True)
         # Normalise the folder path for matching
-        folder_path = '/'+folder_path.rstrip('/')
+        folder_path = normalise_folder_path(folder_path)
         #print "folder_path '%s'" % folder_path
         # Go through the contents of the library
         dataset_client = galaxy.datasets.DatasetClient(self._gi)
         for item in library_contents:
             #print "%s" % item
-            #item_parent = '/'.join(item['name'].strip('/').split('/')[:-1])
-            #item_name = item['name'].split('/')[-1]
             item_parent,item_name = os.path.split(item['name'])
             #print "-- Parent '%s'" % item_parent
             if item_parent == folder_path:
@@ -217,7 +213,7 @@ class Nebulizer:
         lib_client = galaxy.libraries.LibraryClient(self._gi)
         if self.library_id_from_name(name):
             print "Target data library already exists"
-            return None
+            return self.library_id_from_name(name)['id']
         library = lib_client.create_library(name,
                                             description=description,
                                             synopsis=synopsis)
@@ -355,6 +351,26 @@ def split_library_folder_path(path):
     else:
         folder_name = '/'.join(components[1:])
     return (library_name,folder_name)
+
+def normalise_folder_path(path):
+    """
+    Normalise a folder path
+
+    Normalise folder paths so that they are always of the
+    form
+
+    /path/to/folder
+
+    i.e a single leading slash with no trailing slash
+
+    Arguments:
+      path (str): path for a data library folder
+
+    Returns:
+      str: normalised folder path.
+
+    """
+    return '/'+path.strip('/')
 
 def turn_off_urllib3_warnings():
     """Turn off the warnings from urllib3
