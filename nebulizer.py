@@ -5,6 +5,7 @@
 import sys
 import os
 import re
+import fnmatch
 from bioblend import galaxy
 
 class Credentials:
@@ -182,7 +183,7 @@ class Nebulizer:
             #print "%s" % item
             item_parent,item_name = os.path.split(item['name'])
             #print "-- Parent '%s'" % item_parent
-            if item_parent == folder_path:
+            if fnmatch.fnmatch(item_parent,folder_path):
                 nitems += 1
                 if item['type'] == 'folder':
                     folder = lib_client.show_folder(library_id,item['id'])
