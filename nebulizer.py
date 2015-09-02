@@ -177,11 +177,13 @@ class Nebulizer:
         #print "folder_path '%s'" % folder_path
         # Go through the contents of the library
         dataset_client = galaxy.datasets.DatasetClient(self._gi)
+        nitems = 0
         for item in library_contents:
             #print "%s" % item
             item_parent,item_name = os.path.split(item['name'])
             #print "-- Parent '%s'" % item_parent
             if item_parent == folder_path:
+                nitems += 1
                 if item['type'] == 'folder':
                     folder = lib_client.show_folder(library_id,item['id'])
                     print "%s/\t%s\t%s" % (item_name,
@@ -194,6 +196,8 @@ class Nebulizer:
                     print "%s\t%s\t%s" % (item_name,
                                           dataset['file_size'],
                                           dataset['file_name'])
+        if not nitems:
+            print "Total 0"
 
     def create_library(self,name,description=None,synopsis=None):
         """
