@@ -11,16 +11,16 @@ class TestSplitLibraryFolderPathFunction(unittest.TestCase):
     """
     def test_library_name_only(self):
         self.assertEqual(split_library_folder_path('TestLibrary'),
-                         ('TestLibrary',''))
+                         ('TestLibrary','/'))
     def test_library_name_leading_slash(self):
         self.assertEqual(split_library_folder_path('/TestLibrary'),
-                         ('TestLibrary',''))
+                         ('TestLibrary','/'))
     def test_library_name_trailing_slash(self):
         self.assertEqual(split_library_folder_path('TestLibrary/'),
-                         ('TestLibrary',''))
+                         ('TestLibrary','/'))
     def test_library_name_with_spaces(self):
         self.assertEqual(split_library_folder_path('Test Library 2'),
-                         ('Test Library 2',''))
+                         ('Test Library 2','/'))
     def test_library_and_folder(self):
         self.assertEqual(split_library_folder_path('Test Library 2/Run 11'),
                          ('Test Library 2','/Run 11'))
