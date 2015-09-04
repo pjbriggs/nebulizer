@@ -28,6 +28,11 @@ def base_parser(usage=None,description=None):
 
 def handle_ssl_warnings(verify=True):
     """
+    Turn off SSL warnings from urllib3
+
+    Arguments:
+      verify (bool): if False then disable the warnings from
+        urllib3 about SSL certificate verification
 
     """
     if not verify:
@@ -45,6 +50,7 @@ def nebulizer(args=None):
 
 def manage_users(args=None):
     """
+    Implements the 'manage_users' utility
 
     """
     if args is None:
@@ -151,6 +157,7 @@ def manage_users(args=None):
 
 def manage_libraries(args=None):
     """
+    Implements the 'manage_libraries' utility
 
     """
     if args is None:
@@ -246,6 +253,7 @@ def manage_libraries(args=None):
  
 def manage_tools(args=None):
     """
+    Implements the 'manage_tools' utility
 
     """
     if args is None:

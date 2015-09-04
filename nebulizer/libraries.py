@@ -9,6 +9,9 @@ def list_data_libraries(gi):
     """
     Return list of data libraries
 
+    Arguments:
+      gi (bioblend.galaxy.GalaxyInstance): Galaxy instance
+
     """
     for lib in galaxy.libraries.LibraryClient(gi).get_libraries():
         print "%s\t%s\t%s" % (lib['name'],lib['description'],lib['id'])
@@ -19,6 +22,7 @@ def library_id_from_name(gi,library_name):
     Fetch ID for data library from library name
 
     Arguments:
+      gi (bioblend.galaxy.GalaxyInstance): Galaxy instance
       library_name (str): name of data library to look up
 
     Returns:
@@ -36,6 +40,7 @@ def folder_id_from_name(gi,library_id,folder_name):
     Fetch ID for folder
 
     Arguments:
+      gi (bioblend.galaxy.GalaxyInstance): Galaxy instance
       library_id (str): ID for parent data library
       folder_name (str): name of folder to look up
 
@@ -57,6 +62,7 @@ def list_library_contents(gi,path):
     Get contents of folder in data library
 
     Arguments:
+      gi (bioblend.galaxy.GalaxyInstance): Galaxy instance
       path (str): path describing a data library or
         a folder in a library
 
@@ -101,6 +107,7 @@ def create_library(gi,name,description=None,synopsis=None):
     Create a new data library
 
     Arguments:
+      gi (bioblend.galaxy.GalaxyInstance): Galaxy instance
       name (str): name of the new data library
       description (str): (optional) text to add as the
         description of the new data library
@@ -126,6 +133,7 @@ def create_folder(gi,path,description=None):
     Create a new folder in a data library
 
     Arguments:
+      gi (bioblend.galaxy.GalaxyInstance): Galaxy instance
       path (str): path to the new folder (must be within
         an existing data library)
       description (str): text to add as the description
@@ -168,6 +176,7 @@ def add_library_datasets(gi,path,files,
     Add datasets to a data library
 
     Arguments:
+      gi (bioblend.galaxy.GalaxyInstance): Galaxy instance
       path (str): path of folder to add datasets to
         files (list): list of files to upload to the data
         library

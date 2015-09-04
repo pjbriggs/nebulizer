@@ -58,35 +58,16 @@ class Credentials:
                         return (url,api_key)
         raise KeyError("'%s': not found" % name)
 
-class Nebulizer:
-    """
-    Class wrapping functionality from bioblend
-
-    """
-
-    def __init__(self,galaxy_url,api_key=None,verify=True):
-        """
-        Create a new Nebulizer instance
-
-        Arguments:
-          galaxy_url (str): URL for the Galaxy instance to connect to
-          api_key (str): API key to use when accessing Galaxy
-          verify (bool): if True then turn off verification of SSL
-            certificates for HTTPs connections
-
-        """
-        if api_key is None:
-            galaxy_url,api_key = Credentials().fetch_key(galaxy_url)
-        self._galaxy_url = galaxy_url
-        self._gi = galaxy.GalaxyInstance(url=galaxy_url,key=api_key)
-        self._gi.verify = verify
-
-    @property
-    def galaxy_url(self):
-        return self._galaxy_url
-
 def get_galaxy_instance(galaxy_url,api_key=None,verify=True):
     """
+    Return Bioblend GalaxyInstance
+
+    Arguments:
+      galaxy_url (str): URL for the Galaxy instance to connect to
+      api_key (str): API key to use when accessing Galaxy
+      verify (bool): if True then turn off verification of SSL
+        certificates for HTTPs connections
+
     """
     if api_key is None:
         galaxy_url,api_key = Credentials().fetch_key(galaxy_url)
@@ -98,7 +79,8 @@ def get_galaxy_instance(galaxy_url,api_key=None,verify=True):
     return gi
 
 def turn_off_urllib3_warnings():
-    """Turn off the warnings from urllib3
+    """
+    Turn off the warnings from urllib3
 
     Use this to suppress warnings (e.g. about unverified HTTPS
     certificates) that would otherwise be written out for each

@@ -8,6 +8,15 @@ from bioblend.galaxy.client import ConnectionError
 
 def list_tools(gi,name=None,installed_only=False):
     """
+    Print a list of the available tools
+
+    Arguments:
+      gi (bioblend.galaxy.GalaxyInstance): Galaxy instance
+      name (str): optional, only list tools which match this
+        string (can include wildcards)
+      installed_only (bool): if True then only list those
+        tools which are provided by toolshed repositories
+
     """
     tool_client = galaxy.tools.ToolClient(gi)
     for tool in tool_client.get_tools():
@@ -44,6 +53,15 @@ def list_tools(gi,name=None,installed_only=False):
 
 def list_installed_repositories(gi,name=None,list_tools=False):
     """
+    Print a list of the installed toolshed repositories
+
+    Arguments:
+      gi (bioblend.galaxy.GalaxyInstance): Galaxy instance
+      name (str): optional, only list tool repositiories
+        which match this string (can include wildcards)
+      list_tools (bool): if True then also list the tools
+        provided by the repository
+
     """
     shed_client = galaxy.toolshed.ToolShedClient(gi)
     for repo in shed_client.get_repositories():
@@ -100,6 +118,11 @@ def list_installed_repositories(gi,name=None,list_tools=False):
 
 def list_tool_panel(gi):
     """
+    Print a list of tool panel contents
+
+    Arguments:
+      gi (bioblend.galaxy.GalaxyInstance): Galaxy instance
+
     """
     tool_client = galaxy.tools.ToolClient(gi)
     for item in tool_client.get_tool_panel():
@@ -109,6 +132,22 @@ def list_tool_panel(gi):
 def install_tool(gi,tool_shed,name,owner,
                  revision=None,tool_panel_section=None):
     """
+    Install a tool repository into a Galaxy instance
+
+    Arguments:
+      gi (bioblend.galaxy.GalaxyInstance): Galaxy instance
+      tool_shed (str): URL for the toolshed to install the
+        tool from
+      name (str): name of the tool repository
+      owner (str): name of the tool repository owner
+      revision (str): optional revision changeset specifying
+        the tool version to install; if not supplied then
+        the latest installable revision will be used
+      tool_panel_section (str): optional, name or id of
+        the tool panel section to install the tools under; if
+        the tool panel section doesn't already exist it will
+        be created.
+
     """
     # Locate the repository on the toolshed
     shed = toolshed.ToolShedInstance(url=tool_shed)
