@@ -44,11 +44,64 @@ instead of::
 
   % manage_users list http://127.0.0.1:8080 -k 4af252f2250818d14949b3cf0aed476a
 
-Commands
---------
+Commands and usage examples
+---------------------------
 
 Currently ``nebulizer`` offers three utilities:
 
  * ``manage_users``: list and create user accounts
  * ``manage_libraries``: list, create and populate data libraries
  * ``manage_tools``: list and install tools from toolsheds
+
+Some random examples (note that command names etc are subject to change
+without notice while these utilities are under development):
+
+Add a new user::
+
+  manage_users create localhost -p pa55w0rd a.non@galaxy.org
+
+List users matching specific name::
+
+  manage_users list localhost --name=*briggs*
+
+List data libraries::
+
+  manage_libraries list localhost
+
+Create a data library called ``NGS data`` and a subfolder ``Run 21``::
+
+  manage_libraries create_library localhost \
+    --description="Sequencing data analysed in 2015" "NGS data"
+  manage_libraries create_folder localhost "NGS data/Run 21"
+
+List contents of this folder::
+
+  manage_libraries list localhost "NGS data/Run 21"
+
+Upload files to it from the local system::
+
+  manage_libraries add_datasets localhost "NGS data/Run 21" ~/Sample1_R*.fq
+
+Add a file which is on the Galaxy server filesystem to a library as a
+link::
+
+  manage_libraries add_datasets localhost --server --link "NGS data/fastqs" \
+    /galaxy/hosted_data/example.fq
+
+List all tools that are available in a Galaxy instance::
+
+  manage_tools list localhost
+
+List all the ``cuff...`` tools that were installed from a toolshed::
+
+  manage_tools list localhost --name=cuff* --installed
+
+List all the tool repositories that are installed along with the tools
+that they provide::
+
+  manage_tools installed localhost --list-tools
+
+Install the most recent FastQC from the main toolshed::
+
+  manage_tools install --tool-panel-section="NGS: QC and manipulation" \
+    toolshed.g2.bx.psu.edu devteam fastqc
