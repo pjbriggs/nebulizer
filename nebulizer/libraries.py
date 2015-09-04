@@ -234,7 +234,7 @@ def split_library_folder_path(path):
       Tuple: (library_name,folder_name)
 
     """
-    components = path.split('/')
+    components = path.lstrip('/').split('/')
     library_name = components[0]
     if len(components) == 1:
         folder_name = ''
