@@ -47,9 +47,9 @@ def list_tools(gi,name=None,installed_only=False):
         if installed_only and not tool_repo:
             continue
         # Print info
-        print "%s\t%s\t%s" % (tool_name,
-                              tool_version,
-                              tool_repo)
+        print "%-16s\t%-8s\t%s" % (tool_name,
+                                   tool_version,
+                                   tool_repo)
 
 def list_installed_repositories(gi,name=None,list_tools=False):
     """
