@@ -41,6 +41,8 @@ class TestNormaliseFolderPath(unittest.TestCase):
     Tests for the 'normalise_folder_path'
 
     """
+    def test_empty_folder_path(self):
+        self.assertEqual(normalise_folder_path(''),'/')
     def test_already_normalised_folder_path(self):
         self.assertEqual(normalise_folder_path('/path/to/folder'),
                          '/path/to/folder')

@@ -75,8 +75,6 @@ def list_library_contents(gi,path):
     library_id = library_id_from_name(gi,library_name)
     # Get library contents
     library_contents = lib_client.show_library(library_id,contents=True)
-    # Normalise the folder path for matching
-    folder_path = normalise_folder_path(folder_path)
     #print "folder_path '%s'" % folder_path
     # Go through the contents of the library
     dataset_client = galaxy.datasets.DatasetClient(gi)
@@ -227,6 +225,10 @@ def split_library_folder_path(path):
     """
     Split library path into library and folder components
 
+    Note that the folder path will be returned as the
+    normalised pathi.e. /path/to/folder (single leading
+    slash with no trailing slash).
+
     Arguments:
       path (str): path describing a folder in a data library
 
@@ -234,13 +236,14 @@ def split_library_folder_path(path):
       Tuple: (library_name,folder_name)
 
     """
-    components = path.lstrip('/').split('/')
+    components = path.strip('/').split('/')
     library_name = components[0]
     if len(components) == 1:
         folder_name = ''
     else:
         folder_name = '/'.join(components[1:])
-    return (library_name,folder_name)
+    return (library_name,
+            normalise_folder_path(folder_name))
 
 def normalise_folder_path(path):
     """
