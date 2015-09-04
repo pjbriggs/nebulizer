@@ -77,6 +77,7 @@ def list_installed_repositories(gi,name=None,list_tools=False):
         repo_owner = repo['owner']
         repo_revision_number = repo['ctx_rev']
         repo_changeset_revision = repo['changeset_revision']
+        repo_status = repo['status']
         # Repository status
         status = repo['tool_shed_status']
         try:
@@ -99,12 +100,13 @@ def list_installed_repositories(gi,name=None,list_tools=False):
         except (KeyError,TypeError):
             status_indicator = '?'
         # Print information
-        print "%s %s\t%s\t%s\t%s:%s" % (status_indicator,
-                                        repo_name,
-                                        repo_shed,
-                                        repo_owner,
-                                        repo_revision_number,
-                                        repo_changeset_revision)
+        print "%s %s\t%s\t%s\t%s:%s\t%s" % (status_indicator,
+                                            repo_name,
+                                            repo_shed,
+                                            repo_owner,
+                                            repo_revision_number,
+                                            repo_changeset_revision,
+                                            repo_status)
         # Get tools associated with repo
         if list_tools:
             repo_id = '/'.join((repo_shed,'repos',repo_owner,repo_name,))
@@ -151,6 +153,9 @@ def install_tool(gi,tool_shed,name,owner,
     """
     # Locate the repository on the toolshed
     shed = toolshed.ToolShedInstance(url=tool_shed)
+    print "Toolshed:\t%s" % tool_shed
+    print "Repository:\t%s" % name
+    print "Owner:\t%s" % owner
     revisions = shed.repositories.get_ordered_installable_revisions(name,
                                                                     owner)
     #print "%s" % revisions
