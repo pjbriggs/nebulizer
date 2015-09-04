@@ -6,6 +6,12 @@ data libraries and tools in a `Galaxy <https://galaxyproject.org/>`_
 instance, using the Galaxy API via the `Bioblend
 <http://bioblend.readthedocs.org/en/latest/>`_ Python library.
 
+**Caveat**
+
+ * This is very much a work in progress, and operations such as user or library
+   creation and tool installation should be used with caution against production
+   instances of Galaxy.
+
 Installation
 ------------
 
@@ -18,7 +24,7 @@ example::
 Setup
 -----
 
-Although ``nebulizer``'s commands can be used without addition setup, it is
+Although ``nebulizer``'s commands can be used without additional setup, it is
 possible to create shortcuts in the form of 'aliases' to Galaxy URLs and API
 key pairs, by creating a ``.nebulizer`` file in your home directory, e.g.::
 
