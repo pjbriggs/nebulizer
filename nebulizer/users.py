@@ -246,7 +246,7 @@ def check_username_format(username):
     Check that format of 'username' is valid
 
     """
-    return bool(re.match("^[a-z0-9\-]+$",username))
+    return bool(re.match(r"^[a-z0-9\-]+$",username))
 
 def get_username_from_login(email):
     """
