@@ -56,6 +56,9 @@ Currently ``nebulizer`` offers three utilities:
 Some random examples (note that command names etc are subject to change
 without notice while these utilities are under development):
 
+Managing users
+~~~~~~~~~~~~~~
+
 Add a new user::
 
   manage_users create localhost -p pa55w0rd a.non@galaxy.org
@@ -63,6 +66,9 @@ Add a new user::
 List users matching specific name::
 
   manage_users list localhost --name=*briggs*
+
+Managing data libraries
+~~~~~~~~~~~~~~~~~~~~~~~
 
 List data libraries::
 
@@ -87,6 +93,9 @@ link::
 
   manage_libraries add_datasets localhost --server --link "NGS data/fastqs" \
     /galaxy/hosted_data/example.fq
+
+Managing tools
+~~~~~~~~~~~~~~
 
 List all tools that are available in a Galaxy instance::
 
