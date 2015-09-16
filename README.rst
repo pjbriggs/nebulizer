@@ -101,7 +101,16 @@ that they provide::
 
   manage_tools installed localhost --list-tools
 
+List all the tool repositories that have available updates or upgrades::
+
+  manage_tools installed localhost --updateable
+
 Install the most recent FastQC from the main toolshed::
 
   manage_tools install --tool-panel-section="NGS: QC and manipulation" \
     toolshed.g2.bx.psu.edu devteam fastqc
+
+Update FastQC tool to latest installable revision::
+
+  manage_tools update toolshed.g2.bx.psu.edu devteam fastqc
+
