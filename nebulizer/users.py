@@ -8,6 +8,51 @@ import fnmatch
 from bioblend import galaxy
 from mako.template import Template
 
+# Classes
+
+class User:
+    """
+    Class wrapping extraction of user data
+
+    Provides an interface for accessing data about a user
+    in a Galaxy instance, which has been retrieved via a
+    a call to the Galaxy API using bioblend.
+
+    """
+    def __init__(self,user_data):
+        """
+        Create a new User instance
+
+        ``user_data`` is a dictionary returned by a
+        call to bioblend, for example:
+
+        >>> for user_data in galaxy.users.UserClient(gi).get_users():
+        >>>    print User(user_data).name
+
+        """
+        self.email = user_data['email']
+        self.username = user_data['username']
+        self.id = user_data['id']
+
+# Functions
+
+def get_users(gi):
+    """
+    Return list of users in a Galaxy instance
+
+    Arguments:
+      gi (bioblend.galaxy.GalaxyInstance): Galaxy instance
+
+    Returns:
+      list: list of User objects.
+
+    """
+    users = []
+    user_client = galaxy.users.UserClient(gi)
+    for user_data in user_client.get_users():
+        users.append(User(user_data))
+    return users
+
 def list_users(gi,name=None):
     """
     List users in Galaxy instance
@@ -17,13 +62,15 @@ def list_users(gi,name=None):
       name  : optionally, only list matching emails/usernames
 
     """
-    for user in galaxy.users.UserClient(gi).get_users():
-        if name is None or \
-           (fnmatch.fnmatch(user['email'],name) or
-            fnmatch.fnmatch(user['username'],name)):
-            print "%s\t%s\t%s" % (user['email'],
-                                  user['username'],
-                                  user['id'])
+    users = get_users(gi)
+    if name:
+        name = name.lower()
+        users = filter(lambda u: fnmatch.fnmatch(u.username.lower(),name) or
+                       fnmatch.fnmatch(u.email.lower(),name),users)
+    for user in users:
+        print "%s\t%s\t%s" % (user.email,
+                              user.username,
+                              user.id)
 
 def create_user(gi,email,username=None,passwd=None,only_check=False,
                 mako_template=None):
@@ -231,14 +278,14 @@ def check_new_user_info(gi,email,username):
     Check if username or login are already in use
 
     """
-    user_client = galaxy.users.UserClient(gi)
-    for user in user_client.get_users():
-        if user['email'] == email:
-            sys.stderr.write("User with email '%s' already exists\n" % email)
-            return False
-        elif user_client.show_user(user['id'])['username'] == username:
-            sys.stderr.write("User with name '%s' already exists\n" % username)
-            return False
+    lookup_user = filter(lambda u: u.email == email or
+                         u.username == username,get_users(gi))
+    if lookup_user:
+        sys.stderr.write("User details clash with existing user(s):\n")
+        for user in lookup_user:
+            sys.stderr.write("%s\n" % '\t'.join(user.email,
+                                                user.username)) 
+        return False
     return True
 
 def check_username_format(username):
