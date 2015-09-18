@@ -56,6 +56,9 @@ Currently ``nebulizer`` offers three utilities:
 Some random examples (note that command names etc are subject to change
 without notice while these utilities are under development):
 
+Managing users
+~~~~~~~~~~~~~~
+
 Add a new user::
 
   manage_users create localhost -p pa55w0rd a.non@galaxy.org
@@ -63,6 +66,9 @@ Add a new user::
 List users matching specific name::
 
   manage_users list localhost --name=*briggs*
+
+Managing data libraries
+~~~~~~~~~~~~~~~~~~~~~~~
 
 List data libraries::
 
@@ -88,6 +94,9 @@ link::
   manage_libraries add_datasets localhost --server --link "NGS data/fastqs" \
     /galaxy/hosted_data/example.fq
 
+Managing tools
+~~~~~~~~~~~~~~
+
 List all tools that are available in a Galaxy instance::
 
   manage_tools list localhost
@@ -101,7 +110,16 @@ that they provide::
 
   manage_tools installed localhost --list-tools
 
+List all the tool repositories that have available updates or upgrades::
+
+  manage_tools installed localhost --updateable
+
 Install the most recent FastQC from the main toolshed::
 
   manage_tools install --tool-panel-section="NGS: QC and manipulation" \
     toolshed.g2.bx.psu.edu devteam fastqc
+
+Update FastQC tool to latest installable revision::
+
+  manage_tools update toolshed.g2.bx.psu.edu devteam fastqc
+

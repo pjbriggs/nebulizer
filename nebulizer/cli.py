@@ -263,11 +263,12 @@ def manage_tools(args=None):
                     "\n\t%prog list GALAXY_URL [options]"
                     "\n\t%prog installed GALAXY_URL [options]"
                     "\n\t%prog tool_panel GALAXY_URL [options]"
-                    "\n\t%prog install GALAXY_URL [options] SHED OWNER TOOL [REVISION]",
+                    "\n\t%prog install GALAXY_URL [options] SHED OWNER TOOL [REVISION]"
+                    "\n\t%prog update GALAXY_URL [options] SHED OWNER TOOL",
                     description="Manage and install tools in a Galaxy "
                     "instance")
     
-    commands = ['list','installed','tool_panel','install']
+    commands = ['list','installed','tool_panel','install','update']
 
     # Get compulsory arguments
     if len(args) < 2:
@@ -290,6 +291,16 @@ def manage_tools(args=None):
         p.add_option('--list-tools',action='store_true',dest='list_tools',
                      default=None,
                      help="list the associated tools for each repository")
+        p.add_option('--updateable',action='store_true',dest='updateable',
+                     default=None,
+                     help="only show repositories with uninstalled updates "
+                     "or upgrades")
+    elif command == 'tool_panel':
+        p.add_option('--name',action='store',dest='name',default=None,
+                     help="specific tool panel section(s) to list")
+        p.add_option('--list-tools',action='store_true',dest='list_tools',
+                     default=None,
+                     help="list the associated tools for each section")
     elif command == 'install':
         p.add_option('--tool-panel-section',action='store',
                      dest='tool_panel_section',default=None,
@@ -310,9 +321,11 @@ def manage_tools(args=None):
                          installed_only=options.installed_only)
     elif command == 'installed':
         tools.list_installed_repositories(gi,name=options.name,
-                                          list_tools=options.list_tools)
+                                          list_tools=options.list_tools,
+                                          only_updateable=options.updateable)
     elif command == 'tool_panel':
-        tools.list_tool_panel(gi)
+        tools.list_tool_panel(gi,name=options.name,
+                              list_tools=options.list_tools)
     elif command == 'install':
         if len(args) < 3:
             p.error("Need to supply toolshed, owner, repo and optional "
@@ -325,3 +338,8 @@ def manage_tools(args=None):
         tools.install_tool(gi,toolshed,repo,owner,
                            revision=revision,
                            tool_panel_section=options.tool_panel_section)
+    elif command == 'update':
+        if len(args) != 3:
+            p.error("Need to supply toolshed, owner and repo")
+        toolshed,owner,repo = args[:3]
+        tools.update_tool(gi,toolshed,repo,owner)
