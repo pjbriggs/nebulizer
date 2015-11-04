@@ -2,6 +2,7 @@
 #
 # cli: functions for building command utilities
 import sys
+import os
 import optparse
 from nebulizer import get_version
 from .core import get_galaxy_instance
@@ -109,7 +110,11 @@ def manage_users(args=None):
 
     # Check message template is .mako file
     if options.message_template:
-        if not options.message_template.endswith(".mako"):
+        if not os.path.isfile(options.message_template):
+            sys.stderr.write("Message template '%s' not found\n"
+                             % options.message_template)
+            sys.exit(1)
+        elif not options.message_template.endswith(".mako"):
             sys.stderr.write("Message template '%s' is not a .mako file\n"
                              % options.message_template)
             sys.exit(1)
