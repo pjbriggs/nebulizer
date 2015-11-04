@@ -107,6 +107,13 @@ def manage_users(args=None):
     options,args = p.parse_args(args[2:])
     handle_ssl_warnings(verify=(not options.no_verify))
 
+    # Check message template is .mako file
+    if options.message_template:
+        if not options.message_template.endswith(".mako"):
+            sys.stderr.write("Message template '%s' is not a .mako file\n"
+                             % options.message_template)
+            sys.exit(1)
+
     # Get a Galaxy instance
     gi = get_galaxy_instance(galaxy_url,api_key=options.api_key,
                              verify=(not options.no_verify))
