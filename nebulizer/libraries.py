@@ -4,6 +4,7 @@
 import os
 import fnmatch
 from bioblend import galaxy
+import logging
 
 def list_data_libraries(gi):
     """
@@ -50,9 +51,9 @@ def folder_id_from_name(gi,library_id,folder_name):
     """
     lib_client = galaxy.libraries.LibraryClient(gi)
     folder_name = normalise_folder_path(folder_name)
-    ##print "Looking for '%s'" % folder_name
+    logging.debug("Looking for '%s'" % folder_name)
     for folder in lib_client.get_folders(library_id):
-        ##print "Checking '%s'" % folder['name']
+        logging.debug("Checking '%s'" % folder['name'])
         if folder['name'] == folder_name:
             return folder['id']
     return None

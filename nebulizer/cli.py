@@ -4,6 +4,7 @@
 import sys
 import os
 import optparse
+import logging
 from nebulizer import get_version
 from .core import get_galaxy_instance
 from .core import turn_off_urllib3_warnings
@@ -25,6 +26,8 @@ def base_parser(usage=None,description=None):
                  "look up from .nebulizer file)")
     p.add_option('-n','--no-verify',action='store_true',dest='no_verify',
                  default=False,help="don't verify HTTPS connections")
+    p.add_option('--debug',action='store_true',dest='debug',
+                 default=False,help="turn on debugging output")
     return p
 
 def handle_ssl_warnings(verify=True):
@@ -40,6 +43,19 @@ def handle_ssl_warnings(verify=True):
         sys.stderr.write("WARNING SSL certificate verification has "
                          "been disabled\n")
         turn_off_urllib3_warnings()
+
+def handle_debug(debug=True):
+    """
+    Turn on debugging output from logging
+
+    Arguments:
+      debug (bool): if True then turn on debugging output
+
+    """
+    if debug:
+        logging.getLogger().setLevel(logging.DEBUG)
+    else:
+        logging.getLogger().setLevel(logging.ERROR)
 
 def nebulizer(args=None):
     """
@@ -107,6 +123,7 @@ def manage_users(args=None):
     # Process remaining arguments on command line
     options,args = p.parse_args(args[2:])
     handle_ssl_warnings(verify=(not options.no_verify))
+    handle_debug(debug=options.debug)
 
     # Check message template is .mako file
     if options.message_template:
@@ -225,6 +242,7 @@ def manage_libraries(args=None):
     # Process remaining arguments on command line
     options,args = p.parse_args(args[2:])
     handle_ssl_warnings(verify=(not options.no_verify))
+    handle_debug(debug=options.debug)
 
     # Get a Galaxy instance
     gi = get_galaxy_instance(galaxy_url,api_key=options.api_key,
@@ -322,6 +340,7 @@ def manage_tools(args=None):
     # Process remaining arguments on command line
     options,args = p.parse_args(args[2:])
     handle_ssl_warnings(verify=(not options.no_verify))
+    handle_debug(debug=options.debug)
 
     # Get a Galaxy instance
     gi = get_galaxy_instance(galaxy_url,api_key=options.api_key,
