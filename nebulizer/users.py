@@ -283,8 +283,8 @@ def check_new_user_info(gi,email,username):
     if lookup_user:
         sys.stderr.write("User details clash with existing user(s):\n")
         for user in lookup_user:
-            sys.stderr.write("%s\n" % '\t'.join(user.email,
-                                                user.username)) 
+            sys.stderr.write("%s\n" % '\t'.join([user.email,
+                                                 user.username]))
         return False
     return True
 
