@@ -210,6 +210,11 @@ def manage_libraries(args=None):
     # Setup additional command line options
     if command not in commands:
         p.error("unrecognised command: '%s'" % command)
+    elif command == 'list':
+        p.add_option('-l',action='store_true',
+                     dest='long_listing_format',default=False,
+                     help="use a long listing format (include ids, "
+                     "descriptions and file sizes and paths)")
     elif command == 'create_library':
         p.add_option('-d','--description',action='store',
                      dest='description',default=None,
@@ -251,7 +256,8 @@ def manage_libraries(args=None):
     if command == 'list':
         if len(args) == 1:
             # List folders in data library
-            libraries.list_library_contents(gi,args[0])
+            libraries.list_library_contents(gi,args[0],long_listing_format=
+                                            options.long_listing_format)
         else:
             # List data libraries
             libraries.list_data_libraries(gi)
