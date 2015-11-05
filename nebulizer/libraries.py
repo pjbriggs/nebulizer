@@ -72,7 +72,7 @@ def list_library_contents(gi,path):
     # Get name and id for parent data library
     logging.debug("Path '%s'" % path)
     lib_client = galaxy.libraries.LibraryClient(gi)
-    library_name,folder_path = split_library_folder_path(path)
+    library_name,folder_path = split_library_path(path)
     logging.debug("library_name '%s'" % library_name)
     library_id = library_id_from_name(gi,library_name)
     if library_id is None:
@@ -147,7 +147,7 @@ def create_folder(gi,path,description=None):
 
     """
     # Break up the path
-    library_name,folder_path = split_library_folder_path(path)
+    library_name,folder_path = split_library_path(path)
     logging.debug("library_name: %s" % library_name)
     logging.debug("folder_path : %s" % folder_path)
     # Get name and id for parent data library
@@ -200,7 +200,7 @@ def add_library_datasets(gi,path,files,
 
     """
     # Break up the path
-    library_name,folder_path = split_library_folder_path(path)
+    library_name,folder_path = split_library_path(path)
     # Get name and id for parent data library
     lib_client = galaxy.libraries.LibraryClient(gi)
     library_id = library_id_from_name(gi,library_name)
@@ -230,12 +230,12 @@ def add_library_datasets(gi,path,files,
                 file_type=file_type,
                 dbkey=dbkey)
 
-def split_library_folder_path(path):
+def split_library_path(path):
     """
     Split library path into library and folder components
 
     Note that the folder path will be returned as the
-    normalised pathi.e. /path/to/folder (single leading
+    normalised path i.e. /path/to/folder (single leading
     slash with no trailing slash).
 
     Arguments:

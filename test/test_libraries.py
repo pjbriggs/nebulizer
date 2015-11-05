@@ -1,39 +1,39 @@
 #!/usr/bin/env python
 
 import unittest
-from nebulizer.libraries import split_library_folder_path
+from nebulizer.libraries import split_library_path
 from nebulizer.libraries import normalise_folder_path
 
-class TestSplitLibraryFolderPathFunction(unittest.TestCase):
+class TestSplitLibraryPathFunction(unittest.TestCase):
     """
-    Tests for the 'split_library_folder_path' function
+    Tests for the 'split_library_path' function
 
     """
     def test_library_name_only(self):
-        self.assertEqual(split_library_folder_path('TestLibrary'),
+        self.assertEqual(split_library_path('TestLibrary'),
                          ('TestLibrary','/'))
     def test_library_name_leading_slash(self):
-        self.assertEqual(split_library_folder_path('/TestLibrary'),
+        self.assertEqual(split_library_path('/TestLibrary'),
                          ('TestLibrary','/'))
     def test_library_name_trailing_slash(self):
-        self.assertEqual(split_library_folder_path('TestLibrary/'),
+        self.assertEqual(split_library_path('TestLibrary/'),
                          ('TestLibrary','/'))
     def test_library_name_with_spaces(self):
-        self.assertEqual(split_library_folder_path('Test Library 2'),
+        self.assertEqual(split_library_path('Test Library 2'),
                          ('Test Library 2','/'))
     def test_library_and_folder(self):
-        self.assertEqual(split_library_folder_path('Test Library 2/Run 11'),
+        self.assertEqual(split_library_path('Test Library 2/Run 11'),
                          ('Test Library 2','/Run 11'))
     def test_library_and_folder_trailing_slash(self):
-        self.assertEqual(split_library_folder_path('Test Library 2/Run 11/'),
+        self.assertEqual(split_library_path('Test Library 2/Run 11/'),
                          ('Test Library 2','/Run 11'))
     def test_library_and_multiple_folders(self):
         self.assertEqual(
-            split_library_folder_path('Test Library 2/Run 11/Fastqs'),
+            split_library_path('Test Library 2/Run 11/Fastqs'),
             ('Test Library 2','/Run 11/Fastqs'))
     def test_library_and_multiple_folders_trailing_slash(self):
         self.assertEqual(
-            split_library_folder_path('Test Library 2/Run 11/Fastqs/'),
+            split_library_path('Test Library 2/Run 11/Fastqs/'),
             ('Test Library 2','/Run 11/Fastqs'))
 
 class TestNormaliseFolderPath(unittest.TestCase):
