@@ -38,7 +38,7 @@ class TestSplitLibraryFolderPathFunction(unittest.TestCase):
 
 class TestNormaliseFolderPath(unittest.TestCase):
     """
-    Tests for the 'normalise_folder_path'
+    Tests for the 'normalise_folder_path' function
 
     """
     def test_empty_folder_path(self):
@@ -54,5 +54,8 @@ class TestNormaliseFolderPath(unittest.TestCase):
                          '/path/to/folder')
     def test_folder_path_slashes_reversed(self):
         self.assertEqual(normalise_folder_path('path/to/folder/'),
+                         '/path/to/folder')
+    def test_folder_path_remove_multiple_slashes(self):
+        self.assertEqual(normalise_folder_path('/path//to/folder///'),
                          '/path/to/folder')
 

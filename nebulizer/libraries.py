@@ -272,4 +272,4 @@ def normalise_folder_path(path):
       str: normalised folder path.
 
     """
-    return '/'+path.strip('/')
+    return '/'+'/'.join(filter(lambda x: x != '',path.split('/')))
