@@ -59,14 +59,21 @@ def folder_id_from_name(gi,library_id,folder_name):
             return folder['id']
     return None
 
-def list_library_contents(gi,path):
+def list_library_contents(gi,path,long_listing_format=False):
     """
-    Get contents of folder in data library
+    Print contents of folder in data library
+
+    The output of this function is loosely based on the
+    output from the Linux `ls` command, and depends on
+    what data items the input path (which can include
+    wildcards).
 
     Arguments:
       gi (bioblend.galaxy.GalaxyInstance): Galaxy instance
       path (str): path describing a data library or
         a folder in a library
+      long_listing_format (boolean): if True then use a
+        long listing format when reporting items
 
     """
     # Get name and id for parent data library
@@ -81,29 +88,112 @@ def list_library_contents(gi,path):
     # Get library contents
     library_contents = lib_client.show_library(library_id,contents=True)
     logging.debug("folder_path '%s'" % folder_path)
-    # Go through the contents of the library
+    # Bioblend class for getting more info for datasets if
+    # using a long listing format
     dataset_client = galaxy.datasets.DatasetClient(gi)
-    nitems = 0
-    for item in library_contents:
-        logging.debug("%s" % item)
-        item_parent,item_name = os.path.split(item['name'])
-        logging.debug("-- Parent '%s'" % item_parent)
-        if fnmatch.fnmatch(item_parent,folder_path):
-            nitems += 1
+    # Determine if we're matching against a wildcard pattern
+    pattern = folder_path
+    wildcard_pattern = False
+    for c in "*?[]":
+        try:
+            pattern.index(c)
+            wildcard_pattern = True
+        except ValueError:
+            pass
+    # Output mode depends on whether we have wildcards
+    if not wildcard_pattern:
+        # Exact matches only
+        matches = filter(lambda x: x['name'] == pattern,
+                         library_contents)
+        for item in matches:
             if item['type'] == 'folder':
-                folder = lib_client.show_folder(library_id,item['id'])
-                print "%s/\t%s\t%s" % (item_name,
-                                       folder['description'],
-                                       folder['id'])
+                contents = filter(lambda x: os.path.split(x['name'])[0]
+                                  == item['name'],library_contents)
             else:
+                contents = matches
+        # Remove 'root' folder
+        contents = filter(lambda x: x['name'] != '/',contents)
+        # Report
+        if long_listing_format:
+            print "total %s" % len(contents)
+        for item in contents:
+            if long_listing_format:
+                if item['type'] == 'folder':
+                    folder = lib_client.show_folder(library_id,item['id'])
+                    print "%s/\t%s\t%s" % (folder['name'],
+                                           folder['description'],
+                                           folder['id'])
+                else:
+                    dataset = dataset_client.show_dataset(item['id'],
+                                                          hda_ldda='ldda')
+                    print "%s\t%s\t%s" % (dataset['name'],
+                                          dataset['file_size'],
+                                          dataset['file_name'])
+            else:
+                print "%s%s" % (os.path.split(item['name'])[1],
+                                '/' if item['type'] == 'folder' else '')
+    else:
+        # Number of levels to match
+        nlevels = pattern.count('/')
+        # Mixture of matches possible
+        matches = filter(lambda x: fnmatch.fnmatch(x['name'],pattern)
+                         and x['name'].count('/') == nlevels,
+                         library_contents)
+        # Identify the folders that are matched exactly
+        folders = []
+        for item in matches:
+            if item['type'] == 'folder' and item['name'] != '/':
+                folders.append(item)
+        # Locate non-folder items that are not in any of
+        # the folders previously identified
+        datasets = []
+        for item in matches:
+            implicit_dataset = False
+            if item['type'] == 'folder':
+                continue
+            else:
+                parent = os.path.split(item['name'])[0]+'/'
+                for folder in folders:
+                    if folder['name'].startswith(parent):
+                        print "Parent = %s" % parent
+                        implicit_dataset = True
+                        break
+            # Item outside of folders
+            if not implicit_dataset:
+                datasets.append(item)
+        # List the datasets
+        for dataset in datasets:
+            if long_listing_format:
                 dataset = dataset_client.show_dataset(item['id'],
                                                       hda_ldda='ldda')
-                logging.debug("%s" % dataset)
-                print "%s\t%s\t%s" % (item_name,
+                print "%s\t%s\t%s" % (dataset['name'],
                                       dataset['file_size'],
                                       dataset['file_name'])
-    if not nitems:
-        print "Total 0"
+            else:
+                print "%s" % dataset['name']
+        # List the contents of each folder
+        for folder in folders:
+            print "\n%s:" % folder['name']
+            folder_contents = filter(lambda x: os.path.split(x['name'])[0]
+                                     == folder['name'],library_contents)
+            if long_listing_format:
+                print "total %s" % len(folder_contents)
+            for item in folder_contents:
+                if long_listing_format:
+                    if item['type'] == 'folder':
+                        folder = lib_client.show_folder(library_id,item['id'])
+                        print "%s/\t%s\t%s" % (folder['name'],
+                                               folder['description'],
+                                               folder['id'])
+                    else:
+                        dataset = dataset_client.show_dataset(item['id'],
+                                                              hda_ldda='ldda')
+                        print "%s\t%s\t%s" % (dataset['name'],
+                                              dataset['file_size'],
+                                              dataset['file_name'])
+                else:
+                    print "%s%s" % (os.path.split(item['name'])[1],
+                                    '/' if item['type'] == 'folder' else '')
 
 def create_library(gi,name,description=None,synopsis=None):
     """
