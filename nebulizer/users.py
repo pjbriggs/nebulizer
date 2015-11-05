@@ -33,6 +33,15 @@ class User:
         self.email = user_data['email']
         self.username = user_data['username']
         self.id = user_data['id']
+        self.quota_percent = None
+        self.total_disk_usage = None
+        self.nice_total_disk_usage = None
+        self.is_admin = None
+        for attr in user_data.keys():
+            try:
+                setattr(self,attr,user_data[attr])
+            except AttributeError:
+                pass
 
 # Functions
 
@@ -53,13 +62,15 @@ def get_users(gi):
         users.append(User(user_data))
     return users
 
-def list_users(gi,name=None):
+def list_users(gi,name=None,long_listing_format=False):
     """
     List users in Galaxy instance
 
     Arguments:
       gi    : Galaxy instance
       name  : optionally, only list matching emails/usernames
+      long_listing_format (boolean): if True then use a
+        long listing format when reporting items
 
     """
     users = get_users(gi)
@@ -68,9 +79,18 @@ def list_users(gi,name=None):
         users = filter(lambda u: fnmatch.fnmatch(u.username.lower(),name) or
                        fnmatch.fnmatch(u.email.lower(),name),users)
     for user in users:
-        print "%s\t%s\t%s" % (user.email,
-                              user.username,
-                              user.id)
+        if long_listing_format:
+            user = User(galaxy.users.UserClient(gi).show_user(user.id))
+            print '\t'.join([str(x) for x in (user.email,
+                                              user.username,
+                                              user.nice_total_disk_usage,
+                                              "%s%%" % user.quota_percent,
+                                              ('admin' if user.is_admin
+                                               else ''),
+                                              user.id,)])
+        else:
+            print "%s\t%s" % (user.email,
+                              user.username)
 
 def create_user(gi,email,username=None,passwd=None,only_check=False,
                 mako_template=None):
