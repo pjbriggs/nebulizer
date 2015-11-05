@@ -51,7 +51,8 @@ def folder_id_from_name(gi,library_id,folder_name):
     """
     lib_client = galaxy.libraries.LibraryClient(gi)
     folder_name = normalise_folder_path(folder_name)
-    logging.debug("Looking for '%s'" % folder_name)
+    logging.debug("Looking for '%s' in library %s" % (folder_name,
+                                                      library_id))
     for folder in lib_client.get_folders(library_id):
         logging.debug("Checking '%s'" % folder['name'])
         if folder['name'] == folder_name:
@@ -69,21 +70,24 @@ def list_library_contents(gi,path):
 
     """
     # Get name and id for parent data library
-    #print "Path '%s'" % path
+    logging.debug("Path '%s'" % path)
     lib_client = galaxy.libraries.LibraryClient(gi)
     library_name,folder_path = split_library_folder_path(path)
-    #print "library_name '%s'" % library_name
+    logging.debug("library_name '%s'" % library_name)
     library_id = library_id_from_name(gi,library_name)
+    if library_id is None:
+        print "No library '%s'" % library_name
+        return
     # Get library contents
     library_contents = lib_client.show_library(library_id,contents=True)
-    #print "folder_path '%s'" % folder_path
+    logging.debug("folder_path '%s'" % folder_path)
     # Go through the contents of the library
     dataset_client = galaxy.datasets.DatasetClient(gi)
     nitems = 0
     for item in library_contents:
-        #print "%s" % item
+        logging.debug("%s" % item)
         item_parent,item_name = os.path.split(item['name'])
-        #print "-- Parent '%s'" % item_parent
+        logging.debug("-- Parent '%s'" % item_parent)
         if fnmatch.fnmatch(item_parent,folder_path):
             nitems += 1
             if item['type'] == 'folder':
@@ -94,7 +98,7 @@ def list_library_contents(gi,path):
             else:
                 dataset = dataset_client.show_dataset(item['id'],
                                                       hda_ldda='ldda')
-                #print "%s" % dataset
+                logging.debug("%s" % dataset)
                 print "%s\t%s\t%s" % (item_name,
                                       dataset['file_size'],
                                       dataset['file_name'])
@@ -144,10 +148,14 @@ def create_folder(gi,path,description=None):
     """
     # Break up the path
     library_name,folder_path = split_library_folder_path(path)
+    logging.debug("library_name: %s" % library_name)
+    logging.debug("folder_path : %s" % folder_path)
     # Get name and id for parent data library
     lib_client = galaxy.libraries.LibraryClient(gi)
     library_id = library_id_from_name(gi,library_name)
-    #print "library_name '%s'" % library_name
+    if library_id is None:
+        print "Top level data library '%s' not found" % library_name
+        return None
     # Get folder name and base folder
     folder_base,folder_name = os.path.split(folder_path)
     # Check folder with same name doesn't already exist
