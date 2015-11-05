@@ -78,6 +78,7 @@ def list_users(gi,name=None,long_listing_format=False):
         name = name.lower()
         users = filter(lambda u: fnmatch.fnmatch(u.username.lower(),name) or
                        fnmatch.fnmatch(u.email.lower(),name),users)
+    users.sort(key=lambda u: u.email)
     for user in users:
         if long_listing_format:
             user = User(galaxy.users.UserClient(gi).show_user(user.id))
