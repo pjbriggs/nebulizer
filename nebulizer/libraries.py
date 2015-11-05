@@ -382,8 +382,10 @@ def report_dataset(dataset_data,long_listing=False):
     """
     logging.debug("%s" % dataset_data)
     if long_listing:
-        print "%s\t%s\t%s" % (dataset_data['name'],
-                              dataset_data['file_size'],
-                              dataset_data['file_name'])
+        print '\t'.join([str(x) for x in (dataset_data['name'],
+                                          dataset_data['file_ext'],
+                                          dataset_data['genome_build'],
+                                          dataset_data['file_size'],
+                                          dataset_data['file_name'],)])
     else:
         print "%s" % os.path.split(dataset_data['name'])[1]
