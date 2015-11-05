@@ -74,8 +74,11 @@ def get_galaxy_instance(galaxy_url,api_key=None,verify=True):
     print "Connecting to %s" % galaxy_url
     gi = galaxy.GalaxyInstance(url=galaxy_url,key=api_key)
     gi.verify = verify
-    user = galaxy.users.UserClient(gi).get_current_user()
-    print "Username %s" % user['email']
+    try:
+        user = galaxy.users.UserClient(gi).get_current_user()
+        print "Connected as user %s" % user['email']
+    except ConnectionError:
+        print "Unable to determine associated user"
     return gi
 
 def turn_off_urllib3_warnings():
