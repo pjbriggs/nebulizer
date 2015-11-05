@@ -74,7 +74,7 @@ def manage_users(args=None):
         args = sys.argv[1:]
 
     p = base_parser(usage=\
-                    "\n\t%prog list GALAXY_URL [options]"
+                    "\n\t%prog list   GALAXY_URL [options]"
                     "\n\t%prog create GALAXY_URL EMAIL [PUBLIC_NAME]"
                     "\n\t%prog create GALAXY_URL -t TEMPLATE START [END]"
                     "\n\t%prog create GALAXY_URL -b FILE [options]",
