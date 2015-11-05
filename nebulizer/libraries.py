@@ -122,21 +122,14 @@ def list_library_contents(gi,path,long_listing_format=False):
         if long_listing_format:
             print "total %s" % len(contents)
         for item in contents:
-            if long_listing_format:
-                if item['type'] == 'folder':
-                    folder = lib_client.show_folder(library_id,item['id'])
-                    print "%s/\t%s\t%s" % (folder['name'],
-                                           folder['description'],
-                                           folder['id'])
-                else:
-                    dataset = dataset_client.show_dataset(item['id'],
-                                                          hda_ldda='ldda')
-                    print "%s\t%s\t%s" % (dataset['name'],
-                                          dataset['file_size'],
-                                          dataset['file_name'])
+            if item['type'] == 'folder':
+                report_folder(lib_client.show_folder(library_id,
+                                                     item['id']),
+                                    long_listing=long_listing_format)
             else:
-                print "%s%s" % (os.path.split(item['name'])[1],
-                                '/' if item['type'] == 'folder' else '')
+                report_dataset(dataset_client.show_dataset(item['id'],
+                                                           hda_ldda='ldda'),
+                               long_listing=long_listing_format)
     else:
         # Number of levels to match
         nlevels = pattern.count('/')
@@ -172,14 +165,9 @@ def list_library_contents(gi,path,long_listing_format=False):
                 datasets.append(item)
         # List the datasets
         for dataset in datasets:
-            if long_listing_format:
-                dataset = dataset_client.show_dataset(item['id'],
-                                                      hda_ldda='ldda')
-                print "%s\t%s\t%s" % (dataset['name'],
-                                      dataset['file_size'],
-                                      dataset['file_name'])
-            else:
-                print "%s" % dataset['name']
+            report_dataset(dataset_client.show_dataset(item['id'],
+                                                       hda_ldda='ldda'),
+                           long_listing=long_listing_format)
         # List the contents of each folder
         for folder in folders:
             print "\n%s:" % folder['name']
@@ -188,21 +176,14 @@ def list_library_contents(gi,path,long_listing_format=False):
             if long_listing_format:
                 print "total %s" % len(folder_contents)
             for item in folder_contents:
-                if long_listing_format:
-                    if item['type'] == 'folder':
-                        folder = lib_client.show_folder(library_id,item['id'])
-                        print "%s/\t%s\t%s" % (folder['name'],
-                                               folder['description'],
-                                               folder['id'])
-                    else:
-                        dataset = dataset_client.show_dataset(item['id'],
-                                                              hda_ldda='ldda')
-                        print "%s\t%s\t%s" % (dataset['name'],
-                                              dataset['file_size'],
-                                              dataset['file_name'])
+                if item['type'] == 'folder':
+                    report_folder(lib_client.show_folder(library_id,
+                                                         item['id']),
+                    long_listing=long_listing_format)
                 else:
-                    print "%s%s" % (os.path.split(item['name'])[1],
-                                    '/' if item['type'] == 'folder' else '')
+                    report_dataset(dataset_client.show_dataset(item['id'],
+                                                               hda_ldda='ldda'),
+                                   long_listing=long_listing_format)
 
 def create_library(gi,name,description=None,synopsis=None):
     """
@@ -372,3 +353,37 @@ def normalise_folder_path(path):
 
     """
     return '/'+'/'.join(filter(lambda x: x != '',path.split('/')))
+
+def report_folder(folder_data,long_listing=False):
+    """
+    Report details of a library folder
+
+    Arguments:
+      folder_data (dict): dictionary returned from an
+        appropriate call to bioblend
+
+    """
+    logging.debug("%s" % folder_data)
+    if long_listing:
+        print "%s/\t%s\t%s" % (folder_data['name'],
+                                folder_data['description'],
+                                folder_data['id'])
+    else:
+        print "%s/" % os.path.split(folder_data['name'])[1]
+
+def report_dataset(dataset_data,long_listing=False):
+    """
+    Report details of a library dataset
+
+    Arguments:
+      dataset_data (dict): dictionary returned from an
+        appropriate call to bioblend
+
+    """
+    logging.debug("%s" % dataset_data)
+    if long_listing:
+        print "%s\t%s\t%s" % (dataset_data['name'],
+                              dataset_data['file_size'],
+                              dataset_data['file_name'])
+    else:
+        print "%s" % os.path.split(dataset_data['name'])[1]
