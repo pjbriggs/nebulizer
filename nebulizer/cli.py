@@ -125,17 +125,6 @@ def manage_users(args=None):
     handle_ssl_warnings(verify=(not options.no_verify))
     handle_debug(debug=options.debug)
 
-    # Check message template is .mako file
-    if options.message_template:
-        if not os.path.isfile(options.message_template):
-            sys.stderr.write("Message template '%s' not found\n"
-                             % options.message_template)
-            sys.exit(1)
-        elif not options.message_template.endswith(".mako"):
-            sys.stderr.write("Message template '%s' is not a .mako file\n"
-                             % options.message_template)
-            sys.exit(1)
-
     # Get a Galaxy instance
     gi = get_galaxy_instance(galaxy_url,api_key=options.api_key,
                              verify=(not options.no_verify))
@@ -144,6 +133,16 @@ def manage_users(args=None):
     if command == 'list':
         users.list_users(gi,name=options.name)
     elif command == 'create':
+        # Check message template is .mako file
+        if options.message_template:
+            if not os.path.isfile(options.message_template):
+                sys.stderr.write("Message template '%s' not found\n"
+                                 % options.message_template)
+                sys.exit(1)
+            elif not options.message_template.endswith(".mako"):
+                sys.stderr.write("Message template '%s' is not a .mako file\n"
+                                 % options.message_template)
+                sys.exit(1)
         if options.template:
             # Get the template and range of indices
             template = args[0]
