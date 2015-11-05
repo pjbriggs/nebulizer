@@ -94,6 +94,10 @@ def manage_users(args=None):
     elif command == 'list':
         p.add_option('--name',action='store',dest='name',default=None,
                      help="specific emails/user name(s) to list")
+        p.add_option('-l',action='store_true',
+                     dest='long_listing_format',default=False,
+                     help="use a long listing format (include ids, "
+                     "disk usage and admin status)")
     elif command == 'create':
         p.add_option('-p','--password',action='store',dest='passwd',
                      default=None,
@@ -131,7 +135,8 @@ def manage_users(args=None):
 
     # Execute command
     if command == 'list':
-        users.list_users(gi,name=options.name)
+        users.list_users(gi,name=options.name,long_listing_format=
+                         options.long_listing_format)
     elif command == 'create':
         # Check message template is .mako file
         if options.message_template:
