@@ -405,6 +405,7 @@ def list_tools(gi,name=None,installed_only=False):
                                           tool.version,
                                           tool.panel_section,
                                           tool.tool_repo)
+    print "total %s" % len(tools)
 
 def list_installed_repositories(gi,name=None,list_tools=False,
                                 include_deleted=False,
@@ -439,6 +440,7 @@ def list_installed_repositories(gi,name=None,list_tools=False,
     if list_tools:
         tools = get_tools(gi)
     # Report
+    nrevisions = 0
     for repo in repos:
         # Check each revision
         for revision in repo.revisions():
@@ -457,12 +459,14 @@ def list_installed_repositories(gi,name=None,list_tools=False,
                                     repo.owner,
                                     revision.revision_id,
                                     revision.status))
+            nrevisions += 1
             # Get tools associated with repo
             if list_tools:
                 for tool in filter(lambda t: t.tool_repo == repo.id,tools):
                     print "- %s" % '\t'.join((tool.name,
                                               tool.version,
                                               tool.description))
+    print "total %s" % nrevisions
 
 def list_tool_panel(gi,name=None,list_tools=False):
     """
@@ -496,6 +500,7 @@ def list_tool_panel(gi,name=None,list_tools=False):
                 print "- %s" % '\t'.join((tool.name,
                                           tool.version,
                                           tool.description))
+    print "total %s" % len(sections)
 
 def install_tool(gi,tool_shed,name,owner,
                  revision=None,tool_panel_section=None):
