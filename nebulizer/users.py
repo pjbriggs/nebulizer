@@ -92,6 +92,7 @@ def list_users(gi,name=None,long_listing_format=False):
         else:
             print "%s\t%s" % (user.email,
                               user.username)
+    print "total %s" % len(users)
 
 def create_user(gi,email,username=None,passwd=None,only_check=False,
                 mako_template=None):
