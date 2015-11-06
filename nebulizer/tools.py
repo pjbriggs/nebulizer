@@ -423,6 +423,9 @@ def list_installed_repositories(gi,name=None,
       toolshed (str): optional, only list tool
         repositories from toolsheds that match this string
         (can include wildcards)
+      owner (str): optional, only list tool repositiories
+        with owners who match this string (can include
+        wildcards)
       list_tools (bool): if True then also list the tools
         provided by the repository
       include_deleted (bool): if True then also include
@@ -450,6 +453,9 @@ def list_installed_repositories(gi,name=None,
                 toolshed = toolshed[len(protocol):]
         repos = filter(lambda r: fnmatch.fnmatch(r.tool_shed,toolshed),
                        repos)
+    # Filter on owner
+    if owner:
+        repos = filter(lambda r: fnmatch.fnmatch(r.owner,owner),repos)
     # Get list of tools, if required
     if list_tools:
         tools = get_tools(gi)
