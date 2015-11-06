@@ -81,7 +81,8 @@ def get_galaxy_instance(galaxy_url,api_key=None,verify=True):
         try:
             galaxy_url,api_key = Credentials().fetch_key(galaxy_url)
         except KeyError,ex:
-            print ex
+            sys.stderr.write("Failed to find credentials for %s\n" %
+                             galaxy_url)
             return None
     print "Connecting to %s" % galaxy_url
     gi = galaxy.GalaxyInstance(url=galaxy_url,key=api_key)
