@@ -361,6 +361,8 @@ def report_folder(folder_data,long_listing=False):
     Arguments:
       folder_data (dict): dictionary returned from an
         appropriate call to bioblend
+      long_listing_format (boolean): if True then use a
+        long listing format when reporting items
 
     """
     logging.debug("%s" % folder_data)
@@ -378,6 +380,8 @@ def report_dataset(dataset_data,long_listing=False):
     Arguments:
       dataset_data (dict): dictionary returned from an
         appropriate call to bioblend
+      long_listing_format (boolean): if True then use a
+        long listing format when reporting items
 
     """
     logging.debug("%s" % dataset_data)
