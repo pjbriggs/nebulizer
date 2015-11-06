@@ -18,7 +18,7 @@ def base_parser(usage=None,description=None):
 
     """
     p = optparse.OptionParser(usage=usage,
-                              version="%%prog %s" % get_version(),
+                              version="%s" % get_version(),
                               description=description)
     p.add_option('-k','--api_key',action='store',dest='api_key',
                  default=None,
@@ -83,8 +83,11 @@ def manage_users(args=None):
     commands = ['list','create']
 
     # Get compulsory arguments
-    if len(args) == 1 and (args[0] == '-h' or args[0] == '--help'):
-        p.print_usage()
+    if len(args) == 1:
+        if args[0] == '-h' or args[0] == '--help':
+            p.print_usage()
+        elif args[0] == '--version':
+            p.print_version()
         sys.exit(0)
     if len(args) < 2:
         p.error("need to supply a command and a Galaxy URL/alias")
@@ -132,7 +135,7 @@ def manage_users(args=None):
                      "MESSAGE_TEMPLATE")
         
     # Process remaining arguments on command line
-    if args[1] == '-h' or args[1] == '--help':
+    if args[1] in ('-h','--help','--version'):
         args = args[1:]
     else:
         args = args[2:]
@@ -221,8 +224,11 @@ def manage_libraries(args=None):
     commands = ['list','create_library','create_folder','add_datasets']
 
     # Get compulsory arguments
-    if len(args) == 1 and (args[0] == '-h' or args[0] == '--help'):
-        p.print_usage()
+    if len(args) == 1:
+        if args[0] == '-h' or args[0] == '--help':
+            p.print_usage()
+        elif args[0] == '--version':
+            p.print_version()
         sys.exit(0)
     if len(args) < 2:
         p.error("need to supply a command and a Galaxy URL/alias")
@@ -266,7 +272,7 @@ def manage_libraries(args=None):
                      "'auto')")
 
     # Process remaining arguments on command line
-    if args[1] == '-h' or args[1] == '--help':
+    if args[1] in ('-h','--help','--version'):
         args = args[1:]
     else:
         args = args[2:]
@@ -335,8 +341,11 @@ def manage_tools(args=None):
     commands = ['list','installed','tool_panel','install','update']
 
     # Get compulsory arguments
-    if len(args) == 1 and (args[0] == '-h' or args[0] == '--help'):
-        p.print_usage()
+    if len(args) == 1:
+        if args[0] == '-h' or args[0] == '--help':
+            p.print_usage()
+        elif args[0] == '--version':
+            p.print_version()
         sys.exit(0)
     if len(args) < 2:
         p.error("need to supply a command and a Galaxy URL/alias")
@@ -375,7 +384,7 @@ def manage_tools(args=None):
                      "tool under")
 
     # Process remaining arguments on command line
-    if args[1] == '-h' or args[1] == '--help':
+    if args[1] in ('-h','--help','--version'):
         args = args[1:]
     else:
         args = args[2:]
