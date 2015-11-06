@@ -239,21 +239,25 @@ def manage_libraries(args=None):
     if command not in commands:
         p.error("unrecognised command: '%s'" % command)
     elif command == 'list':
+        p.set_usage("%prog list GALAXY_URL [options]")
         p.add_option('-l',action='store_true',
                      dest='long_listing_format',default=False,
                      help="use a long listing format (include ids, "
                      "descriptions and file sizes and paths)")
     elif command == 'create_library':
+        p.set_usage("%prog create_library GALAXY_URL [options] NAME")
         p.add_option('-d','--description',action='store',
                      dest='description',default=None,
                      help="optional description")
         p.add_option('-s','--synopsis',action='store',dest='synopsis',
                      default=None,help="optional synopsis")
     elif command == 'create_folder':
+        p.set_usage("%prog create_folder GALAXY_URL [options] PATH")
         p.add_option('-d','--description',action='store',
                      dest='description',default=None,
                      help="optional description")
     elif command == 'add_datasets':
+        p.set_usage("%prog add_datasets GALAXY_URL [options] DEST FILE...")
         p.add_option('--server',action='store_true',dest='from_server',
                      default=False,
                      help="upload files from Galaxy server file system "
@@ -356,12 +360,14 @@ def manage_tools(args=None):
     if command not in commands:
         p.error("unrecognised command: '%s'" % command)
     elif command == 'list':
+        p.set_usage("%prog list GALAXY_URL [options]")
         p.add_option('--name',action='store',dest='name',default=None,
                      help="specific tool name(s) to list")
         p.add_option('--installed',action='store_true',
                      dest='installed_only',default=False,
                      help="only list tools installed from a toolshed")
     elif command == 'installed':
+        p.set_usage("%prog installed GALAXY_URL [options]")
         p.add_option('--name',action='store',dest='name',default=None,
                      help="specific tool repository/ies to list")
         p.add_option('--list-tools',action='store_true',dest='list_tools',
@@ -372,16 +378,21 @@ def manage_tools(args=None):
                      help="only show repositories with uninstalled updates "
                      "or upgrades")
     elif command == 'tool_panel':
+        p.set_usage("%prog tool_panel GALAXY_URL [options]")
         p.add_option('--name',action='store',dest='name',default=None,
                      help="specific tool panel section(s) to list")
         p.add_option('--list-tools',action='store_true',dest='list_tools',
                      default=None,
                      help="list the associated tools for each section")
     elif command == 'install':
+        p.set_usage("%prog install GALAXY_URL [options] SHED OWNER TOOL "
+                    "[REVISION]")
         p.add_option('--tool-panel-section',action='store',
                      dest='tool_panel_section',default=None,
                      help="tool panel section name or id to install the "
                      "tool under")
+    elif command == 'update':
+        p.set_usage("%prog update GALAXY_URL [options] SHED OWNER TOOL")
 
     # Process remaining arguments on command line
     if args[1] in ('-h','--help','--version'):
