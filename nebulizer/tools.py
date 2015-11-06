@@ -457,12 +457,12 @@ def list_installed_repositories(gi,name=None,list_tools=False,
                                     repo.owner,
                                     revision.revision_id,
                                     revision.status))
-        # Get tools associated with repo
-        if list_tools:
-            for tool in filter(lambda t: t.tool_repo == repo.id,tools):
-                print "- %s" % '\t'.join((tool.name,
-                                          tool.version,
-                                          tool.description))
+            # Get tools associated with repo
+            if list_tools:
+                for tool in filter(lambda t: t.tool_repo == repo.id,tools):
+                    print "- %s" % '\t'.join((tool.name,
+                                              tool.version,
+                                              tool.description))
 
 def list_tool_panel(gi,name=None,list_tools=False):
     """
