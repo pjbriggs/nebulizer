@@ -143,6 +143,9 @@ def manage_users(args=None):
     # Get a Galaxy instance
     gi = get_galaxy_instance(galaxy_url,api_key=options.api_key,
                              verify=(not options.no_verify))
+    if gi is None:
+        sys.stderr.write("Failed to connect to Galaxy instance\n")
+        sys.exit(1)
 
     # Execute command
     if command == 'list':
@@ -274,6 +277,9 @@ def manage_libraries(args=None):
     # Get a Galaxy instance
     gi = get_galaxy_instance(galaxy_url,api_key=options.api_key,
                              verify=(not options.no_verify))
+    if gi is None:
+        sys.stderr.write("Failed to connect to Galaxy instance\n")
+        sys.exit(1)
 
     # Execute command
     if command == 'list':
@@ -380,6 +386,9 @@ def manage_tools(args=None):
     # Get a Galaxy instance
     gi = get_galaxy_instance(galaxy_url,api_key=options.api_key,
                              verify=(not options.no_verify))
+    if gi is None:
+        sys.stderr.write("Failed to connect to Galaxy instance\n")
+        sys.exit(1)
 
     # Execute command
     if command == 'list':
