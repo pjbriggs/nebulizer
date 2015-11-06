@@ -407,7 +407,10 @@ def list_tools(gi,name=None,installed_only=False):
                                           tool.tool_repo)
     print "total %s" % len(tools)
 
-def list_installed_repositories(gi,name=None,list_tools=False,
+def list_installed_repositories(gi,name=None,
+                                toolshed=None,
+                                owner=None,
+                                list_tools=False,
                                 include_deleted=False,
                                 only_updateable=False):
     """
@@ -417,6 +420,9 @@ def list_installed_repositories(gi,name=None,list_tools=False,
       gi (bioblend.galaxy.GalaxyInstance): Galaxy instance
       name (str): optional, only list tool repositiories
         which match this string (can include wildcards)
+      toolshed (str): optional, only list tool
+        repositories from toolsheds that match this string
+        (can include wildcards)
       list_tools (bool): if True then also list the tools
         provided by the repository
       include_deleted (bool): if True then also include
@@ -435,6 +441,14 @@ def list_installed_repositories(gi,name=None,list_tools=False,
     if name:
         name = name.lower()
         repos = filter(lambda r: fnmatch.fnmatch(r.name.lower(),name),
+                       repos)
+    # Filter on toolshed
+    if toolshed:
+        # Strip leading http(s)://
+        for protocol in ('https://','http://'):
+            if toolshed.startswith(protocol):
+                toolshed = toolshed[len(protocol):]
+        repos = filter(lambda r: fnmatch.fnmatch(r.tool_shed,toolshed),
                        repos)
     # Get list of tools, if required
     if list_tools:

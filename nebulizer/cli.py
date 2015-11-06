@@ -370,6 +370,8 @@ def manage_tools(args=None):
         p.set_usage("%prog installed GALAXY_URL [options]")
         p.add_option('--name',action='store',dest='name',default=None,
                      help="specific tool repository/ies to list")
+        p.add_option('--toolshed',action='store',dest='toolshed',default=None,
+                     help="only list repositories from TOOLSHED")
         p.add_option('--list-tools',action='store_true',dest='list_tools',
                      default=None,
                      help="list the associated tools for each repository")
@@ -416,6 +418,7 @@ def manage_tools(args=None):
                          installed_only=options.installed_only)
     elif command == 'installed':
         tools.list_installed_repositories(gi,name=options.name,
+                                          toolshed=options.toolshed,
                                           list_tools=options.list_tools,
                                           only_updateable=options.updateable)
     elif command == 'tool_panel':
