@@ -62,18 +62,35 @@ def get_galaxy_instance(galaxy_url,api_key=None,verify=True):
     """
     Return Bioblend GalaxyInstance
 
+    Attempts to connect to the specified Galaxy instance and
+    verify that the connection is working by requesting the
+    config for that instance.
+
     Arguments:
       galaxy_url (str): URL for the Galaxy instance to connect to
       api_key (str): API key to use when accessing Galaxy
       verify (bool): if True then turn off verification of SSL
         certificates for HTTPs connections
 
+    Returns:
+      GalaxyInstance: a bioblend GalaxyInstance for the connection,
+        or None if the connection failed or couldn't be verified.
+
     """
     if api_key is None:
-        galaxy_url,api_key = Credentials().fetch_key(galaxy_url)
+        try:
+            galaxy_url,api_key = Credentials().fetch_key(galaxy_url)
+        except KeyError,ex:
+            print ex
+            return None
     print "Connecting to %s" % galaxy_url
     gi = galaxy.GalaxyInstance(url=galaxy_url,key=api_key)
     gi.verify = verify
+    try:
+        galaxy.config.ConfigClient(gi).get_config()
+    except ConnectionError,ex:
+        print ex
+        return None
     try:
         user = galaxy.users.UserClient(gi).get_current_user()
         print "Connected as user %s" % user['email']
