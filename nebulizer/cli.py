@@ -83,6 +83,9 @@ def manage_users(args=None):
     commands = ['list','create']
 
     # Get compulsory arguments
+    if len(args) == 1 and (args[0] == '-h' or args[0] == '--help'):
+        p.print_usage()
+        sys.exit(0)
     if len(args) < 2:
         p.error("need to supply a command and a Galaxy URL/alias")
     command = args[0]
@@ -92,6 +95,7 @@ def manage_users(args=None):
     if command not in commands:
         p.error("unrecognised command: '%s'" % command)
     elif command == 'list':
+        p.set_usage("%prog list GALAXY_URL [options]")
         p.add_option('--name',action='store',dest='name',default=None,
                      help="specific emails/user name(s) to list")
         p.add_option('-l',action='store_true',
@@ -99,6 +103,9 @@ def manage_users(args=None):
                      help="use a long listing format (include ids, "
                      "disk usage and admin status)")
     elif command == 'create':
+        p.set_usage("\n\t%prog create GALAXY_URL EMAIL [PUBLIC_NAME]"
+                    "\n\t%prog create GALAXY_URL -t TEMPLATE START [END]"
+                    "\n\t%prog create GALAXY_URL -b FILE [options]")
         p.add_option('-p','--password',action='store',dest='passwd',
                      default=None,
                      help="specify password for new user account "
@@ -125,7 +132,11 @@ def manage_users(args=None):
                      "MESSAGE_TEMPLATE")
         
     # Process remaining arguments on command line
-    options,args = p.parse_args(args[2:])
+    if args[1] == '-h' or args[1] == '--help':
+        args = args[1:]
+    else:
+        args = args[2:]
+    options,args = p.parse_args(args)
     handle_ssl_warnings(verify=(not options.no_verify))
     handle_debug(debug=options.debug)
 
@@ -207,6 +218,9 @@ def manage_libraries(args=None):
     commands = ['list','create_library','create_folder','add_datasets']
 
     # Get compulsory arguments
+    if len(args) == 1 and (args[0] == '-h' or args[0] == '--help'):
+        p.print_usage()
+        sys.exit(0)
     if len(args) < 2:
         p.error("need to supply a command and a Galaxy URL/alias")
     command = args[0]
@@ -249,7 +263,11 @@ def manage_libraries(args=None):
                      "'auto')")
 
     # Process remaining arguments on command line
-    options,args = p.parse_args(args[2:])
+    if args[1] == '-h' or args[1] == '--help':
+        args = args[1:]
+    else:
+        args = args[2:]
+    options,args = p.parse_args(args)
     handle_ssl_warnings(verify=(not options.no_verify))
     handle_debug(debug=options.debug)
 
@@ -311,6 +329,9 @@ def manage_tools(args=None):
     commands = ['list','installed','tool_panel','install','update']
 
     # Get compulsory arguments
+    if len(args) == 1 and (args[0] == '-h' or args[0] == '--help'):
+        p.print_usage()
+        sys.exit(0)
     if len(args) < 2:
         p.error("need to supply a command and a Galaxy URL/alias")
     command = args[0]
@@ -348,7 +369,11 @@ def manage_tools(args=None):
                      "tool under")
 
     # Process remaining arguments on command line
-    options,args = p.parse_args(args[2:])
+    if args[1] == '-h' or args[1] == '--help':
+        args = args[1:]
+    else:
+        args = args[2:]
+    options,args = p.parse_args(args)
     handle_ssl_warnings(verify=(not options.no_verify))
     handle_debug(debug=options.debug)
 
