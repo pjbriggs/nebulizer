@@ -123,3 +123,13 @@ Update FastQC tool to latest installable revision::
 
   manage_tools update toolshed.g2.bx.psu.edu devteam fastqc
 
+Handling SSL certificate failures
+---------------------------------
+
+``nebulizer`` commands will fail for Galaxy instances which are served over
+``https`` protocol without a valid SSL certificate, reporting an error like::
+
+  [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed (_ssl.c:590), 0 attempts left: None
+
+In this case adding the ``--no-verify`` (``-n``) option turns off the
+certificate verification and should enable a connection to be made.
