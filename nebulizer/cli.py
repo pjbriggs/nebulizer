@@ -4,6 +4,7 @@
 import sys
 import os
 import optparse
+import getpass
 import logging
 from nebulizer import get_version
 from .core import get_galaxy_instance
@@ -24,6 +25,12 @@ def base_parser(usage=None,description=None):
                  default=None,
                  help="specify API key for GALAXY_URL (otherwise will try to "
                  "look up from .nebulizer file)")
+    p.add_option('-u','--username',action='store',dest='username',
+                 default=None,
+                 help="specify username (i.e. email) to log into Galaxy with")
+    p.add_option('-P','--galaxy_password',action='store',
+                 dest='galaxy_password',default=None,
+                 help="supply password for Galaxy instance")
     p.add_option('-n','--no-verify',action='store_true',dest='no_verify',
                  default=False,help="don't verify HTTPS connections")
     p.add_option('--debug',action='store_true',dest='debug',
@@ -56,6 +63,25 @@ def handle_debug(debug=True):
         logging.getLogger().setLevel(logging.DEBUG)
     else:
         logging.getLogger().setLevel(logging.ERROR)
+
+def handle_credentials(email,password,prompt="Password: "):
+    """
+    Sort out email and password for accessing Galaxy
+
+    Arguments:
+      email (str): Galaxy e-mail address corresponding to the user
+      password (str): password of Galaxy account corresponding to
+        email address
+
+    Returns:
+      Tuple: tuple consisting of (email,password).
+
+    """
+    if email is None:
+        return (None,None)
+    if password is None:
+        password = getpass.getpass(prompt)
+    return (email,password)
 
 def nebulizer(args=None):
     """
@@ -143,8 +169,14 @@ def manage_users(args=None):
     handle_ssl_warnings(verify=(not options.no_verify))
     handle_debug(debug=options.debug)
 
+    # Handle password if required
+    email,password = handle_credentials(options.username,
+                                        options.galaxy_password,
+                                        prompt="Password for %s: " % galaxy_url)
+
     # Get a Galaxy instance
     gi = get_galaxy_instance(galaxy_url,api_key=options.api_key,
+                             email=email,password=password,
                              verify=(not options.no_verify))
     if gi is None:
         sys.stderr.write("Failed to connect to Galaxy instance\n")
@@ -284,8 +316,14 @@ def manage_libraries(args=None):
     handle_ssl_warnings(verify=(not options.no_verify))
     handle_debug(debug=options.debug)
 
+    # Handle password if required
+    email,password = handle_credentials(options.username,
+                                        options.galaxy_password,
+                                        prompt="Password for %s: " % galaxy_url)
+
     # Get a Galaxy instance
     gi = get_galaxy_instance(galaxy_url,api_key=options.api_key,
+                             email=email,password=password,
                              verify=(not options.no_verify))
     if gi is None:
         sys.stderr.write("Failed to connect to Galaxy instance\n")
@@ -407,8 +445,14 @@ def manage_tools(args=None):
     handle_ssl_warnings(verify=(not options.no_verify))
     handle_debug(debug=options.debug)
 
+    # Handle password if required
+    email,password = handle_credentials(options.username,
+                                        options.galaxy_password,
+                                        prompt="Password for %s: " % galaxy_url)
+
     # Get a Galaxy instance
     gi = get_galaxy_instance(galaxy_url,api_key=options.api_key,
+                             email=email,password=password,
                              verify=(not options.no_verify))
     if gi is None:
         sys.stderr.write("Failed to connect to Galaxy instance\n")

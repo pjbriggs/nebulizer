@@ -58,7 +58,8 @@ class Credentials:
                         return (url,api_key)
         raise KeyError("'%s': not found" % name)
 
-def get_galaxy_instance(galaxy_url,api_key=None,verify=True):
+def get_galaxy_instance(galaxy_url,api_key=None,email=None,password=None,
+                        verify=True):
     """
     Return Bioblend GalaxyInstance
 
@@ -69,6 +70,10 @@ def get_galaxy_instance(galaxy_url,api_key=None,verify=True):
     Arguments:
       galaxy_url (str): URL for the Galaxy instance to connect to
       api_key (str): API key to use when accessing Galaxy
+      email (str): Galaxy e-mail address corresponding to the user
+        (alternative to api_key; also need to supply a password)
+      password (str): password of Galaxy account corresponding to
+        email address (alternative to api_key)
       verify (bool): if True then turn off verification of SSL
         certificates for HTTPs connections
 
@@ -77,15 +82,20 @@ def get_galaxy_instance(galaxy_url,api_key=None,verify=True):
         or None if the connection failed or couldn't be verified.
 
     """
+    try:
+        galaxy_url,stored_key = Credentials().fetch_key(galaxy_url)
+    except KeyError,ex:
+        sys.stderr.write("Failed to find credentials for %s\n" %
+                         galaxy_url)
+        stored_key = None
     if api_key is None:
-        try:
-            galaxy_url,api_key = Credentials().fetch_key(galaxy_url)
-        except KeyError,ex:
-            sys.stderr.write("Failed to find credentials for %s\n" %
-                             galaxy_url)
-            return None
+        api_key = stored_key
     print "Connecting to %s" % galaxy_url
-    gi = galaxy.GalaxyInstance(url=galaxy_url,key=api_key)
+    if email is not None:
+        gi = galaxy.GalaxyInstance(url=galaxy_url,email=email,
+                                   password=password)
+    else:
+        gi = galaxy.GalaxyInstance(url=galaxy_url,key=api_key)
     gi.verify = verify
     try:
         galaxy.config.ConfigClient(gi).get_config()
