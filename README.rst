@@ -133,3 +133,16 @@ Handling SSL certificate failures
 
 In this case adding the ``--no-verify`` (``-n``) option turns off the
 certificate verification and should enable a connection to be made.
+
+Using email and password instead of API key
+-------------------------------------------
+
+It is possible to use your normal Galaxy login credentials (i.e. your email
+and password) to access the API on a Galaxy instance without using the
+API key, using the ``-u``/``--username`` option, e.g.::
+
+  manage_libraries list localhost -u joe.bloggs@example.com "NGS data/Run 21"
+
+You will be prompted to enter the password; however you can also use the
+``-P``/``--galaxy_password`` option to specify it explicitly on the command
+line.
