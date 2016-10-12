@@ -2,9 +2,18 @@
 #
 # tools: functions for managing tools
 import fnmatch
+import time
+import logging
 from bioblend import galaxy
 from bioblend import toolshed
 from bioblend.galaxy.client import ConnectionError
+
+# Constants
+TOOL_INSTALL_OK = 0
+TOOL_INSTALL_FAIL = 1
+TOOL_INSTALL_TIMEOUT = 2
+TOOL_UPDATE_OK = 0
+TOOL_UPDATE_FAIL = 1
 
 # Classes
 
@@ -374,6 +383,39 @@ def normalise_toolshed_url(toolshed):
         return toolshed
     return "https://%s" % toolshed
 
+def tool_install_status(gi,tool_shed,owner,name,revision):
+    """
+    Return the installation status of a tool repo
+
+    Arguments:
+      gi (bioblend.galaxy.GalaxyInstance): Galaxy instance
+      tool_shed (str): URL for the toolshed to install the
+        tool from
+      name (str): name of the tool repository
+      owner (str): name of the tool repository owner
+      revision (str): revision changeset specifying
+        the tool repository version
+
+    Returns:
+      String: the tool repository installation status returned
+        from Galaxy (or '?' if the status cannot be retrieved)
+
+    """
+    repos = filter(lambda r: r.name == name,get_repositories(gi))
+    repos = filter(lambda r: r.owner == owner,repos)
+    repos = filter(lambda r: r.tool_shed == tool_shed,repos)
+    if len(repos) != 1:
+        logging.debug("Unable to fetch tool repository information")
+        return "?"
+    repo = repos[0]
+    revisions = filter(lambda v: v.changeset_revision == revision,
+                       repo.revisions())
+    if len(revisions) != 1:
+        logging.debug("Unable to fetch tool repository revisions")
+        return "?"
+    rev = revisions[0]
+    return rev.status
+
 # Commands
 
 def list_tools(gi,name=None,installed_only=False):
@@ -535,34 +577,56 @@ def install_tool(gi,tool_shed,name,owner,
       owner (str): name of the tool repository owner
       revision (str): optional revision changeset specifying
         the tool version to install; if not supplied then
-        the latest installable revision will be used
+        the latest installable revision will be used.
+        NB revision can include the revision number e.g.
+        "5:f8b7dc21b4ee"; only the trailing changeset id
+        will be used.
       tool_panel_section (str): optional, name or id of
         the tool panel section to install the tools under; if
         the tool panel section doesn't already exist it will
         be created.
 
     """
+    # Local constants
+    timeout = 600
+    poll_interval = 30
     # Locate the repository on the toolshed
     shed = toolshed.ToolShedInstance(url=tool_shed)
-    print "Toolshed:\t%s" % tool_shed
+    print "Toolshed  :\t%s" % tool_shed
     print "Repository:\t%s" % name
-    print "Owner:\t%s" % owner
+    print "Owner     :\t%s" % owner
+    if revision is not None:
+        # Normalise revision if necessary
+        if ':' in revision:
+            revision = revision.split(':')[1]
+        print "Revision  :\t%s" % revision
+    else:
+        print "Revision  : <newest>"
+    # Get available revisions
     revisions = shed.repositories.get_ordered_installable_revisions(name,
                                                                     owner)
     #print "%s" % revisions
     if not revisions:
-        print "No installable revisions found"
-        return
+        logging.critical("%s: no installable revisions found" % name)
+        return TOOL_INSTALL_FAIL
     # Revisions are listed oldest to newest
     if revision is not None:
         # Check that specified revision can be installed
         if revision not in revisions:
-            print "Requested revision is not installable"
-            return
+            logging.critical("%s: requested revision is not installable"
+                             % name)
+            return TOOL_INSTALL_FAIL
     else:
         # Set revision to the most recent
         revision = revisions[-1]
         print "Installing newest revision (%s)" % revision
+    # Check if tool is already installed
+    install_status = tool_install_status(gi,tool_shed,owner,name,
+                                         revision)
+    if install_status.startswith("Installed"):
+        print "%s: already installed (status is \"%s\")" % (name,
+                                                            install_status)
+        return TOOL_INSTALL_OK
     # Look up tool panel
     tool_panel_section_id = None
     if tool_panel_section is not None:
@@ -570,8 +634,8 @@ def install_tool(gi,tool_shed,name,owner,
             if tool_panel_section == section.id or \
                tool_panel_section == section.name:
                 tool_panel_section_id = section.id
-                print "Located existing tool panel section: '%s'" % \
-                    tool_panel_section_id
+                print "Existing tool panel section: '%s' (%s)" % \
+                    (section.name,tool_panel_section_id)
                 break
         if not tool_panel_section_id:
             print "New tool panel section: '%s'" % tool_panel_section
@@ -581,7 +645,7 @@ def install_tool(gi,tool_shed,name,owner,
     tool_shed_url = normalise_toolshed_url(tool_shed)
     print "Toolshed URL: %s" % tool_shed_url
     # Attempt to install
-    print "Installing..."
+    print "%s: requesting installation" % name
     try:
         tool_shed_client = galaxy.toolshed.ToolShedClient(gi)
         tool_shed_client.install_repository_revision(
@@ -590,11 +654,30 @@ def install_tool(gi,tool_shed,name,owner,
             install_repository_dependencies=True,
             tool_panel_section_id=tool_panel_section_id,
             new_tool_panel_section_label=tool_panel_section)
-        print "Done"
-        list_installed_repositories(gi,name,list_tools=True)
     except ConnectionError,ex:
-        print "Error from Galaxy API: %s" % ex
-        print "The tool may still be installing so please check"
+        print "Error from Galaxy API: %s (ignored)" % ex
+    # Check installation status
+    ntries = 0
+    while (ntries*poll_interval) < timeout:
+        install_status = tool_install_status(gi,tool_shed,owner,
+                                             name,revision)
+        if install_status.startswith("Installed"):
+            print "%s: installed (status is \"%s\")" % (name,
+                                                        install_status)
+            return TOOL_INSTALL_OK
+        elif install_status.startswith("Installing") or \
+             install_status == "Cloning" or \
+             install_status == "Never installed":
+            ntries += 1
+            print "- Status \"%s\": waiting for install to complete [#%s]" % \
+                (install_status,ntries)
+            time.sleep(poll_interval)
+        else:
+            logging.critical("%s: failed (%s)" % (name,install_status))
+            return TOOL_INSTALL_FAIL
+    # Reaching here means timed out
+    logging.critical("%s: timed out waiting for install" % name)
+    return TOOL_INSTALL_TIMEOUT
 
 def update_tool(gi,tool_shed,name,owner):
     """
@@ -617,24 +700,25 @@ def update_tool(gi,tool_shed,name,owner):
             update_repo = repo
             break
     if update_repo is None:
-        print "Unable to find repository for update"
-        return
+        logging.critical("%s: unable to find repository for update" %
+                         name)
+        return TOOL_UPDATE_FAIL
     print "Toolshed:\t%s" % tool_shed
     print "Repository:\t%s" % name
     print "Owner:\t%s" % owner
     # Check that there is an update available
     for r in repo.revisions():
         if not r.deleted and r.latest_revision:
-            print "Version %s already the latest version" \
-                % r.revision_id
-            return
+            print "%s: version %s already the latest version" \
+                % (name,r.revision_id)
+            return TOOL_UPDATE_OK
     # Find latest installable revision
     shed = toolshed.ToolShedInstance(url=tool_shed)
     revisions = shed.repositories.get_ordered_installable_revisions(name,
                                                                     owner)
     if not revisions:
-        print "No installable revisions found"
-        return
+        logging.critical("%s: no installable revisions found" % name)
+        return TOOL_UPDATE_FAIL
     revision = revisions[-1]
     # Locate tool panel section for existing tools
     tool_panel_section = None
@@ -643,8 +727,8 @@ def update_tool(gi,tool_shed,name,owner):
             tool_panel_section = tool.panel_section
             break
     if tool_panel_section is None:
-        print "No tool panel section found"
-        return
+        logging.critical("%s: no tool panel section found" % name)
+        return TOOL_UPDATE_FAIL
     #print "Installing update under %s" % tool_panel_section
-    install_tool(gi,tool_shed,name,owner,
-                 tool_panel_section=tool_panel_section)
+    return install_tool(gi,tool_shed,name,owner,
+                        tool_panel_section=tool_panel_section)

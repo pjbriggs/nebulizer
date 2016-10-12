@@ -480,11 +480,13 @@ def manage_tools(args=None):
             revision = args[3]
         else:
             revision = None
-        tools.install_tool(gi,toolshed,repo,owner,
-                           revision=revision,
-                           tool_panel_section=options.tool_panel_section)
+        status = tools.install_tool(
+            gi,toolshed,repo,owner,revision=revision,
+            tool_panel_section=options.tool_panel_section)
+        sys.exit(status)
     elif command == 'update':
         if len(args) != 3:
             p.error("Need to supply toolshed, owner and repo")
         toolshed,owner,repo = args[:3]
-        tools.update_tool(gi,toolshed,repo,owner)
+        status = tools.update_tool(gi,toolshed,repo,owner)
+        sys.exit(status)
