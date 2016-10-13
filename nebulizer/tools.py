@@ -601,7 +601,7 @@ def install_tool(gi,tool_shed,name,owner,
             revision = revision.split(':')[1]
         print "Revision  :\t%s" % revision
     else:
-        print "Revision  : <newest>"
+        print "Revision  :\t<newest>"
     # Get available revisions
     revisions = shed.repositories.get_ordered_installable_revisions(name,
                                                                     owner)
@@ -634,12 +634,13 @@ def install_tool(gi,tool_shed,name,owner,
             if tool_panel_section == section.id or \
                tool_panel_section == section.name:
                 tool_panel_section_id = section.id
-                print "Existing tool panel section: '%s' (%s)" % \
+                print "Existing tool panel section: '%s' (id '%s')" % \
                     (section.name,tool_panel_section_id)
                 break
         if not tool_panel_section_id:
             print "New tool panel section: '%s'" % tool_panel_section
         else:
+            print "No tool panel section specified"
             tool_panel_section = None
     # Get toolshed URL
     tool_shed_url = normalise_toolshed_url(tool_shed)
