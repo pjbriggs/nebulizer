@@ -140,7 +140,7 @@ def nebulizer(args=None):
     elif command == 'list':
         p.set_usage("%prog list")
     elif command == 'add':
-        p.set_usage("%prog add ALIAS GALAXY_URL API_KEY")
+        p.set_usage("%prog add ALIAS GALAXY_URL [API_KEY]")
     elif command == 'update':
         p.set_usage("%prog update ALIAS")
         p.add_option('--new-url',action='store',dest='new_url',
@@ -162,6 +162,27 @@ def nebulizer(args=None):
     elif command == 'add':
         if len(args) == 3:
             alias,galaxy_url,api_key = args[:3]
+        elif len(args) == 2:
+            # No API key supplied
+            alias,galaxy_url = args[:2]
+            if options.username is None:
+                p.error("Need to supply an API key, or a username (-u)")
+            # Attempt to fetch new API key
+            print "Connecting to Galaxy to fetch API key"
+            handle_ssl_warnings(verify=(not options.no_verify))
+            handle_debug(debug=options.debug)
+            email,password = handle_credentials(
+                options.username,
+                options.galaxy_password,
+                prompt="Password for %s: " % galaxy_url)
+            gi = get_galaxy_instance(galaxy_url,api_key=options.api_key,
+                                     email=email,password=password,
+                                     verify=(not options.no_verify))
+            api_key = users.get_user_api_key(gi,username=email)
+            if api_key is None:
+                logging.error("Failed to get API key from %s" %
+                              galaxy_url)
+                sys.exit(1)
         else:
             p.error("Need to supply alias name, Galaxy URL and API key")
         instances = Credentials()
