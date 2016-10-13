@@ -13,6 +13,8 @@ import users
 import libraries
 import tools
 
+logging.basicConfig(format="%(levelname)s %(message)s")
+
 def base_parser(usage=None,description=None):
     """
     Create base parser with common options
@@ -47,8 +49,8 @@ def handle_ssl_warnings(verify=True):
 
     """
     if not verify:
-        sys.stderr.write("WARNING SSL certificate verification has "
-                         "been disabled\n")
+        logging.warning("SSL certificate verification has "
+                        "been disabled")
         turn_off_urllib3_warnings()
 
 def handle_debug(debug=True):
@@ -179,7 +181,7 @@ def manage_users(args=None):
                              email=email,password=password,
                              verify=(not options.no_verify))
     if gi is None:
-        sys.stderr.write("Failed to connect to Galaxy instance\n")
+        logging.critical("Failed to connect to Galaxy instance")
         sys.exit(1)
 
     # Execute command
@@ -190,11 +192,11 @@ def manage_users(args=None):
         # Check message template is .mako file
         if options.message_template:
             if not os.path.isfile(options.message_template):
-                sys.stderr.write("Message template '%s' not found\n"
+                logging.critical("Message template '%s' not found"
                                  % options.message_template)
                 sys.exit(1)
             elif not options.message_template.endswith(".mako"):
-                sys.stderr.write("Message template '%s' is not a .mako file\n"
+                logging.critical("Message template '%s' is not a .mako file"
                                  % options.message_template)
                 sys.exit(1)
         if options.template:
@@ -222,9 +224,9 @@ def manage_users(args=None):
             try:
                 name = args[1]
                 if not users.check_username_format(name):
-                    sys.stderr.write("Invalid name: must contain only "
+                    logging.critical("Invalid name: must contain only "
                                      "lower-case letters, numbers and "
-                                     "'-'\n")
+                                     "'-'")
                     sys.exit(1)
             except IndexError:
                 # No public name supplied, make from email address
@@ -326,7 +328,7 @@ def manage_libraries(args=None):
                              email=email,password=password,
                              verify=(not options.no_verify))
     if gi is None:
-        sys.stderr.write("Failed to connect to Galaxy instance\n")
+        logging.critical("Failed to connect to Galaxy instance")
         sys.exit(1)
 
     # Execute command
@@ -455,7 +457,7 @@ def manage_tools(args=None):
                              email=email,password=password,
                              verify=(not options.no_verify))
     if gi is None:
-        sys.stderr.write("Failed to connect to Galaxy instance\n")
+        logging.critical("Failed to connect to Galaxy instance")
         sys.exit(1)
 
     # Execute command

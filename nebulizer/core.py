@@ -2,10 +2,10 @@
 #
 # core: core nebulizer classes and functions
 
-import sys
 import os
 import re
 import fnmatch
+import logging
 from bioblend import galaxy
 from bioblend.galaxy.client import ConnectionError
 
@@ -85,8 +85,8 @@ def get_galaxy_instance(galaxy_url,api_key=None,email=None,password=None,
     try:
         galaxy_url,stored_key = Credentials().fetch_key(galaxy_url)
     except KeyError,ex:
-        sys.stderr.write("Failed to find credentials for %s\n" %
-                         galaxy_url)
+        logging.warning("Failed to find credentials for %s" %
+                        galaxy_url)
         stored_key = None
     if api_key is None:
         api_key = stored_key
