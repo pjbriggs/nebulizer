@@ -327,8 +327,8 @@ def get_user_api_key(gi,username=None):
             user = galaxy.users.UserClient(gi).get_current_user()
             print "Username: %s" % username
         except ConnectionError:
-            sys.stderr.write("Cannot determine user associated with "
-                             "this instance\n")
+            logging.error("Cannot determine user associated with "
+                          "this instance\n")
             return
     else:
         # Fetch the details for the specified user
@@ -338,7 +338,7 @@ def get_user_api_key(gi,username=None):
                 user = u
                 break
     if user is None:
-        sys.stderr.write("Cannot get info for user '%s'\n" % username)
+        logging.error("Cannot get info for user '%s'\n" % username)
         return
     # Get the API key
     user_id = user.id
