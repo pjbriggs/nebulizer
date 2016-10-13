@@ -559,12 +559,16 @@ def list_installed_repositories(gi,name=None,
                                     revision.revision_id,
                                     revision.status))
             nrevisions += 1
-            # Get tools associated with repo
+            # List tools associated with revision
             if list_tools:
-                for tool in filter(lambda t: t.tool_repo == repo.id,tools):
+                repo_tools = filter(lambda t:
+                                    t.tool_repo == repo.id and
+                                    t.tool_changeset == revision.installed_changeset_revision,
+                                    tools)
+                for tool in repo_tools:
                     print "- %s" % '\t'.join((tool.name,
-                                              tool.version,
-                                              tool.description))
+                                               tool.version,
+                                               tool.description))
     print "total %s" % nrevisions
 
 def list_tool_panel(gi,name=None,list_tools=False):
