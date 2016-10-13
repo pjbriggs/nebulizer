@@ -130,6 +130,7 @@ class RepositoryRevision:
         # Version numbers
         self.revision_number = repo_data['ctx_rev']
         self.changeset_revision = repo_data['changeset_revision']
+        self.installed_changeset_revision = repo_data['installed_changeset_revision']
         self.status = repo_data['status']
         self.deleted = repo_data['deleted']
         # Repository revision status
