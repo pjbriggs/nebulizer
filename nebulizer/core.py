@@ -92,7 +92,7 @@ class Credentials:
         }
         # Wipe the key file
         with open(self._key_file,'w') as fp:
-            fp.write("# .nebulizer\n#Aliases\tGalaxy URL\t#API key\n")
+            fp.write("#.nebulizer\n#Aliases\tGalaxy URL\tAPI key\n")
         # Store the cached keys again
         for alias in key_names:
             if name != alias:
