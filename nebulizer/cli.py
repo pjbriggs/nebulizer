@@ -9,6 +9,7 @@ import logging
 from nebulizer import get_version
 from .core import get_galaxy_instance
 from .core import turn_off_urllib3_warnings
+from .core import Credentials
 import users
 import libraries
 import tools
@@ -104,11 +105,86 @@ def handle_credentials(email,password,prompt="Password: "):
 
 def nebulizer(args=None):
     """
+    Implements the 'nebulizer' command
 
     """
     if args is None:
         args = sys.argv[1:]
+
+    p = base_parser(usage=\
+                    "\n\t%prog list"
+                    "\n\t%prog add ALIAS GALAXY_URL [API_KEY]"
+                    "\n\t%prog update ALIAS"
+                    "\n\t%prog remove ALIAS",
+                    description="Admin commands for Galaxy instances")
+    commands = ['list','add','update','remove']
+
+    # Handle standard options
+    if len(args) == 0:
+        p.error("need to supply a command")
+    elif len(args) == 1:
+        if args[0] == '-h' or args[0] == '--help':
+            p.print_usage()
+        elif args[0] == '--version':
+            p.print_version()
+        if args[0] in ('-h','--help','--version'):
+            sys.exit(0)
+
+    # Identify major command
     command = args[0]
+    args = args[1:]
+
+    # Set up parser for specific commands
+    if command not in commands:
+        p.error("unrecognised command: '%s'" % command)
+    elif command == 'list':
+        p.set_usage("%prog list")
+    elif command == 'add':
+        p.set_usage("%prog add ALIAS GALAXY_URL API_KEY")
+    elif command == 'update':
+        p.set_usage("%prog update ALIAS")
+        p.add_option('--new-url',action='store',dest='new_url',
+                     default=None,
+                     help="specify new URL for Galaxy instance")
+        p.add_option('--new-api-key',action='store',dest='new_api_key',
+                     default=None,
+                     help="specify new API key for Galaxy instance")
+    elif command == 'remove':
+        p.set_usage("%prog remove ALIAS")
+
+    # Execute command
+    options,args = p.parse_args(args)
+    if command == 'list':
+        instances = Credentials()
+        for alias in instances.list_keys():
+            galaxy_url,api_key = instances.fetch_key(alias)
+            print "%s\t%s\t%s" % (alias,galaxy_url,api_key)
+    elif command == 'add':
+        if len(args) == 3:
+            alias,galaxy_url,api_key = args[:3]
+        else:
+            p.error("Need to supply alias name, Galaxy URL and API key")
+        instances = Credentials()
+        if alias in instances.list_keys():
+            logging.error("'%s' already exists" % alias)
+        else:
+            instances.store_key(alias,galaxy_url,api_key)
+    elif command == 'update':
+        if len(args) == 1:
+            alias = args[0]
+        else:
+            p.error("Need to supply alias name to be updated")
+        instances = Credentials()
+        instances.update_key(alias,
+                             new_url=options.new_url,
+                             new_api_key=options.new_api_key)
+    elif command == 'remove':
+        if len(args) == 1:
+            alias = args[0]
+        else:
+            p.error("Need to supply alias name to be removed")
+        instances = Credentials()
+        instances.remove_key(alias)
 
 def manage_users(args=None):
     """

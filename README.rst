@@ -26,12 +26,15 @@ Setup
 
 Although ``nebulizer``'s commands can be used without additional setup, it is
 possible to create shortcuts in the form of 'aliases' to Galaxy URLs and API
-key pairs, by creating a ``.nebulizer`` file in your home directory, e.g.::
+key pairs, which are stored in a ``.nebulizer`` file in your home directory.
 
-  % touch ~/.nebulizer
+This can be managed using the ``nebulizer`` utility, e.g. to add new alias
+for a local Galaxy instance::
 
-and populating with tab-delimited lines with ``alias|URL|API key``, for
-example::
+  % nebulizer add localhost http://127.0.0.1:8080 4af252f2250818d14949b3cf0aed476a
+
+Each alias is stored in a tab-delimited line with the format
+``alias|URL|API key``, for example::
 
   localhost	http://127.0.0.1:8080	4af252f2250818d14949b3cf0aed476a
 
@@ -44,6 +47,9 @@ instead of::
 
   % manage_users list http://127.0.0.1:8080 -k 4af252f2250818d14949b3cf0aed476a
 
+See below for more information on managing the stored aliases and
+associated information.
+
 Commands and usage examples
 ---------------------------
 
@@ -52,6 +58,11 @@ Currently ``nebulizer`` offers three utilities:
  * ``manage_users``: list and create user accounts
  * ``manage_libraries``: list, create and populate data libraries
  * ``manage_tools``: list and install tools from toolsheds
+
+In addition there is a utility for managing stored information on
+Galaxy instances that you wish to interact with::
+
+ * ``nebulizer``: list and manage API keys for Galaxy instances
 
 Some random examples (note that command names etc are subject to change
 without notice while these utilities are under development):
@@ -116,12 +127,32 @@ List all the tool repositories that have available updates or upgrades::
 
 Install the most recent FastQC from the main toolshed::
 
-  manage_tools install --tool-panel-section="NGS: QC and manipulation" \
+  manage_tools install localhost \
+    --tool-panel-section="NGS: QC and manipulation" \
     toolshed.g2.bx.psu.edu devteam fastqc
 
 Update FastQC tool to latest installable revision::
 
-  manage_tools update toolshed.g2.bx.psu.edu devteam fastqc
+  manage_tools update localhost toolshed.g2.bx.psu.edu devteam fastqc
+
+Managing Galaxy instance aliases and information
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+List the stored aliases and associated Galaxy instances::
+
+  nebulizer list
+
+Add a new alias called 'production' for a Galaxy instance::
+
+  nebulizer add production http:://galaxy.org/ 5e7a1264905c8f0beb80002f7de13a40
+
+Update the API key for 'production'::
+
+  nebulizer update production --new-api-key=37b6430624255b8c61a137abd69ae3bb
+
+Remove the entry for 'production'::
+
+  nebulizer remove production
 
 Handling SSL certificate failures
 ---------------------------------
