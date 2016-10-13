@@ -476,10 +476,13 @@ def list_tools(gi,name=None,installed_only=False):
     tools.sort(key=lambda x: x.name.lower())
     # Print info
     for tool in tools:
-        print "%-16s\t%-8s\t%-16s\t%s" % (tool.name,
-                                          tool.version,
-                                          tool.panel_section,
-                                          tool.tool_repo)
+        print "%-16s\t%-8s\t%-16s\t%s\t%s" % (tool.name,
+                                              tool.version,
+                                              tool.panel_section,
+                                              tool.tool_repo,
+                                              (tool.tool_changeset
+                                               if tool.tool_changeset
+                                               else ''))
     print "total %s" % len(tools)
 
 def list_installed_repositories(gi,name=None,
