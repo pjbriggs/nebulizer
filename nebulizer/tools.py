@@ -42,6 +42,10 @@ class Tool:
         self.version = tool_data['version']
         self.description = tool_data['description']
         self.panel_section = tool_data['panel_section_name']
+        try:
+            self.config_file = tool_data['config_file']
+        except KeyError:
+            self.config_file = None
 
     @property
     def tool_repo(self):
@@ -67,6 +71,35 @@ class Tool:
             return '/'.join((toolshed,owner,repo))
         except ValueError:
             return ''
+
+    @property
+    def tool_changeset(self):
+        """
+        Return the tool changeset revision
+
+        This is a commit id of the form 'efc56ee1ade4'
+
+        Returns None if a changeset revision can't be
+        extracted
+
+        """
+        tool_repo = self.tool_repo
+        if not tool_repo:
+            return None
+        # Look for the config_file element - something of
+        # the form:
+        # .../toolshed.g2.bx.psu.edu/repos/devteam/picard/efc56ee1ade4/...
+        try:
+            ele = tool_repo.split('/')
+            toolshed = '/'.join(ele[:-2])
+            owner = ele[-2]
+            repo = ele[-1]
+            search_string = "/repos/%s/%s/" % (owner,repo)
+            i = self.config_file.index(search_string) + len(search_string)
+            revision = self.config_file[i:].split('/')[0]
+            return revision
+        except AttributeError,ValueError:
+            return None
 
 class RepositoryRevision:
     """
