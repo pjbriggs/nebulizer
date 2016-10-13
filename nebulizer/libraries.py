@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 #
 # libraries: functions for managing data libraries
-import sys
+import logging
 import os
 import fnmatch
 from bioblend import galaxy
@@ -107,8 +107,8 @@ def list_library_contents(gi,path,long_listing_format=False):
         matches = filter(lambda x: x['name'] == pattern,
                          library_contents)
         if not matches:
-            sys.stderr.write("Cannot access %s: no matching libraries "
-                             "or folders\n" % path)
+            logging.error("Cannot access %s: no matching libraries "
+                          "or folders" % path)
             return
         for item in matches:
             if item['type'] == 'folder':
@@ -138,8 +138,8 @@ def list_library_contents(gi,path,long_listing_format=False):
                          and x['name'].count('/') == nlevels,
                          library_contents)
         if not matches:
-            sys.stderr.write("Cannot access %s: no matching libraries "
-                             "or folders\n" % path)
+            logging.error("Cannot access %s: no matching libraries "
+                          "or folders\n" % path)
             return
         # Identify the folders that are matched exactly
         folders = []

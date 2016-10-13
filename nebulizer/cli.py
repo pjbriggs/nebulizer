@@ -13,6 +13,8 @@ import users
 import libraries
 import tools
 
+logging.basicConfig(format="%(levelname)s %(message)s")
+
 def base_parser(usage=None,description=None):
     """
     Create base parser with common options
@@ -33,6 +35,9 @@ def base_parser(usage=None,description=None):
                  help="supply password for Galaxy instance")
     p.add_option('-n','--no-verify',action='store_true',dest='no_verify',
                  default=False,help="don't verify HTTPS connections")
+    p.add_option('-q','--suppress-warnings',action='store_true',
+                 dest='suppress_warnings',
+                 default=False,help="suppress warning messages")
     p.add_option('--debug',action='store_true',dest='debug',
                  default=False,help="turn on debugging output")
     return p
@@ -47,8 +52,8 @@ def handle_ssl_warnings(verify=True):
 
     """
     if not verify:
-        sys.stderr.write("WARNING SSL certificate verification has "
-                         "been disabled\n")
+        logging.warning("SSL certificate verification has "
+                        "been disabled")
         turn_off_urllib3_warnings()
 
 def handle_debug(debug=True):
@@ -62,7 +67,21 @@ def handle_debug(debug=True):
     if debug:
         logging.getLogger().setLevel(logging.DEBUG)
     else:
+        logging.getLogger().setLevel(logging.WARNING)
+
+def handle_suppress_warnings(suppress_warnings=True):
+    """
+    Suppress warning messages output from logging
+
+    Arguments:
+      suppress_warnings (bool): if True then turn off
+        warning messages
+
+    """
+    if suppress_warnings:
         logging.getLogger().setLevel(logging.ERROR)
+    else:
+        logging.getLogger().setLevel(logging.WARNING)
 
 def handle_credentials(email,password,prompt="Password: "):
     """
@@ -166,8 +185,9 @@ def manage_users(args=None):
     else:
         args = args[2:]
     options,args = p.parse_args(args)
-    handle_ssl_warnings(verify=(not options.no_verify))
     handle_debug(debug=options.debug)
+    handle_suppress_warnings(suppress_warnings=options.suppress_warnings)
+    handle_ssl_warnings(verify=(not options.no_verify))
 
     # Handle password if required
     email,password = handle_credentials(options.username,
@@ -179,7 +199,7 @@ def manage_users(args=None):
                              email=email,password=password,
                              verify=(not options.no_verify))
     if gi is None:
-        sys.stderr.write("Failed to connect to Galaxy instance\n")
+        logging.critical("Failed to connect to Galaxy instance")
         sys.exit(1)
 
     # Execute command
@@ -190,11 +210,11 @@ def manage_users(args=None):
         # Check message template is .mako file
         if options.message_template:
             if not os.path.isfile(options.message_template):
-                sys.stderr.write("Message template '%s' not found\n"
+                logging.critical("Message template '%s' not found"
                                  % options.message_template)
                 sys.exit(1)
             elif not options.message_template.endswith(".mako"):
-                sys.stderr.write("Message template '%s' is not a .mako file\n"
+                logging.critical("Message template '%s' is not a .mako file"
                                  % options.message_template)
                 sys.exit(1)
         if options.template:
@@ -222,9 +242,9 @@ def manage_users(args=None):
             try:
                 name = args[1]
                 if not users.check_username_format(name):
-                    sys.stderr.write("Invalid name: must contain only "
+                    logging.critical("Invalid name: must contain only "
                                      "lower-case letters, numbers and "
-                                     "'-'\n")
+                                     "'-'")
                     sys.exit(1)
             except IndexError:
                 # No public name supplied, make from email address
@@ -313,8 +333,9 @@ def manage_libraries(args=None):
     else:
         args = args[2:]
     options,args = p.parse_args(args)
-    handle_ssl_warnings(verify=(not options.no_verify))
     handle_debug(debug=options.debug)
+    handle_suppress_warnings(suppress_warnings=options.suppress_warnings)
+    handle_ssl_warnings(verify=(not options.no_verify))
 
     # Handle password if required
     email,password = handle_credentials(options.username,
@@ -326,7 +347,7 @@ def manage_libraries(args=None):
                              email=email,password=password,
                              verify=(not options.no_verify))
     if gi is None:
-        sys.stderr.write("Failed to connect to Galaxy instance\n")
+        logging.critical("Failed to connect to Galaxy instance")
         sys.exit(1)
 
     # Execute command
@@ -442,8 +463,9 @@ def manage_tools(args=None):
     else:
         args = args[2:]
     options,args = p.parse_args(args)
-    handle_ssl_warnings(verify=(not options.no_verify))
     handle_debug(debug=options.debug)
+    handle_suppress_warnings(suppress_warnings=options.suppress_warnings)
+    handle_ssl_warnings(verify=(not options.no_verify))
 
     # Handle password if required
     email,password = handle_credentials(options.username,
@@ -455,7 +477,7 @@ def manage_tools(args=None):
                              email=email,password=password,
                              verify=(not options.no_verify))
     if gi is None:
-        sys.stderr.write("Failed to connect to Galaxy instance\n")
+        logging.critical("Failed to connect to Galaxy instance")
         sys.exit(1)
 
     # Execute command

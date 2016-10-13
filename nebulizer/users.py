@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 #
 # users: functions for managing users
-import sys
+import logging
 import re
 import getpass
 import fnmatch
@@ -129,7 +129,7 @@ def create_user(gi,email,username=None,passwd=None,only_check=False,
         try:
             passwd = get_passwd()
         except Exception, ex:
-            sys.stderr.write("%s\n" % ex)
+            logging.error("%s" % ex)
             return 1
     # Create the new user
     try:
@@ -185,18 +185,18 @@ def create_users_from_template(gi,template,start,end,passwd=None,
     # Check template
     name,domain = template.split('@')
     if name.count('#') != 1 or domain.count('#') != 0:
-        sys.stderr.write("Incorrect email template format\n")
+        logging.error("Incorrect email template format")
         return 1
     # Deal with password
     if passwd is not None:
         if not validate_password(passwd):
-            sys.stderr.write("Invalid password\n")
+            logging.error("Invalid password")
             return 1
     else:
         try:
             passwd = get_passwd()
         except Exception, ex:
-            sys.stderr.write("%s\n" % ex)
+            logging.error("%s" % ex)
             return 1
     # Generate emails
     emails = [template.replace('#',str(i)) for i in range(start,end+1)]
@@ -270,13 +270,13 @@ def create_batch_of_users(gi,tsv,only_check=False,mako_template=None):
             pass
         # Do checks
         if email in users:
-            sys.stderr.write("%s: appears multiple times\n" % email)
+            logging.error("%s: appears multiple times" % email)
             return 1
         if passwd is None:
-            sys.stderr.write("%s: no password supplied\n" % email)
+            logging.error("%s: no password supplied" % email)
             return 1
         elif not validate_password(passwd):
-            sys.stderr.write("%s: invalid password\n" % email)
+            logging.error("%s: invalid password\n" % email)
             return 1
         if name is None:
             name = get_username_from_login(email)
@@ -303,10 +303,11 @@ def check_new_user_info(gi,email,username):
     lookup_user = filter(lambda u: u.email == email or
                          u.username == username,get_users(gi))
     if lookup_user:
-        sys.stderr.write("User details clash with existing user(s):\n")
+        error_msg = "User details clash with existing user(s):"
         for user in lookup_user:
-            sys.stderr.write("%s\n" % '\t'.join([user.email,
-                                                 user.username]))
+            error_msg += "\n%s" % ('\t'.join([user.email,
+                                             user.username]))
+        logging.error(error_msg)
         return False
     return True
 
