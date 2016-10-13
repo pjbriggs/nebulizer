@@ -311,6 +311,45 @@ def check_new_user_info(gi,email,username):
         return False
     return True
 
+def get_user_api_key(gi,username=None):
+    """
+    Retrieve an API key for a user
+
+    Arguments:
+      username (str): email address or username for the
+        user to get the API key for; default is to get
+        the key for the current user
+
+    """
+    if username is None:
+        # Fetch the details for the current user
+        try:
+            user = galaxy.users.UserClient(gi).get_current_user()
+            print "Username: %s" % username
+        except ConnectionError:
+            logging.error("Cannot determine user associated with "
+                          "this instance\n")
+            return
+    else:
+        # Fetch the details for the specified user
+        user = None
+        for u in get_users(gi):
+            if (u.email == username) or (u.username == username):
+                user = u
+                break
+    if user is None:
+        logging.error("Cannot get info for user '%s'\n" % username)
+        return
+    # Get the API key
+    user_id = user.id
+    try:
+        api_key = galaxy.users.UserClient(gi).create_user_apikey(user_id)
+    except galaxy.client.ConnectionError,ex:
+        print "Failed to fetch API key for user '%s': " % username
+        print ex
+        return
+    return api_key
+
 def check_username_format(username):
     """
     Check that format of 'username' is valid

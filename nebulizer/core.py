@@ -24,28 +24,122 @@ class Credentials:
 
     """
 
-    def __init__(self):
-        self._key_file = os.path.join(os.path.expanduser("~"),
-                                           '.nebulizer')
+    def __init__(self,key_file=None):
+        """
+        Create a new Credentials instance
+
+        Arguments:
+          key_file (str): if supplied then should specify
+            the path to the credentials file (defaults to
+            $HOME/.nebulizer)
+
+        """
+        if key_file is None:
+            key_file = os.path.join(os.path.expanduser("~"),
+                                    '.nebulizer')
+        self._key_file = os.path.abspath(key_file)
+
+    def list_keys(self):
+        """
+        List aliases for API keys stored in credentials file
+
+        Returns:
+          List: list of aliases.
+
+        """
+        key_names = []
+        if os.path.exists(self._key_file):
+            with open(self._key_file,'r') as fp:
+                for line in fp:
+                    if line.startswith('#') or not line.strip():
+                        continue
+                    key_names.append(line.strip().split('\t')[0])
+        return key_names
 
     def store_key(self,name,url,api_key):
-        """Store a Galaxy API key
+        """
+        Store a Galaxy API key
 
         Appends an entry to the key file.
 
+        Arguments:
+          name (str): alias to store the key against
+          url (str): URL of the Galaxy instance
+          api_key (str): API key for the Galaxy instance 
+
         """
-        with open(self._key_file,'w+') as fp:
+        with open(self._key_file,'a') as fp:
             fp.write("%s\t%s\t%s\n" % (name,url,api_key))
 
+    def remove_key(self,name):
+        """
+        Remove a Galaxy API key
+
+        Removes a key entry from the key file.
+
+        Arguments:
+          name (str) alias of the key to be removed
+
+        """
+        key_names = self.list_keys()
+        if name not in key_names:
+            logging.error("'%s': not found" % name)
+            return
+        # Store the keys
+        cached_keys = {
+            name: list(self.fetch_key(name))
+            for name in key_names
+        }
+        # Wipe the key file
+        with open(self._key_file,'w') as fp:
+            fp.write("#.nebulizer\n#Aliases\tGalaxy URL\tAPI key\n")
+        # Store the cached keys again
+        for alias in key_names:
+            if name != alias:
+                url,api_key = cached_keys[alias]
+                self.store_key(alias,url,api_key)
+
+    def update_key(self,name,new_url=None,new_api_key=None):
+        """
+        Update a Galaxy API key
+
+        Updates the stored information in the key file.
+
+        Arguments:
+          name (str): alias of the key entry to be updated
+          new_url (str): optional, new URL for the Galaxy
+            instance
+          new_api_key (str): optional, new API key for the
+            Galaxy instance
+        
+        """
+        try:
+            url,api_key = self.fetch_key(name)
+        except KeyError:
+            logging.error("'%s': not found" % name)
+            return
+        if new_url:
+            url = new_url
+        if new_api_key:
+            api_key = new_api_key
+        self.remove_key(name)
+        self.store_key(name,url,api_key)
+
     def fetch_key(self,name):
-        """Fetch credentials associated with a Galaxy instance
+        """
+        Fetch credentials associated with a Galaxy instance
 
-        Looks up the credentials associated with the
-        alias 'name', and returns the tuple:
+        Returns the credentials (i.e. Galaxy URL and API key)
+        associated with the specified alias
 
-        (GALAXY_URL,API_KEY)
+        Raises a KeyError if no entry matching the alias is
+        found.
 
-        Raises a KeyError if no matching alias is found.
+        Arguments:
+          name (str): alias of the key entry to fetch
+
+        Returns:
+          Tuple: consisting of (GALAXY_URL,API_KEY)
 
         """
         if os.path.exists(self._key_file):
