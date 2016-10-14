@@ -7,6 +7,7 @@ import logging
 from bioblend import galaxy
 from bioblend import toolshed
 from bioblend.galaxy.client import ConnectionError
+from bioblend import ConnectionError as BioblendConnectionError
 
 # Constants
 TOOL_INSTALL_OK = 0
@@ -644,8 +645,12 @@ def install_tool(gi,tool_shed,name,owner,
     else:
         print "Revision  :\t<newest>"
     # Get available revisions
-    revisions = shed.repositories.get_ordered_installable_revisions(name,
-                                                                    owner)
+    try:
+        revisions = shed.repositories.get_ordered_installable_revisions(name,
+                                                                        owner)
+    except BioblendConnectionError:
+        logging.critical("Unable to connect to toolshed '%s'" % tool_shed)
+        return TOOL_INSTALL_FAIL
     #print "%s" % revisions
     if not revisions:
         logging.critical("%s: no installable revisions found" % name)
