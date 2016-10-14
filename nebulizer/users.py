@@ -85,7 +85,9 @@ def list_users(gi,name=None,long_listing_format=False):
             print '\t'.join([str(x) for x in (user.email,
                                               user.username,
                                               user.nice_total_disk_usage,
-                                              "%s%%" % user.quota_percent,
+                                              ("%s%%" % user.quota_percent
+                                               if user.quota_percent
+                                               else "0%"),
                                               ('admin' if user.is_admin
                                                else ''),
                                               user.id,)])
