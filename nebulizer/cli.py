@@ -6,6 +6,7 @@ import os
 import optparse
 import getpass
 import logging
+import click
 from nebulizer import get_version
 from .core import get_galaxy_instance
 from .core import turn_off_urllib3_warnings
@@ -130,130 +131,141 @@ def fetch_api_key(galaxy_url,email,password=None,verify=True):
                              verify=verify)
     return users.get_user_api_key(gi,username=email)
 
-def nebulizer(args=None):
+
+class Context(object):
     """
-    Implements the 'nebulizer' command
-
+    Provide context for nebulizer command
     """
-    if args is None:
-        args = sys.argv[1:]
+    def __init__(self):
+        self.api_key = None
+        self.username = None
+        self.galaxy_password = None
+        self.no_verify = False
+        self.debug = False
 
-    p = base_parser(usage=\
-                    "\n\t%prog list"
-                    "\n\t%prog add ALIAS GALAXY_URL [API_KEY]"
-                    "\n\t%prog update ALIAS"
-                    "\n\t%prog remove ALIAS",
-                    description="Admin commands for Galaxy instances")
-    commands = ['list','add','update','remove']
+pass_context = click.make_pass_decorator(Context,ensure=True)
 
-    # Handle standard options
-    if len(args) == 0:
-        p.error("need to supply a command")
-    elif len(args) == 1:
-        if args[0] == '-h' or args[0] == '--help':
-            p.print_usage()
-        elif args[0] == '--version':
-            p.print_version()
-        if args[0] in ('-h','--help','--version'):
-            sys.exit(0)
+@click.group()
+@click.option('--api_key','-k',
+              help="specify API key for Galaxy instance")
+@click.option('--username','-u',
+              help="specify username or email to log into Galaxy with")
+@click.option('--galaxy_password','-P',
+              help="supply password for Galaxy instance")
+@click.option('--no-verify','-n',is_flag=True,
+              help="don't verify HTTPS connections")
+@click.option('--suppress-warnings','-q',is_flag=True,
+              help="suppress warning messages")
+@click.option('--debug',is_flag=True,
+              help="turn on debugging output")
+@pass_context
+def nebulizer(context,api_key,username,galaxy_password,
+              no_verify,suppress_warnings,debug):
+    """
+    Manage users, tools and data libraries in Galaxy instances
+    via the API
+    """
+    context.api_key = api_key
+    context.username = username
+    context.galaxy_password = galaxy_password
+    context.no_verify = no_verify
+    context.debug = debug
+    handle_ssl_warnings(verify=(not context.no_verify))
+    handle_debug(debug=context.debug)
 
-    # Identify major command
-    command = args[0]
-    args = args[1:]
+@nebulizer.command()
+@pass_context
+def list(context):
+    """
+    List stored Galaxy instance aliases and API keys
+    """
+    instances = Credentials()
+    for alias in instances.list_keys():
+        galaxy_url,api_key = instances.fetch_key(alias)
+        click.echo("%s\t%s\t%s" % (alias,galaxy_url,api_key))
 
-    # Set up parser for specific commands
-    if command not in commands:
-        p.error("unrecognised command: '%s'" % command)
-    elif command == 'list':
-        p.set_usage("%prog list")
-    elif command == 'add':
-        p.set_usage("%prog add ALIAS GALAXY_URL [API_KEY]")
-    elif command == 'update':
-        p.set_usage("%prog update ALIAS")
-        p.add_option('--new-url',action='store',dest='new_url',
-                     default=None,
-                     help="specify new URL for Galaxy instance")
-        p.add_option('--new-api-key',action='store',dest='new_api_key',
-                     default=None,
-                     help="specify new API key for Galaxy instance")
-        p.add_option('--fetch-api-key',action='store_true',
-                     dest='fetch_api_key',
-                     help="fetch new API key for Galaxy instance")
-    elif command == 'remove':
-        p.set_usage("%prog remove ALIAS")
+@nebulizer.command()
+@click.argument("alias")
+@click.argument("galaxy_url")
+@click.argument("api_key",required=False)
+@pass_context
+def add(context,alias,galaxy_url,api_key=None):
+    """
+    Store new URL and API key for Galaxy instance
 
-    # Execute command
-    options,args = p.parse_args(args)
-    if command == 'list':
-        instances = Credentials()
-        for alias in instances.list_keys():
-            galaxy_url,api_key = instances.fetch_key(alias)
-            print "%s\t%s\t%s" % (alias,galaxy_url,api_key)
-    elif command == 'add':
-        if len(args) == 3:
-            alias,galaxy_url,api_key = args[:3]
-        elif len(args) == 2:
-            # No API key supplied
-            alias,galaxy_url = args[:2]
-            api_key = None
-        instances = Credentials()
-        if alias in instances.list_keys():
-            logging.error("'%s' already exists" % alias)
-            sys.exit(1)
-        if api_key is None:
-            # Attempt to fetch new API key
-            if options.username is None:
-                p.error("Need to supply an API key, or a username (-u)")
-            handle_ssl_warnings(verify=(not options.no_verify))
-            handle_debug(debug=options.debug)
+    ALIAS is the name that the instance will be stored
+    against; GALAXY_URL is the URL for the instance;
+    API_KEY is the corresponding API key.
+
+    If API_KEY is not supplied then nebulizer will
+    attempt to fetch one automatically.
+    """
+    instances = Credentials()
+    if alias in instances.list_keys():
+        logging.error("'%s' already exists" % alias)
+        return 1
+    if api_key is None:
+        # No API key supplied as argument
+        if context.api_key:
+            api_key = context.api_key
+        elif context.username:
             api_key = fetch_api_key(galaxy_url,
-                                    options.username,
-                                    options.galaxy_password,
-                                    verify=(not options.no_verify))
+                                    context.username,
+                                    context.galaxy_password,
+                                    verify=(not context.no_verify))
             if api_key is None:
                 logging.error("Failed to get API key from %s" %
                               galaxy_url)
-                sys.exit(1)
+                return 1
         else:
-            p.error("Need to supply alias name, Galaxy URL and API key")
-        # Store the entry
-        instances.store_key(alias,galaxy_url,api_key)
-    elif command == 'update':
-        if len(args) == 1:
-            alias = args[0]
-        else:
-            p.error("Need to supply alias name to be updated")
-        instances = Credentials()
-        if alias not in instances.list_keys():
-            logging.error("'%s': not found" % alias)
-            sys.exit(1)
-        if options.fetch_api_key:
-            # Attempt to fetch new API key
-            handle_ssl_warnings(verify=(not options.no_verify))
-            handle_debug(debug=options.debug)
-            new_api_key = fetch_api_key(alias,
-                                        options.username,
-                                        options.galaxy_password,
-                                        verify=(not options.no_verify))
-            if new_api_key is None:
-                logging.error("Failed to get new API key from %s" %
-                              alias)
-                if options.username is None:
-                    logging.error("Invalid existing API key? Try "
-                                  "specifying user name with -u")
-                sys.exit(1)
-        else:
-            new_api_key = options.new_api_key
-        instances.update_key(alias,
-                             new_url=options.new_url,
-                             new_api_key=new_api_key)
-    elif command == 'remove':
-        if len(args) == 1:
-            alias = args[0]
-        else:
-            p.error("Need to supply alias name to be removed")
-        instances = Credentials()
-        instances.remove_key(alias)
+            logging.error("Need to supply an API key, or a username (-u)")
+            return
+    # Store the entry
+    instances.store_key(alias,galaxy_url,api_key)
+
+@nebulizer.command()
+@click.option('--new-url',
+              help="specify new URL for Galaxy instance")
+@click.option('--new-api-key',
+              help="specify new API key for Galaxy instance")
+@click.option('--fetch-api-key',
+              help="fetch new API key for Galaxy instance")
+@click.argument("alias")
+@pass_context
+def update(context,alias,new_url,new_api_key,fetch_api_key):
+    """
+    Update details for Galaxy instance matching ALIAS
+    """
+    instances = Credentials()
+    if alias not in instances.list_keys():
+        logging.error("'%s': not found" % alias)
+        return 1
+    if fetch_api_key:
+        # Attempt to fetch new API key
+        new_api_key = fetch_api_key(alias,
+                                    context.username,
+                                    context.galaxy_password,
+                                    verify=(not context.no_verify))
+        if new_api_key is None:
+            logging.error("Failed to get new API key from %s" %
+                          alias)
+            if context.username is None:
+                logging.error("Invalid existing API key? Try "
+                              "specifying user name with -u")
+            return 1
+    instances.update_key(alias,
+                         new_url=new_url,
+                         new_api_key=new_api_key)
+
+@nebulizer.command()
+@click.argument("alias")
+@pass_context
+def remove(context,alias):
+    """
+    Remove details of Galaxy instance
+    """
+    instances = Credentials()
+    instances.remove_key(alias)
 
 def manage_users(args=None):
     """
