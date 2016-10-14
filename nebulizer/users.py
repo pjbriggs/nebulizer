@@ -326,9 +326,13 @@ def get_user_api_key(gi,username=None):
         try:
             user = galaxy.users.UserClient(gi).get_current_user()
             print "Username: %s" % username
-        except ConnectionError:
+        except galaxy.client.ConnectionError:
             logging.error("Cannot determine user associated with "
-                          "this instance\n")
+                          "this instance")
+            return
+        except AttributeError:
+            logging.error("Unable to fetch user associated with "
+                          "this instance")
             return
     else:
         # Fetch the details for the specified user

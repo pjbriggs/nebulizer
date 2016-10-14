@@ -237,7 +237,10 @@ def nebulizer(args=None):
                                         verify=(not options.no_verify))
             if new_api_key is None:
                 logging.error("Failed to get new API key from %s" %
-                              galaxy_url)
+                              alias)
+                if options.username is None:
+                    logging.error("Invalid existing API key? Try "
+                                  "specifying user name with -u")
                 sys.exit(1)
         else:
             new_api_key = options.new_api_key
