@@ -13,7 +13,8 @@ class TestTool(unittest.TestCase):
     """
     def test_load_tool_data(self):
         tool_data = { u'panel_section_name': u'NGS: Mapping',
-                      u'description': u'Reports on methylation status of reads mapped by Bismark', 
+                      u'description': u'Reports on methylation status of reads mapped by Bismark',
+                      u'config_file': u'/galaxy/shed_tools/toolshed.g2.bx.psu.edu/repos/bgruening/bismark/0f8646f22b8d/bismark/bismark_bowtie_wrapper.xml',
                       u'name': u'Bismark Meth. Extractor',
                       u'panel_section_id': u'solexa_tools',
                       u'version': u'0.10.2',
@@ -34,6 +35,80 @@ class TestTool(unittest.TestCase):
                          'bismark_methylation_extractor/0.10.2')
         self.assertEqual(tool.tool_repo,
                          'toolshed.g2.bx.psu.edu/bgruening/bismark')
+        self.assertEqual(tool.tool_changeset,'0f8646f22b8d')
+
+    def test_load_tool_data_no_config_file(self):
+        tool_data = { u'panel_section_name': u'NGS: Mapping',
+                      u'description': u'Reports on methylation status of reads mapped by Bismark',
+                      u'name': u'Bismark Meth. Extractor',
+                      u'panel_section_id': u'solexa_tools',
+                      u'version': u'0.10.2',
+                      u'link': u'/galaxy_dev/tool_runner?tool_id=toolshed.g2.bx.psu.edu%2Frepos%2Fbgruening%2Fbismark%2Fbismark_methylation_extractor%2F0.10.2',
+                      u'min_width': -1,
+                      u'model_class': u'Tool',
+                      u'id': u'toolshed.g2.bx.psu.edu/repos/bgruening/bismark/bismark_methylation_extractor/0.10.2',
+                      u'target': u'galaxy_main'}
+        tool = Tool(tool_data)
+        self.assertEqual(tool.name,'Bismark Meth. Extractor')
+        self.assertEqual(tool.description,
+                         'Reports on methylation status of reads mapped by '
+                         'Bismark')
+        self.assertEqual(tool.version,'0.10.2')
+        self.assertEqual(tool.panel_section,'NGS: Mapping')
+        self.assertEqual(tool.id,
+                         'toolshed.g2.bx.psu.edu/repos/bgruening/bismark/'
+                         'bismark_methylation_extractor/0.10.2')
+        self.assertEqual(tool.tool_repo,
+                         'toolshed.g2.bx.psu.edu/bgruening/bismark')
+        self.assertEqual(tool.tool_changeset,None)
+
+    def test_load_tool_data_toolshed_has_prefix(self):
+        tool_data = { u'panel_section_name': u'Local Toolshed',
+                      u'config_file': u'/galaxy/shed_tools/192.168.60.164/toolshed/repos/pjbriggs/rnachipintegrator/2f0a1f1a5725/rnachipintegrator/rnachipintegrator_wrapper.xml',
+                      u'description': u"Integrated analysis of 'gene' and 'peak' data",
+                      u'panel_section_id': u'local_toolshed',
+                      u'version': u'1.0.1.0',
+                      u'link': u'/galaxy_dev/tool_runner?tool_id=192.168.60.164%2Ftoolshed%2Frepos%2Fpjbriggs%2Frnachipintegrator%2Frnachipintegrator_wrapper%2F1.0.1.0',
+                      u'target': u'galaxy_main',
+                      u'min_width': -1,
+                      u'model_class': u'Tool',
+                      u'id': u'192.168.60.164/toolshed/repos/pjbriggs/rnachipintegrator/rnachipintegrator_wrapper/1.0.1.0',
+                      u'name': u'RnaChipIntegrator'}
+        tool = Tool(tool_data)
+        self.assertEqual(tool.name,'RnaChipIntegrator')
+        self.assertEqual(tool.description,
+                         "Integrated analysis of 'gene' and 'peak' data")
+        self.assertEqual(tool.version,'1.0.1.0')
+        self.assertEqual(tool.panel_section,'Local Toolshed')
+        self.assertEqual(tool.id,
+                         '192.168.60.164/toolshed/repos/pjbriggs/'
+                         'rnachipintegrator/rnachipintegrator_wrapper/1.0.1.0')
+        self.assertEqual(tool.tool_repo,
+                         '192.168.60.164/toolshed/pjbriggs/'
+                         'rnachipintegrator')
+        self.assertEqual(tool.tool_changeset,'2f0a1f1a5725')
+
+    def test_load_tool_data_not_from_toolshed(self):
+        tool_data = { u'panel_section_name': u'Get Genomic Scores',
+                      u'config_file': u'/galaxy/tools/filters/wiggle_to_simple.xml',
+                      u'description': u'converter',
+                      u'panel_section_id': u'scores',
+                      u'version': u'1.0.0',
+                      u'link': u'/galaxy_dev/tool_runner?tool_id=wiggle2simple1',
+                      u'target': u'galaxy_main',
+                      u'min_width': -1,
+                      u'model_class': u'Tool',
+                      u'id': u'wiggle2simple1',
+                      u'name': u'Wiggle-to-Interval' }
+        tool = Tool(tool_data)
+        self.assertEqual(tool.name,'Wiggle-to-Interval')
+        self.assertEqual(tool.description,
+                         'converter')
+        self.assertEqual(tool.version,'1.0.0')
+        self.assertEqual(tool.panel_section,'Get Genomic Scores')
+        self.assertEqual(tool.id,'wiggle2simple1')
+        self.assertEqual(tool.tool_repo,'')
+        self.assertEqual(tool.tool_changeset,None)
 
 class TestRepository(unittest.TestCase):
     """
@@ -68,6 +143,8 @@ class TestRepository(unittest.TestCase):
         self.assertEqual(len(revisions),1)
         self.assertEqual(revisions[0].revision_number,'2')
         self.assertEqual(revisions[0].changeset_revision,'a60283899c6d')
+        self.assertEqual(revisions[0].installed_changeset_revision,
+                         'a60283899c6d')
         self.assertEqual(revisions[0].status,'Installed')
         self.assertFalse(revisions[0].deleted)
         self.assertFalse(revisions[0].revision_update)
@@ -126,6 +203,8 @@ class TestRepository(unittest.TestCase):
         self.assertEqual(len(revisions),2)
         self.assertEqual(revisions[0].revision_number,'2')
         self.assertEqual(revisions[0].changeset_revision,'a60283899c6d')
+        self.assertEqual(revisions[0].installed_changeset_revision,
+                         'a60283899c6d')
         self.assertEqual(revisions[0].status,'Installed')
         self.assertFalse(revisions[0].deleted)
         self.assertFalse(revisions[0].revision_update)
@@ -135,6 +214,8 @@ class TestRepository(unittest.TestCase):
         # Previous revision
         self.assertEqual(revisions[1].revision_number,'1')
         self.assertEqual(revisions[1].changeset_revision,'2bd7cdbb6228')
+        self.assertEqual(revisions[1].installed_changeset_revision,
+                         '3358c3d30143')
         self.assertEqual(revisions[1].status,'Installed')
         self.assertFalse(revisions[1].deleted)
         self.assertFalse(revisions[1].revision_update)

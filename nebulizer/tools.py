@@ -42,6 +42,10 @@ class Tool:
         self.version = tool_data['version']
         self.description = tool_data['description']
         self.panel_section = tool_data['panel_section_name']
+        try:
+            self.config_file = tool_data['config_file']
+        except KeyError:
+            self.config_file = None
 
     @property
     def tool_repo(self):
@@ -67,6 +71,35 @@ class Tool:
             return '/'.join((toolshed,owner,repo))
         except ValueError:
             return ''
+
+    @property
+    def tool_changeset(self):
+        """
+        Return the tool changeset revision
+
+        This is a commit id of the form 'efc56ee1ade4'
+
+        Returns None if a changeset revision can't be
+        extracted
+
+        """
+        tool_repo = self.tool_repo
+        if not tool_repo:
+            return None
+        # Look for the config_file element - something of
+        # the form:
+        # .../toolshed.g2.bx.psu.edu/repos/devteam/picard/efc56ee1ade4/...
+        try:
+            ele = tool_repo.split('/')
+            toolshed = '/'.join(ele[:-2])
+            owner = ele[-2]
+            repo = ele[-1]
+            search_string = "/repos/%s/%s/" % (owner,repo)
+            i = self.config_file.index(search_string) + len(search_string)
+            revision = self.config_file[i:].split('/')[0]
+            return revision
+        except AttributeError,ValueError:
+            return None
 
 class RepositoryRevision:
     """
@@ -97,6 +130,7 @@ class RepositoryRevision:
         # Version numbers
         self.revision_number = repo_data['ctx_rev']
         self.changeset_revision = repo_data['changeset_revision']
+        self.installed_changeset_revision = repo_data['installed_changeset_revision']
         self.status = repo_data['status']
         self.deleted = repo_data['deleted']
         # Repository revision status
@@ -443,10 +477,13 @@ def list_tools(gi,name=None,installed_only=False):
     tools.sort(key=lambda x: x.name.lower())
     # Print info
     for tool in tools:
-        print "%-16s\t%-8s\t%-16s\t%s" % (tool.name,
-                                          tool.version,
-                                          tool.panel_section,
-                                          tool.tool_repo)
+        print "%-16s\t%-8s\t%-16s\t%s\t%s" % (tool.name,
+                                              tool.version,
+                                              tool.panel_section,
+                                              tool.tool_repo,
+                                              (tool.tool_changeset
+                                               if tool.tool_changeset
+                                               else ''))
     print "total %s" % len(tools)
 
 def list_installed_repositories(gi,name=None,
@@ -522,12 +559,16 @@ def list_installed_repositories(gi,name=None,
                                     revision.revision_id,
                                     revision.status))
             nrevisions += 1
-            # Get tools associated with repo
+            # List tools associated with revision
             if list_tools:
-                for tool in filter(lambda t: t.tool_repo == repo.id,tools):
+                repo_tools = filter(lambda t:
+                                    t.tool_repo == repo.id and
+                                    t.tool_changeset == revision.installed_changeset_revision,
+                                    tools)
+                for tool in repo_tools:
                     print "- %s" % '\t'.join((tool.name,
-                                              tool.version,
-                                              tool.description))
+                                               tool.version,
+                                               tool.description))
     print "total %s" % nrevisions
 
 def list_tool_panel(gi,name=None,list_tools=False):
