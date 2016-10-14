@@ -106,7 +106,7 @@ def handle_credentials(email,password,prompt="Password: "):
         password = getpass.getpass(prompt)
     return (email,password)
 
-def fetch_api_key(galaxy_url,email,password=None,verify=True):
+def fetch_new_api_key(galaxy_url,email,password=None,verify=True):
     """
     Fetch a new API key from a Galaxy instance
 
@@ -131,7 +131,6 @@ def fetch_api_key(galaxy_url,email,password=None,verify=True):
                              verify=verify)
     return users.get_user_api_key(gi,username=email)
 
-
 class Context(object):
     """
     Provide context for nebulizer command
@@ -143,9 +142,26 @@ class Context(object):
         self.no_verify = False
         self.debug = False
 
+    def galaxy_instance(self,alias):
+        """
+        Return Galaxy instance based on context
+
+        Attempts to create a Bioblend based on the supplied
+        arguments to the nebulizer command.
+        """
+        email,password = handle_credentials(
+            self.username,
+            self.galaxy_password,
+            prompt="Password for %s: " % alias)
+        gi = get_galaxy_instance(alias,api_key=self.api_key,
+                                 email=email,password=password,
+                                 verify=(not self.no_verify))
+        return gi
+
 pass_context = click.make_pass_decorator(Context,ensure=True)
 
 @click.group()
+@click.version_option(version=get_version())
 @click.option('--api_key','-k',
               help="specify API key for Galaxy instance")
 @click.option('--username','-u',
@@ -170,8 +186,10 @@ def nebulizer(context,api_key,username,galaxy_password,
     context.galaxy_password = galaxy_password
     context.no_verify = no_verify
     context.debug = debug
-    handle_ssl_warnings(verify=(not context.no_verify))
+    context.suppress_warnings = suppress_warnings
     handle_debug(debug=context.debug)
+    handle_suppress_warnings(suppress_warnings=context.suppress_warnings)
+    handle_ssl_warnings(verify=(not context.no_verify))
 
 @nebulizer.command()
 @pass_context
@@ -209,10 +227,10 @@ def add(context,alias,galaxy_url,api_key=None):
         if context.api_key:
             api_key = context.api_key
         elif context.username:
-            api_key = fetch_api_key(galaxy_url,
-                                    context.username,
-                                    context.galaxy_password,
-                                    verify=(not context.no_verify))
+            api_key = fetch_new_api_key(galaxy_url,
+                                        context.username,
+                                        context.galaxy_password,
+                                        verify=(not context.no_verify))
             if api_key is None:
                 logging.error("Failed to get API key from %s" %
                               galaxy_url)
@@ -228,7 +246,7 @@ def add(context,alias,galaxy_url,api_key=None):
               help="specify new URL for Galaxy instance")
 @click.option('--new-api-key',
               help="specify new API key for Galaxy instance")
-@click.option('--fetch-api-key',
+@click.option('--fetch-api-key',is_flag=True,
               help="fetch new API key for Galaxy instance")
 @click.argument("alias")
 @pass_context
@@ -240,12 +258,21 @@ def update(context,alias,new_url,new_api_key,fetch_api_key):
     if alias not in instances.list_keys():
         logging.error("'%s': not found" % alias)
         return 1
+    if new_url:
+        galaxy_url = new_url
+    else:
+        galaxy_url = instances.fetch_key(alias)[0]
+    click.echo("galaxy_url: %s" % galaxy_url)
+    click.echo("username  : %s" % context.username)
     if fetch_api_key:
         # Attempt to fetch new API key
-        new_api_key = fetch_api_key(alias,
-                                    context.username,
-                                    context.galaxy_password,
-                                    verify=(not context.no_verify))
+        try:
+            new_api_key = fetch_new_api_key(galaxy_url,
+                                            context.username,
+                                            context.galaxy_password,
+                                            verify=(not context.no_verify))
+        except AttributeError:
+            new_api_key = None
         if new_api_key is None:
             logging.error("Failed to get new API key from %s" %
                           alias)
@@ -267,6 +294,295 @@ def remove(context,alias):
     instances = Credentials()
     instances.remove_key(alias)
 
+@nebulizer.command()
+@click.option("--name",
+              help="specific emails/user name(s) to list")
+@click.option("--long","-l","long_listing",is_flag=True,
+              help="use a long listing format (include ids,"
+              " disk usage and admin status)")
+@click.argument("galaxy")
+@pass_context
+def list_users(context,galaxy,name,long_listing):
+    """
+    List users in Galaxy instance
+    """
+    # Get a Galaxy instance
+    gi = context.galaxy_instance(galaxy)
+    if gi is None:
+        logging.critical("Failed to connect to Galaxy instance")
+        return 1
+    # List users
+    users.list_users(gi,name=name,long_listing_format=long_listing)
+
+@nebulizer.command()
+@click.option('--password','-p',
+              help="specify password for new user account "
+              "(otherwise program will prompt for password)")
+@click.option('--check','-c','only_check',is_flag=True,
+              help="check user details but don't try to create the "
+              "new account")
+@click.option('--message','-m','message_template',
+              type=click.Path(exists=True),
+              help="Mako template to populate and output")
+@click.argument("galaxy")
+@click.argument("email")
+@click.argument("public_name",required=False)
+@pass_context
+def create_user(context,galaxy,email,public_name,password,only_check,
+                message_template):
+    """
+    Create new Galaxy user
+    """
+    # Check message template is a .mako file
+    if message_template:
+        if not message_template.endswith(".mako"):
+            logging.critical("Message template '%s' is not a .mako file"
+                             % message_template)
+            return 1
+    # Get a Galaxy instance
+    gi = context.galaxy_instance(galaxy)
+    if gi is None:
+        logging.critical("Failed to connect to Galaxy instance")
+        return 1
+    # Sort out email and public name
+    if public_name:
+        if not users.check_username_format(public_name):
+            logging.critical("Invalid public name: must contain only "
+                             "lower-case letters, numbers and '-'")
+            return 1
+    else:
+        # No public name supplied, make from email address
+        name = users.get_username_from_login(email)
+    # Create user
+    print "Email : %s" % email
+    print "Name  : %s" % name
+    return users.create_user(gi,email,name,password,
+                             only_check=only_check,
+                             mako_template=message_template)
+
+@nebulizer.command()
+@click.option('--password','-p',
+              help="specify password for new user accounts "
+              "(otherwise program will prompt for password). "
+              "All accounts will be created with the same "
+              "password")
+@click.option('--check','-c','only_check',is_flag=True,
+              help="check user details but don't try to create the "
+              "new account")
+@click.argument("galaxy")
+@click.argument("template")
+@click.argument("start")
+@click.argument("end",required=False)
+@pass_context
+def create_users_from_template(context,galaxy,template,start,end,
+                               password,only_check):
+    """
+    Create multiple Galaxy users from a template
+
+    TEMPLATE is a 'template' email address which includes a
+    '#' symbol as a placeholder where an integer index
+    should be substituted to make multiple accounts (e.g.
+    'student#@galaxy.ac.uk')
+    """
+    # Get a Galaxy instance
+    gi = context.galaxy_instance(galaxy)
+    if gi is None:
+        logging.critical("Failed to connect to Galaxy instance")
+        return 1
+    # Sort out start and end indices
+    if end is not None:
+        end = start
+        start = 1
+    # Create users
+    return users.create_users_from_template(gi,template,
+                                            start,end,password,
+                                            only_check=only_check)
+
+@nebulizer.command()
+@click.option('--password','-p',
+              help="specify password for new user accounts "
+              "(otherwise program will prompt for password). "
+              "All accounts will be created with the same "
+              "password")
+@click.option('--check','-c','only_check',is_flag=True,
+              help="check user details but don't try to create the "
+              "new account")
+@click.option('--message','-m','message_template',
+              type=click.Path(exists=True),
+              help="Mako template to populate and output")
+@click.argument("galaxy")
+@click.argument("file")
+@pass_context
+def create_users_from_file(context,galaxy,tsvfile,password,only_check):
+    """
+    Create multiple Galaxy users from a file
+
+    TSVFILE is a tab-delimited file with details of a new user
+    on each line; the columns should be 'email','password', and
+    optionally 'public_name'.
+    """
+    # Check message template is a .mako file
+    if message_template:
+        if not message_template.endswith(".mako"):
+            logging.critical("Message template '%s' is not a .mako file"
+                             % message_template)
+            return 1
+    # Get a Galaxy instance
+    gi = context.galaxy_instance(galaxy)
+    if gi is None:
+        logging.critical("Failed to connect to Galaxy instance")
+        return 1
+    # Sort out start and end indices
+    if end is not None:
+        end = start
+        start = 1
+    # Create users
+    return users.create_batch_of_users(gi,tsvfile,
+                                       only_check=only_check,
+                                       mako_template=message_template)
+
+@nebulizer.command()
+@click.option('--name',
+              help="specific tool name(s) to list")
+@click.option('--installed','installed_only',is_flag=True,
+              help="only list tools installed from a toolshed")
+@click.argument("galaxy")
+@pass_context
+def list_tools(context,galaxy,name,installed_only):
+    """
+    List tools in Galaxy instance
+    """
+    # Get a Galaxy instance
+    gi = context.galaxy_instance(galaxy)
+    if gi is None:
+        logging.critical("Failed to connect to Galaxy instance")
+        return 1
+    # List tools
+    tools.list_tools(gi,name=name,installed_only=installed_only)
+
+@nebulizer.command()
+@click.option('--name',
+              help="specific tool repository name(s) to list")
+@click.option('--toolshed',
+              help="only list repositories from specified toolshed")
+@click.option('--owner',
+              help="only list repositories from specified owner")
+@click.option('--list-tools',is_flag=True,
+              help="list the tools associated with each repository "
+              "revision")
+@click.option('--updateable',is_flag=True,
+              help="only show repositories with uninstalled updates "
+              "or upgrades")
+@click.argument("galaxy")
+@pass_context
+def list_installed(context,galaxy,name,toolshed,owner,list_tools,
+                   updateable):
+    """
+    List installed tool repositories
+    """
+    # Get a Galaxy instance
+    gi = context.galaxy_instance(galaxy)
+    if gi is None:
+        logging.critical("Failed to connect to Galaxy instance")
+        return 1
+    # List repositories
+    tools.list_installed_repositories(gi,name=name,
+                                      toolshed=toolshed,
+                                      owner=owner,
+                                      list_tools=list_tools,
+                                      only_updateable=updateable)
+
+@nebulizer.command()
+@click.option('--name',
+              help="specific tool panel section(s) to list")
+@click.option('--list-tools',is_flag=True,
+              help="also list the associated tools for each "
+              "section")
+@click.argument("galaxy")
+@pass_context
+def list_tool_panel(context,alias,name,list_tools):
+    """
+    List tool panel contents
+    """
+    
+    # Get a Galaxy instance
+    gi = context.galaxy_instance(galaxy)
+    if gi is None:
+        logging.critical("Failed to connect to Galaxy instance")
+        return 1
+    # List tool panel contents
+    tools.list_tool_panel(gi,name=name,
+                          list_tools=list_tools)
+
+@nebulizer.command()
+@click.option('--tool-panel-section',
+              help="tool panel section name or id to install "
+              "the tool under")
+@click.argument("galaxy")
+@click.argument("toolshed")
+@click.argument("owner")
+@click.argument("repository")
+@click.argument("revision",required=False)
+@pass_context
+def install_tool(context,galaxy,toolshed,owner,repository,
+                 revision,tool_panel_section):
+    """
+    Install tool from toolshed
+    """
+    # Get a Galaxy instance
+    gi = context.galaxy_instance(galaxy)
+    if gi is None:
+        logging.critical("Failed to connect to Galaxy instance")
+        return 1
+    # Install tool
+    return tools.install_tool(
+        gi,toolshed,repository,owner,revision=revision,
+        tool_panel_section=tool_panel_section)
+
+@nebulizer.command()
+@click.argument("galaxy")
+@click.argument("toolshed")
+@click.argument("owner")
+@click.argument("repository")
+@pass_context
+def update_tool(context,galaxy,toolshed,owner,repository):
+    """
+    Update tool installed from toolshed
+    """
+    # Get a Galaxy instance
+    gi = context.galaxy_instance(galaxy)
+    if gi is None:
+        logging.critical("Failed to connect to Galaxy instance")
+        return 1
+    # Install tool
+    return tools.install_tool(
+        gi,toolshed,repository,owner,revision=revision,
+        tool_panel_section=tool_panel_section)
+
+@nebulizer.command()
+@click.option('-l','long_listing',is_flag=True,
+              help="use a long listing format (include ids, "
+              "descriptions and file sizes and paths)")
+@click.argument("galaxy")
+@click.argument("path",required=False)
+@pass_context
+def list_libraries(context,galaxy,path,long_listing):
+    """
+    List data libraries and contents
+    """
+    # Get a Galaxy instance
+    gi = context.galaxy_instance(galaxy)
+    if gi is None:
+        logging.critical("Failed to connect to Galaxy instance")
+        return 1
+    # List folders in data library
+    if path:
+        libraries.list_library_contents(gi,path,
+                                        long_listing_format=
+                                        long_listing)
+    else:
+        libraries.list_data_libraries(gi)
+    
 def manage_users(args=None):
     """
     Implements the 'manage_users' utility
