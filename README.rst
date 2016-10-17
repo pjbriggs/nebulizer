@@ -55,59 +55,96 @@ instead of::
 See below for more information on managing the stored aliases and
 associated information.
 
-Commands and usage examples
----------------------------
+Commands
+--------
 
-Currently ``nebulizer`` offers three utilities:
+All functionality is available as subcommands of the ``nebulizer``
+utility.
+
+User management:
+
+ * ``list_users``: List users in Galaxy instance.
+ * ``create_user``: Create new Galaxy user.
+ * ``create_batch_users``: Create multiple Galaxy users from a template.
+ * ``create_users_from_file``: Create multiple Galaxy users from a file.
+
+Data library management:
+
+ * ``list_libraries``:  List data libraries and contents.
+ * ``create_library``: Create new data library.
+ * ``create_library_folder``: Create new folder in a data library.
+ * ``add_library_datasets``: Add datasets to a data library.
+
+Tool management:
+
+ * ``list_tools``: List tools in Galaxy instance.
+ * ``list_tool_panel``: List tool panel contents.
+ * ``list_installed_tools``: List installed tool repositories.
+ * ``install_tool``: Install tool from toolshed.
+ * ``update_tool``: Update tool installed from toolshed.
+
+Local API key management:
+
+ * ``add_key``: Store new Galaxy URL and API key.
+ * ``list_keys``: List stored Galaxy API keys.
+ * ``remove_key``: Remove stored Galaxy API key.
+ * ``update_key``: Update stored Galaxy API key.
+
+Deprecated utilities
+~~~~~~~~~~~~~~~~~~~~
+
+The following additional utilities are included for backwards
+compatibility but are deprecated and likely to be removed in a
+future version:
 
  * ``manage_users``: list and create user accounts
  * ``manage_libraries``: list, create and populate data libraries
  * ``manage_tools``: list and install tools from toolsheds
 
-In addition there is a utility for managing stored information on
-Galaxy instances that you wish to interact with::
+They are not documented further here.
 
- * ``nebulizer``: list and manage API keys for Galaxy instances
+Usage examples
+--------------
 
-Some random examples (note that command names etc are subject to change
-without notice while these utilities are under development):
+The following sections have usage examples intended to give a
+flavour of how ``nebulizer`` might be used.
 
 Managing users
 ~~~~~~~~~~~~~~
 
-Add a new user::
-
-  manage_users create localhost -p pa55w0rd a.non@galaxy.org
-
 List users matching specific name::
 
-  manage_users list localhost --name=*briggs*
+  nebulizer list_users localhost --name="*briggs*"
+
+Add a new user::
+
+  nebulizer create_user localhost -p pa55w0rd a.non@galaxy.org
 
 Managing data libraries
 ~~~~~~~~~~~~~~~~~~~~~~~
 
 List data libraries::
 
-  manage_libraries list localhost
+  nebulizer list_libraries localhost
 
 Create a data library called ``NGS data`` and a subfolder ``Run 21``::
 
-  manage_libraries create_library localhost \
+  nebulizer create_library localhost \
     --description="Sequencing data analysed in 2015" "NGS data"
-  manage_libraries create_folder localhost "NGS data/Run 21"
+  nebulizer create_library_folder localhost "NGS data/Run 21"
 
 List contents of this folder::
 
-  manage_libraries list localhost "NGS data/Run 21"
+  nebulizer list_libraries localhost "NGS data/Run 21"
 
 Upload files to it from the local system::
 
-  manage_libraries add_datasets localhost "NGS data/Run 21" ~/Sample1_R*.fq
+  nebulizer add_library_datasets localhost "NGS data/Run 21" ~/Sample1_R*.fq
 
 Add a file which is on the Galaxy server filesystem to a library as a
 link::
 
-  manage_libraries add_datasets localhost --server --link "NGS data/fastqs" \
+  nebulizer add_library_datasets localhost --server --link "NGS data/fastqs" \
     /galaxy/hosted_data/example.fq
 
 Managing tools
@@ -115,30 +152,30 @@ Managing tools
 
 List all tools that are available in a Galaxy instance::
 
-  manage_tools list localhost
+  nebulizer list_tools localhost
 
 List all the ``cuff...`` tools that were installed from a toolshed::
 
-  manage_tools list localhost --name=cuff* --installed
+  nebulizer list_tools localhost --name="cuff*" --installed
 
 List all the tool repositories that are installed along with the tools
 that they provide::
 
-  manage_tools installed localhost --list-tools
+  nebulizer list_installed_tools localhost --list-tools
 
 List all the tool repositories that have available updates or upgrades::
 
-  manage_tools installed localhost --updateable
+  nebulizer list_installed_tools localhost --updateable
 
 Install the most recent FastQC from the main toolshed::
 
-  manage_tools install localhost \
+  nebulizer install_tool localhost \
     --tool-panel-section="NGS: QC and manipulation" \
     toolshed.g2.bx.psu.edu devteam fastqc
 
 Update FastQC tool to latest installable revision::
 
-  manage_tools update localhost toolshed.g2.bx.psu.edu devteam fastqc
+  nebulizer update_tool localhost toolshed.g2.bx.psu.edu devteam fastqc
 
 Managing Galaxy API keys
 ~~~~~~~~~~~~~~~~~~~~~~~~
@@ -177,7 +214,7 @@ It is possible to use your normal Galaxy login credentials (i.e. your email
 and password) to access the API on a Galaxy instance without using the
 API key, using the ``-u``/``--username`` option, e.g.::
 
-  manage_libraries list localhost -u joe.bloggs@example.com "NGS data/Run 21"
+  nebulizer -u joe.bloggs@example.com list_libraries "NGS data/Run 21"
 
 You will be prompted to enter the password; however you can also use the
 ``-P``/``--galaxy_password`` option to specify it explicitly on the command
