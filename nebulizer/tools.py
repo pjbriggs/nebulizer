@@ -480,7 +480,9 @@ def list_tools(gi,name=None,installed_only=False):
     for tool in tools:
         print "%-16s\t%-8s\t%-16s\t%s\t%s" % (tool.name,
                                               tool.version,
-                                              tool.panel_section,
+                                              (tool.panel_section
+                                               if tool.panel_section
+                                               else ''),
                                               tool.tool_repo,
                                               (tool.tool_changeset
                                                if tool.tool_changeset
@@ -774,8 +776,7 @@ def update_tool(gi,tool_shed,name,owner):
             tool_panel_section = tool.panel_section
             break
     if tool_panel_section is None:
-        logging.critical("%s: no tool panel section found" % name)
-        return TOOL_UPDATE_FAIL
+        logging.warning("%s: no tool panel section found" % name)
     #print "Installing update under %s" % tool_panel_section
     return install_tool(gi,tool_shed,name,owner,
                         tool_panel_section=tool_panel_section)
