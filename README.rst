@@ -31,12 +31,12 @@ key pairs, which are stored in a ``.nebulizer`` file in your home directory.
 This can be managed using the ``nebulizer`` utility, e.g. to add new alias
 for a local Galaxy instance::
 
-  % nebulizer add localhost http://127.0.0.1:8080 4af252f2250818d14949b3cf0aed476a
+  % nebulizer add_key localhost http://127.0.0.1:8080 4af252f2250818d14949b3cf0aed476a
 
 Alternatively: if you don't have the API key then nebulizer will fetch it
 if you give it a user name, for example::
 
-  % nebulizer add localhost http://127.0.0.1:8080 --username me@example.org
+  % nebulizer add_key localhost http://127.0.0.1:8080 --username me@example.org
 
 Each alias is stored in a tab-delimited line with the format
 ``alias|URL|API key``, for example::
@@ -140,24 +140,24 @@ Update FastQC tool to latest installable revision::
 
   manage_tools update localhost toolshed.g2.bx.psu.edu devteam fastqc
 
-Managing Galaxy instance aliases and information
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Managing Galaxy API keys
+~~~~~~~~~~~~~~~~~~~~~~~~
 
 List the stored aliases and associated Galaxy instances::
 
-  nebulizer list
+  nebulizer list_keys
 
 Add a new alias called 'production' for a Galaxy instance::
 
-  nebulizer add production http:://galaxy.org/ 5e7a1264905c8f0beb80002f7de13a40
+  nebulizer add_key production http:://galaxy.org/ 5e7a1264905c8f0beb80002f7de13a40
 
 Update the API key for 'production'::
 
-  nebulizer update production --new-api-key=37b6430624255b8c61a137abd69ae3bb
+  nebulizer update_key production --new-api-key=37b6430624255b8c61a137abd69ae3bb
 
 Remove the entry for 'production'::
 
-  nebulizer remove production
+  nebulizer remove_key production
 
 Handling SSL certificate failures
 ---------------------------------

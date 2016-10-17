@@ -193,9 +193,9 @@ def nebulizer(context,api_key,username,galaxy_password,
 
 @nebulizer.command()
 @pass_context
-def list(context):
+def list_keys(context):
     """
-    List stored Galaxy instance aliases and API keys
+    List stored Galaxy API keys
     """
     instances = Credentials()
     for alias in instances.list_keys():
@@ -207,9 +207,9 @@ def list(context):
 @click.argument("galaxy_url")
 @click.argument("api_key",required=False)
 @pass_context
-def add(context,alias,galaxy_url,api_key=None):
+def add_key(context,alias,galaxy_url,api_key=None):
     """
-    Store new URL and API key for Galaxy instance
+    Store new Galaxy URL and API key
 
     ALIAS is the name that the instance will be stored
     against; GALAXY_URL is the URL for the instance;
@@ -250,9 +250,9 @@ def add(context,alias,galaxy_url,api_key=None):
               help="fetch new API key for Galaxy instance")
 @click.argument("alias")
 @pass_context
-def update(context,alias,new_url,new_api_key,fetch_api_key):
+def update_key(context,alias,new_url,new_api_key,fetch_api_key):
     """
-    Update details for Galaxy instance matching ALIAS
+    Update stored Galaxy API key
     """
     instances = Credentials()
     if alias not in instances.list_keys():
@@ -287,9 +287,9 @@ def update(context,alias,new_url,new_api_key,fetch_api_key):
 @nebulizer.command()
 @click.argument("alias")
 @pass_context
-def remove(context,alias):
+def remove_key(context,alias):
     """
-    Remove details of Galaxy instance
+    Remove stored Galaxy API key
     """
     instances = Credentials()
     instances.remove_key(alias)
