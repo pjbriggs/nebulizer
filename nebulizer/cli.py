@@ -216,7 +216,7 @@ def nebulizer(context,api_key,username,galaxy_password,
 @pass_context
 def list_keys(context):
     """
-    List stored Galaxy API keys
+    List stored Galaxy API keys.
 
     Prints a list of stored aliases with the associated
     Galaxy URLs and API keys.
@@ -326,15 +326,18 @@ def remove_key(context,alias):
 
 @nebulizer.command()
 @click.option("--name",
-              help="specific emails/user name(s) to list")
+              help="list only users with matching email or user "
+              "name. Can include glob-style wild-cards.")
 @click.option("--long","-l","long_listing",is_flag=True,
-              help="use a long listing format (include ids,"
-              " disk usage and admin status)")
+              help="use a long listing format that includes ids,"
+              " disk usage and admin status.")
 @click.argument("galaxy")
 @pass_context
 def list_users(context,galaxy,name,long_listing):
     """
-    List users in Galaxy instance
+    List users in Galaxy instance.
+
+    Prints details of user accounts in GALAXY instance.
     """
     # Get a Galaxy instance
     gi = context.galaxy_instance(galaxy)
@@ -402,10 +405,10 @@ def create_user(context,galaxy,email,public_name,password,only_check,
               help="specify password for new user accounts "
               "(otherwise program will prompt for password). "
               "All accounts will be created with the same "
-              "password")
+              "password.")
 @click.option('--check','-c','only_check',is_flag=True,
-              help="check user details but don't try to create the "
-              "new account")
+              help="check user details but don't try to create "
+              "the new account.")
 @click.argument("galaxy")
 @click.argument("template")
 @click.argument("start",type=int)
@@ -414,7 +417,7 @@ def create_user(context,galaxy,email,public_name,password,only_check,
 def create_batch_users(context,galaxy,template,start,end,
                        password,only_check):
     """
-    Create multiple users from a template.
+    Create multiple Galaxy users from a template.
 
     Creates a batch of users in GALAXY using TEMPLATE; this
     should be a template email address which includes a
@@ -448,21 +451,25 @@ def create_batch_users(context,galaxy,template,start,end,
 @nebulizer.command()
 @click.option('--check','-c','only_check',is_flag=True,
               help="check user details but don't try to create the "
-              "new account")
+              "new account.")
 @click.option('--message','-m','message_template',
               type=click.Path(exists=True),
-              help="Mako template to populate and output")
+              help="Mako template to populate and output.")
 @click.argument("galaxy")
 @click.argument("file",type=click.Path(exists=True))
 @pass_context
 def create_users_from_file(context,galaxy,file,message_template,
                            only_check):
     """
-    Create multiple Galaxy users from a file
+    Create multiple Galaxy users from a file.
 
-    FILE is a tab-delimited file with details of a new user
-    on each line; the columns should be 'email','password',
-    and optionally 'public_name'.
+    Creates user accounts in GALAXY instance from contents of
+    FILE, which should be a tab-delimited file with details of
+    a new user on each line; the columns should be 'email',
+    'password', and optionally 'public_name'.
+
+    (If the 'public_name' is missing then it will be generated
+    automatically from the leading part of the email.)
     """
     # Check message template is a .mako file
     if message_template:
@@ -481,15 +488,21 @@ def create_users_from_file(context,galaxy,file,message_template,
                                        mako_template=message_template)
 
 @nebulizer.command()
-@click.option('--name',
-              help="specific tool name(s) to list")
+@click.option('--name',metavar='NAME',
+              help="list only tools matching NAME. Can include "
+              "glob-style wild-cards.")
 @click.option('--installed','installed_only',is_flag=True,
-              help="only list tools installed from a toolshed")
+              help="only list tools that have been installed from "
+              "a toolshed (default is to list all tools).")
 @click.argument("galaxy")
 @pass_context
 def list_tools(context,galaxy,name,installed_only):
     """
-    List tools in Galaxy instance
+    List tools in Galaxy instance.
+
+    Prints details of tools available in GALAXY instance,
+    including: tool name, version, tool panel section, and
+    toolshed repository and revision changeset.
     """
     # Get a Galaxy instance
     gi = context.galaxy_instance(galaxy)
@@ -500,15 +513,18 @@ def list_tools(context,galaxy,name,installed_only):
     tools.list_tools(gi,name=name,installed_only=installed_only)
 
 @nebulizer.command()
-@click.option('--name',
-              help="specific tool repository name(s) to list")
-@click.option('--toolshed',
-              help="only list repositories from specified toolshed")
-@click.option('--owner',
-              help="only list repositories from specified owner")
+@click.option('--name',metavar='NAME',
+              help="only list tool repositories matching NAME. Can "
+              "include glob-style wild-cards.")
+@click.option('--toolshed',metavar='TOOLSHED',
+              help="only list repositories installed from toolshed "
+              "matching TOOLSHED. Can include glob-style wild-cards.")
+@click.option('--owner',metavar='OWNER',
+              help="only list repositories from matching OWNER. "
+              "Can include glob-style wild-cards.")
 @click.option('--list-tools',is_flag=True,
-              help="list the tools associated with each repository "
-              "revision")
+              help="also list the tools associated with each "
+              "installed repository revision changeset.")
 @click.option('--updateable',is_flag=True,
               help="only show repositories with uninstalled updates "
               "or upgrades")
@@ -517,7 +533,17 @@ def list_tools(context,galaxy,name,installed_only):
 def list_installed_tools(context,galaxy,name,toolshed,owner,list_tools,
                          updateable):
     """
-    List installed tool repositories
+    List installed tool repositories.
+
+    Prints details of installed tool repositories in GALAXY
+    instance, including: repository name, toolshed, owner,
+    revision id and changeset, and installation status.
+
+    Repository details are also preceeded by a single-character
+    'status' indicator: 'D' = deprecated; '^' = newer revision
+    installed; 'u' = update available but not installed;
+    'U' = ugrade available but not installed; '*' = latest
+    revision.
     """
     # Get a Galaxy instance
     gi = context.galaxy_instance(galaxy)
@@ -532,18 +558,22 @@ def list_installed_tools(context,galaxy,name,toolshed,owner,list_tools,
                                       only_updateable=updateable)
 
 @nebulizer.command()
-@click.option('--name',
-              help="specific tool panel section(s) to list")
+@click.option('--name',metavar='NAME',
+              help="only list tool panel sections where name or "
+              "id match NAME. Can include glob-style wild-cards.")
 @click.option('--list-tools',is_flag=True,
               help="also list the associated tools for each "
               "section")
 @click.argument("galaxy")
 @pass_context
-def list_tool_panel(context,alias,name,list_tools):
+def list_tool_panel(context,galaxy,name,list_tools):
     """
-    List tool panel contents
+    List tool panel contents.
+
+    Prints details of tool panel sections including the
+    displayed text and the internal section id, and any
+    tools available outside of any section.
     """
-    
     # Get a Galaxy instance
     gi = context.galaxy_instance(galaxy)
     if gi is None:
@@ -556,7 +586,10 @@ def list_tool_panel(context,alias,name,list_tools):
 @nebulizer.command()
 @click.option('--tool-panel-section',
               help="tool panel section name or id to install "
-              "the tool under")
+              "the tool under; if the section doesn't exist "
+              "then it will be created. If this option is "
+              "omitted then the tool will be installed at the "
+              "top-level i.e. not in any section.")
 @click.argument("galaxy")
 @click.argument("toolshed")
 @click.argument("owner")
@@ -566,7 +599,18 @@ def list_tool_panel(context,alias,name,list_tools):
 def install_tool(context,galaxy,toolshed,owner,repository,
                  revision,tool_panel_section):
     """
-    Install tool from toolshed
+    Install tool from toolshed.
+
+    Installs the specified tool from REPOSITORY owned by
+    OWNER in TOOLSHED, into GALAXY.
+
+    Optionally also specify a changeset REVISION; if no
+    revision is specified and no version of the tool is
+    already installed then will attempt to install the
+    latest revision (otherwise will skip installation).
+    Installation will fail if the specified revision is
+    not installable, or if no installable revisions are
+    found.
     """
     # Get a Galaxy instance
     gi = context.galaxy_instance(galaxy)
@@ -586,7 +630,15 @@ def install_tool(context,galaxy,toolshed,owner,repository,
 @pass_context
 def update_tool(context,galaxy,toolshed,owner,repository):
     """
-    Update tool installed from toolshed
+    Update tool installed from toolshed.
+
+    Updates the specified tool from REPOSITORY owned by
+    OWNER in TOOLSHED, to the latest revision in GALAXY.
+
+    The tool must already be present in GALAXY and a newer
+    changeset revision must be available. The update will
+    be installed into the same tool panel section as the
+    original tool.
     """
     # Get a Galaxy instance
     gi = context.galaxy_instance(galaxy)
@@ -598,14 +650,20 @@ def update_tool(context,galaxy,toolshed,owner,repository):
 
 @nebulizer.command()
 @click.option('-l','long_listing',is_flag=True,
-              help="use a long listing format (include ids, "
-              "descriptions and file sizes and paths)")
+              help="use a long listing format that includes "
+              "ids, descriptions, file sizes, dbkeys and paths)")
 @click.argument("galaxy")
 @click.argument("path",required=False)
 @pass_context
 def list_libraries(context,galaxy,path,long_listing):
     """
-    List data libraries and contents
+    List data libraries and contents.
+
+    Prints details of the data library and folders
+    specified by PATH, in GALAXY instance.
+
+    PATH should be of the form
+    'data_library[/folder[/subfolder[...]]]'
     """
     # Get a Galaxy instance
     gi = context.galaxy_instance(galaxy)
@@ -630,7 +688,10 @@ def list_libraries(context,galaxy,path,long_listing):
 @pass_context
 def create_library(context,galaxy,name,description,synopsis):
     """
-    Create new data library
+    Create new data library.
+
+    Makes a new data library NAME in GALAXY. A library
+    with the same name must not already.
     """
     # Get a Galaxy instance
     gi = context.galaxy_instance(galaxy)
@@ -650,7 +711,15 @@ def create_library(context,galaxy,name,description,synopsis):
 @pass_context
 def create_library_folder(context,galaxy,path,description):
     """
-    Create new folder in a data library
+    Create new folder in a data library.
+
+    Makes a new folder or folder tree within an existing data
+    library in GALAXY.
+
+    The new folder(s) are specified by PATH, which should be
+    of the form 'data_library[/folder[/subfolder[...]]]'.
+    Although the data library must already exist, PATH must
+    not address an existing folder.
     """
     # Get a Galaxy instance
     gi = context.galaxy_instance(galaxy)
@@ -683,7 +752,15 @@ def create_library_folder(context,galaxy,path,description):
 def add_library_datasets(context,galaxy,dest,file,file_type,
                          dbkey,from_server,link):
     """
-    Add datasets to a data library
+    Add datasets to a data library.
+
+    Uploads one or more FILEs as new datasets in the
+    data library folder DEST in GALAXY.
+
+    DEST should be a path to a data library or library
+    folder of the form
+    'data_library[/folder[/subfolder[...]]]'. The library
+    and folder must already exist.
     """
     # Get a Galaxy instance
     gi = context.galaxy_instance(galaxy)
