@@ -555,9 +555,7 @@ def update_tool(context,galaxy,toolshed,owner,repository):
         logging.critical("Failed to connect to Galaxy instance")
         return 1
     # Install tool
-    return tools.install_tool(
-        gi,toolshed,repository,owner,revision=revision,
-        tool_panel_section=tool_panel_section)
+    return tools.update_tool(gi,toolshed,repository,owner)
 
 @nebulizer.command()
 @click.option('-l','long_listing',is_flag=True,
