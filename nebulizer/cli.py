@@ -475,8 +475,8 @@ def list_tools(context,galaxy,name,installed_only):
               "or upgrades")
 @click.argument("galaxy")
 @pass_context
-def list_installed(context,galaxy,name,toolshed,owner,list_tools,
-                   updateable):
+def list_installed_tools(context,galaxy,name,toolshed,owner,list_tools,
+                         updateable):
     """
     List installed tool repositories
     """
