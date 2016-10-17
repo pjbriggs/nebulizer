@@ -582,6 +582,82 @@ def list_libraries(context,galaxy,path,long_listing):
                                         long_listing)
     else:
         libraries.list_data_libraries(gi)
+
+@nebulizer.command()
+@click.option('-d','--description',
+              help="description of the new library")
+@click.option('-s','--synopsis',
+              help="synopsis text for the new library")
+@click.argument("galaxy")
+@click.argument("name")
+@pass_context
+def create_library(context,galaxy,name,description,synopsis):
+    """
+    Create new data library
+    """
+    # Get a Galaxy instance
+    gi = context.galaxy_instance(galaxy)
+    if gi is None:
+        logging.critical("Failed to connect to Galaxy instance")
+        return 1
+    # Create new data library
+    libraries.create_library(gi,name,
+                             description=description,
+                             synopsis=synopsis)
+
+@nebulizer.command()
+@click.option('-d','--description',
+              help="description of the new folder")
+@click.argument("galaxy")
+@click.argument("path")
+@pass_context
+def create_library_folder(context,galaxy,path,description):
+    """
+    Create new folder in a data library
+    """
+    # Get a Galaxy instance
+    gi = context.galaxy_instance(galaxy)
+    if gi is None:
+        logging.critical("Failed to connect to Galaxy instance")
+        return 1
+    # Create new folder
+    libraries.create_folder(gi,path,description=description)
+
+@nebulizer.command()
+@click.option('--file-type',default='auto',
+              help="Galaxy data type to assign the files to "
+              "(default is 'auto'). Must be a valid Galaxy "
+              "data type. If not 'auto' then all files will "
+              "be assigned the same type.")
+@click.option('--dbkey',default='?',
+              help="dbkey to assign to files (default is '?')")
+@click.option('--server','from_server',is_flag=True,
+              help="upload files from the Galaxy server file "
+              "system (default is to upload files from local "
+              "system)")
+@click.option('--link',is_flag=True,
+              help="create symlinks to files on server (only "
+              "valid if used with --server; default is to copy "
+              "files into Galaxy)")
+@click.argument("galaxy")
+@click.argument("dest")
+@click.argument("file","files",nargs=-1)
+@pass_context
+def add_library_datasets(context,galaxy,dest):
+    """
+    Add datasets to a data library
+    """
+    # Get a Galaxy instance
+    gi = context.galaxy_instance(galaxy)
+    if gi is None:
+        logging.critical("Failed to connect to Galaxy instance")
+        return 1
+    # Add the datasets
+    libraries.add_library_datasets(gi,dest,files,
+                                   from_server=options.from_server,
+                                   link_only=options.link,
+                                   file_type=options.file_type,
+                                   dbkey=options.dbkey)
     
 def manage_users(args=None):
     """
