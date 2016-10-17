@@ -361,7 +361,14 @@ def list_users(context,galaxy,name,long_listing):
 def create_user(context,galaxy,email,public_name,password,only_check,
                 message_template):
     """
-    Create new Galaxy user
+    Create new Galaxy user.
+
+    Creates a new user in GALAXY, using EMAIL for the username.
+    If PUBLIC_NAME is not supplied then it will be generated
+    automatically from the leading part of the email address.
+
+    If a password for the new account is not supplied using the
+    --password option then nebulizer will prompt for one.
     """
     # Check message template is a .mako file
     if message_template:
@@ -382,11 +389,11 @@ def create_user(context,galaxy,email,public_name,password,only_check,
             return 1
     else:
         # No public name supplied, make from email address
-        name = users.get_username_from_login(email)
+        public_name = users.get_username_from_login(email)
     # Create user
     print "Email : %s" % email
-    print "Name  : %s" % name
-    return users.create_user(gi,email,name,password,
+    print "Name  : %s" % public_name
+    return users.create_user(gi,email,public_name,password,
                              only_check=only_check,
                              mako_template=message_template)
 
