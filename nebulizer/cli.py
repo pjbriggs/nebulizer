@@ -217,6 +217,9 @@ def nebulizer(context,api_key,username,galaxy_password,
 def list_keys(context):
     """
     List stored Galaxy API keys
+
+    Prints a list of stored aliases with the associated
+    Galaxy URLs and API keys.
     """
     instances = Credentials()
     for alias in instances.list_keys():
@@ -230,7 +233,7 @@ def list_keys(context):
 @pass_context
 def add_key(context,alias,galaxy_url,api_key=None):
     """
-    Store new Galaxy URL and API key
+    Store new Galaxy URL and API key.
 
     ALIAS is the name that the instance will be stored
     against; GALAXY_URL is the URL for the instance;
@@ -273,7 +276,10 @@ def add_key(context,alias,galaxy_url,api_key=None):
 @pass_context
 def update_key(context,alias,new_url,new_api_key,fetch_api_key):
     """
-    Update stored Galaxy API key
+    Update stored Galaxy API key.
+
+    Update the Galaxy URL and/or API key stored
+    against ALIAS.
     """
     instances = Credentials()
     if alias not in instances.list_keys():
@@ -310,7 +316,10 @@ def update_key(context,alias,new_url,new_api_key,fetch_api_key):
 @pass_context
 def remove_key(context,alias):
     """
-    Remove stored Galaxy API key
+    Remove stored Galaxy API key.
+
+    Removes the Galaxy URL/API key pair associated with
+    ALIAS from the list of stored keys.
     """
     instances = Credentials()
     instances.remove_key(alias)
