@@ -678,9 +678,10 @@ def create_library_folder(context,galaxy,path,description):
               "files into Galaxy)")
 @click.argument("galaxy")
 @click.argument("dest")
-@click.argument("file","files",nargs=-1)
+@click.argument("file",nargs=-1)
 @pass_context
-def add_library_datasets(context,galaxy,dest):
+def add_library_datasets(context,galaxy,dest,file,file_type,
+                         dbkey,from_server,link):
     """
     Add datasets to a data library
     """
@@ -690,11 +691,11 @@ def add_library_datasets(context,galaxy,dest):
         logging.critical("Failed to connect to Galaxy instance")
         return 1
     # Add the datasets
-    libraries.add_library_datasets(gi,dest,files,
-                                   from_server=options.from_server,
-                                   link_only=options.link,
-                                   file_type=options.file_type,
-                                   dbkey=options.dbkey)
+    libraries.add_library_datasets(gi,dest,file,
+                                   from_server=from_server,
+                                   link_only=link,
+                                   file_type=file_type,
+                                   dbkey=dbkey)
     
 def manage_users(args=None):
     """
