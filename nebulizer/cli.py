@@ -408,18 +408,28 @@ def create_user(context,galaxy,email,public_name,password,only_check,
               "new account")
 @click.argument("galaxy")
 @click.argument("template")
-@click.argument("start")
-@click.argument("end",required=False)
+@click.argument("start",type=int)
+@click.argument("end",type=int,required=False)
 @pass_context
-def create_users_from_template(context,galaxy,template,start,end,
-                               password,only_check):
+def create_batch_users(context,galaxy,template,start,end,
+                       password,only_check):
     """
-    Create multiple Galaxy users from a template
+    Create multiple users from a template.
 
-    TEMPLATE is a 'template' email address which includes a
-    '#' symbol as a placeholder where an integer index
-    should be substituted to make multiple accounts (e.g.
-    'student#@galaxy.ac.uk')
+    Creates a batch of users in GALAXY using TEMPLATE; this
+    should be a template email address which includes a
+    '#' symbol as a placeholder for an integer index.
+
+    The range of integers is defined by START and END; if
+    only one of these is supplied then START is assumed to be
+    1 and the supplied value is END.
+
+    For example: using the template 'user#@example.org'
+    with the range 1 to 5 will create new accounts:
+
+    user1@galaxy.org
+    ...
+    user5@galaxy.org
     """
     # Get a Galaxy instance
     gi = context.galaxy_instance(galaxy)
@@ -427,7 +437,7 @@ def create_users_from_template(context,galaxy,template,start,end,
         logging.critical("Failed to connect to Galaxy instance")
         return 1
     # Sort out start and end indices
-    if end is not None:
+    if end is None:
         end = start
         start = 1
     # Create users
