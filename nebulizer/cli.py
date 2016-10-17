@@ -399,11 +399,6 @@ def create_users_from_template(context,galaxy,template,start,end,
                                             only_check=only_check)
 
 @nebulizer.command()
-@click.option('--password','-p',
-              help="specify password for new user accounts "
-              "(otherwise program will prompt for password). "
-              "All accounts will be created with the same "
-              "password")
 @click.option('--check','-c','only_check',is_flag=True,
               help="check user details but don't try to create the "
               "new account")
@@ -411,15 +406,16 @@ def create_users_from_template(context,galaxy,template,start,end,
               type=click.Path(exists=True),
               help="Mako template to populate and output")
 @click.argument("galaxy")
-@click.argument("file")
+@click.argument("file",type=click.Path(exists=True))
 @pass_context
-def create_users_from_file(context,galaxy,tsvfile,password,only_check):
+def create_users_from_file(context,galaxy,file,message_template,
+                           only_check):
     """
     Create multiple Galaxy users from a file
 
-    TSVFILE is a tab-delimited file with details of a new user
-    on each line; the columns should be 'email','password', and
-    optionally 'public_name'.
+    FILE is a tab-delimited file with details of a new user
+    on each line; the columns should be 'email','password',
+    and optionally 'public_name'.
     """
     # Check message template is a .mako file
     if message_template:
@@ -432,12 +428,8 @@ def create_users_from_file(context,galaxy,tsvfile,password,only_check):
     if gi is None:
         logging.critical("Failed to connect to Galaxy instance")
         return 1
-    # Sort out start and end indices
-    if end is not None:
-        end = start
-        start = 1
     # Create users
-    return users.create_batch_of_users(gi,tsvfile,
+    return users.create_batch_of_users(gi,file,
                                        only_check=only_check,
                                        mako_template=message_template)
 
