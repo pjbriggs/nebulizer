@@ -46,11 +46,11 @@ Each alias is stored in a tab-delimited line with the format
 Then, rather than specifying the full URL and API key each you can just use
 the alias, for example::
 
-  % manage_users list localhost
+  % nebulizer list_users localhost
 
 instead of::
 
-  % manage_users list http://127.0.0.1:8080 -k 4af252f2250818d14949b3cf0aed476a
+  % nebulizer -k 4af252f2250818d14949b3cf0aed476a list_users http://127.0.0.1:8080
 
 See below for more information on managing the stored aliases and
 associated information.
