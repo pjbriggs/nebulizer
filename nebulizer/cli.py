@@ -27,19 +27,29 @@ def base_parser(usage=None,description=None):
                               description=description)
     p.add_option('-k','--api_key',action='store',dest='api_key',
                  default=None,
-                 help="specify API key for GALAXY_URL (otherwise will try to "
-                 "look up from .nebulizer file)")
+                 help="specify API key to use for connecting to "
+                 "Galaxy instance. Must be supplied if there is "
+                 "no API key stored for the specified instance, "
+                 "(unless --username option is specified). If "
+                 "there is a stored API key this overrides it.")
     p.add_option('-u','--username',action='store',dest='username',
                  default=None,
-                 help="specify username (i.e. email) to log into Galaxy with")
+                 help="specify username (i.e. email) for connecting "
+                 "to Galaxy instance, as an alternative to using "
+                 "the API key. Prompts for a password unless one "
+                 "is supplied via the --galaxy_password option.")
     p.add_option('-P','--galaxy_password',action='store',
                  dest='galaxy_password',default=None,
-                 help="supply password for Galaxy instance")
+                 help="supply password for connecting to Galaxy "
+                 "instance, when using the --username option.")
     p.add_option('-n','--no-verify',action='store_true',dest='no_verify',
-                 default=False,help="don't verify HTTPS connections")
+                 default=False,help="don't verify HTTPS "
+                 "connections. Use this when connecting to a Galaxy "
+                 "instance which uses self-signed certificates.")
     p.add_option('-q','--suppress-warnings',action='store_true',
                  dest='suppress_warnings',
-                 default=False,help="suppress warning messages")
+                 default=False,help="suppress warning messages "
+                 "from nebulizer")
     p.add_option('--debug',action='store_true',dest='debug',
                  default=False,help="turn on debugging output")
     return p
@@ -163,17 +173,28 @@ pass_context = click.make_pass_decorator(Context,ensure=True)
 @click.group()
 @click.version_option(version=get_version())
 @click.option('--api_key','-k',
-              help="specify API key for Galaxy instance")
+              help="specify API key to use for connecting to "
+              "Galaxy instance. Must be supplied if there is "
+              "no API key stored for the specified instance, "
+              "(unless --username option is specified). If "
+              "there is a stored API key this overrides it.")
 @click.option('--username','-u',
-              help="specify username or email to log into Galaxy with")
+              help="specify username (i.e. email) for connecting "
+              "to Galaxy instance, as an alternative to using "
+              "the API key. Prompts for a password unless one "
+              "is supplied via the --galaxy_password option.")
 @click.option('--galaxy_password','-P',
-              help="supply password for Galaxy instance")
+              help="supply password for connecting to Galaxy "
+              "instance, when using the --username option.")
 @click.option('--no-verify','-n',is_flag=True,
-              help="don't verify HTTPS connections")
+              help="don't verify HTTPS connections when "
+              "connecting to Galaxy instance. Use this when "
+              "interacting with Galaxy instances which use "
+              "self-signed certificates.")
 @click.option('--suppress-warnings','-q',is_flag=True,
-              help="suppress warning messages")
+              help="suppress warning messages from nebulizer.")
 @click.option('--debug',is_flag=True,
-              help="turn on debugging output")
+              help="turn on debugging output.")
 @pass_context
 def nebulizer(context,api_key,username,galaxy_password,
               no_verify,suppress_warnings,debug):
