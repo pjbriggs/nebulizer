@@ -81,6 +81,7 @@ Tool management:
  * ``list_tool_panel``: List tool panel contents.
  * ``list_installed_tools``: List installed tool repositories.
  * ``install_tool``: Install tool from toolshed.
+ * ``install_tools_from_file``: Install tools listed in a file.
  * ``update_tool``: Update tool installed from toolshed.
 
 Local API key management:
@@ -176,6 +177,12 @@ Install the most recent FastQC from the main toolshed::
 Update FastQC tool to latest installable revision::
 
   nebulizer update_tool localhost toolshed.g2.bx.psu.edu devteam fastqc
+
+Fetch a list of tools in one Galaxy instance and install them into
+another automatically::
+
+  nebulizer list_installed_tools old_galaxy --tsv > tools.tsv
+  nebulizer install_tools_from_file new_galaxy tools.tsv
 
 Managing Galaxy API keys
 ~~~~~~~~~~~~~~~~~~~~~~~~
