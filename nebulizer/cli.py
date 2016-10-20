@@ -639,6 +639,54 @@ def install_tool(context,galaxy,toolshed,owner,repository,
 
 @nebulizer.command()
 @click.argument("galaxy")
+@click.argument("file",type=click.File('r'))
+@pass_context
+def install_tools_from_file(context,galaxy,file):
+    """
+    Install tools listed in a file.
+
+    Installs the tools specified in FILE into GALAXY.
+
+    FILE should be a tab-delimited file with the columns:
+
+    TOOLSHED|OWNER|REPOSITORY|REVISON|SECTION
+
+    If the REVISION field is blank then nebulizer will
+    attempt to install the latest revision; if the
+    SECTION field is blank then the tool will be
+    installed at the top level of the tool panel (i.e.
+    not in any section).
+    """
+    # Get a Galaxy instance
+    gi = context.galaxy_instance(galaxy)
+    if gi is None:
+        logging.critical("Failed to connect to Galaxy instance")
+        return 1
+    # Install tools
+    for line in file:
+        if line.startswith('#'):
+            continue
+        print line.rstrip('\n')
+        line = line.rstrip('\n').split('\t')
+        try:
+            toolshed,owner,repository = line[:3]
+        except ValueError:
+            logging.critical("Couldn't parse line")
+            return 1
+        try:
+            revision = line[3]
+        except KeyError:
+            revision = None
+        try:
+            tool_panel_section = line[4]
+        except KeyError:
+            tool_panel_section = None
+        tools.install_tool(gi,toolshed,repository,owner,
+                           revision=revision,
+                           tool_panel_section=tool_panel_section)
+
+@nebulizer.command()
+@click.argument("galaxy")
 @click.argument("toolshed")
 @click.argument("owner")
 @click.argument("repository")
