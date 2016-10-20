@@ -36,7 +36,7 @@ for a local Galaxy instance::
 Alternatively: if you don't have the API key then nebulizer will fetch it
 if you give it a user name, for example::
 
-  % nebulizer add_key localhost http://127.0.0.1:8080 --username me@example.org
+  % nebulizer -u me@example.org add_key localhost http://127.0.0.1:8080
 
 Each alias is stored in a tab-delimited line with the format
 ``alias|URL|API key``, for example::
