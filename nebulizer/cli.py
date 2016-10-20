@@ -527,23 +527,38 @@ def list_tools(context,galaxy,name,installed_only):
               "installed repository revision changeset.")
 @click.option('--updateable',is_flag=True,
               help="only show repositories with uninstalled updates "
-              "or upgrades")
+              "or upgrades.")
+@click.option('--tsv',is_flag=True,
+              help="output in a tab-delimited value format with one "
+              "installed revision per line, columns are: toolshed, "
+              "owner, repository, changeset revision and tool panel "
+              "section. This output format is suitable for input "
+              "into the 'install_tools_from_file' command.")
 @click.argument("galaxy")
 @pass_context
 def list_installed_tools(context,galaxy,name,toolshed,owner,list_tools,
-                         updateable):
+                         updateable,tsv):
     """
     List installed tool repositories.
 
     Prints details of installed tool repositories in GALAXY
-    instance, including: repository name, toolshed, owner,
-    revision id and changeset, and installation status.
+    instance.
 
-    Repository details are also preceeded by a single-character
-    'status' indicator: 'D' = deprecated; '^' = newer revision
-    installed; 'u' = update available but not installed;
-    'U' = ugrade available but not installed; '*' = latest
-    revision.
+    By default this is a 'verbose' format that includes:
+    repository name, toolshed, owner, revision id and changeset,
+    and installation status.
+
+    In this format, the repository details are also preceeded by
+    a single-character 'status' indicator ('D' = deprecated;
+    '^' = newer revision installed; 'u' = update available but
+    not installed; 'U' = ugrade available but not installed;
+    '*' = latest revision).
+
+    If the --tsv option is specified then the output is in a
+    more compact tab-delimited value format, with each line
+    containing just the toolshed, owner, repository, changeset
+    id and tool panel section. Output from this format is
+    suitable for input into 'install_tools_from_file' command.
     """
     # Get a Galaxy instance
     gi = context.galaxy_instance(galaxy)
