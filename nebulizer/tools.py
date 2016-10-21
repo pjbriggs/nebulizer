@@ -24,7 +24,7 @@ class Tool:
 
     Provides an interface for accessing data about a tool
     in a Galaxy instance, which has been retrieved via a
-    a call to the Galaxy API using bioblend.
+    call to the Galaxy API using bioblend.
 
     """
     def __init__(self,tool_data):
