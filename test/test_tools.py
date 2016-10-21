@@ -270,7 +270,7 @@ class TestToolPanelSection(unittest.TestCase):
                             u'id': u'toolshed.g2.bx.psu.edu/repos/devteam/fastqc/fastqc/0.65',
                             u'target': u'galaxy_main' }
         section = ToolPanelSection(tool_panel_data)
-        self.assertEqual(section.name,None)
+        self.assertEqual(section.name,'FastQC')
         self.assertEqual(section.id,'toolshed.g2.bx.psu.edu/repos/devteam/fastqc/fastqc/0.65')
         self.assertEqual(section.model_class,'Tool')
         self.assertFalse(section.is_toolsection)
