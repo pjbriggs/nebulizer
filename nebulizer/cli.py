@@ -14,6 +14,7 @@ from .core import Credentials
 import users
 import libraries
 import tools
+import tables
 
 logging.basicConfig(format="%(levelname)s %(message)s")
 
@@ -773,7 +774,46 @@ def add_library_datasets(context,galaxy,dest,file,file_type,
                                    link_only=link,
                                    file_type=file_type,
                                    dbkey=dbkey)
-    
+
+@nebulizer.command()
+@click.argument("galaxy")
+@pass_context
+def list_data_tables(context,galaxy):
+    """
+    List data tables in Galaxy instance.
+
+    Prints the names of all tool data tables found in
+    GALAXY instance.
+    """
+    # Get a Galaxy instance
+    gi = context.galaxy_instance(galaxy)
+    if gi is None:
+        logging.critical("Failed to connect to Galaxy instance")
+        return 1
+    for tbl in tables.DataTables(gi).tables:
+        print tbl
+
+@nebulizer.command()
+@click.argument("galaxy")
+@click.argument("table")
+@pass_context
+def show_data_table(context,galaxy,table):
+    """
+    Show tool data table contents.
+
+    Prints the contents of tool data table TABLE in
+    GALAXY instance.
+    """
+    # Get a Galaxy instance
+    gi = context.galaxy_instance(galaxy)
+    if gi is None:
+        logging.critical("Failed to connect to Galaxy instance")
+        return 1
+    tbl = tables.DataTables(gi).get_table(table)
+    print "#%s" % '\t'.join(tbl.columns)
+    for line in tbl.fields:
+        print "%s" % '\t'.join(line)
+
 def manage_users(args=None):
     """
     Implements the 'manage_users' utility

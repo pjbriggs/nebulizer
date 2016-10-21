@@ -75,6 +75,11 @@ Data library management:
  * ``create_library_folder``: Create new folder in a data library.
  * ``add_library_datasets``: Add datasets to a data library.
 
+Tool data tables management:
+
+ * ``list_data_tables``:  List data tables in Galaxy instance.
+ * ``show_data_table``: Show tool data table contents.
+
 Tool management:
 
  * ``list_tools``: List tools in Galaxy instance.
