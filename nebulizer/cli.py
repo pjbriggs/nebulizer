@@ -528,37 +528,28 @@ def list_tools(context,galaxy,name,installed_only):
 @click.option('--updateable',is_flag=True,
               help="only show repositories with uninstalled updates "
               "or upgrades.")
-@click.option('--tsv',is_flag=True,
-              help="output in a tab-delimited value format with one "
-              "installed revision per line, columns are: toolshed, "
-              "owner, repository, changeset revision and tool panel "
-              "section. This output format is suitable for input "
-              "into the 'install_tools_from_file' command.")
 @click.argument("galaxy")
 @pass_context
 def list_installed_tools(context,galaxy,name,toolshed,owner,list_tools,
-                         updateable,tsv):
+                         updateable):
     """
     List installed tool repositories.
 
     Prints details of installed tool repositories in GALAXY
     instance.
 
-    By default this is a 'verbose' format that includes:
-    repository name, toolshed, owner, revision id and changeset,
-    and installation status.
+    For each installed repository the details include: repository
+    name, toolshed, owner, revision id and changeset, and
+    installation status.
 
-    In this format, the repository details are also preceeded by
-    a single-character 'status' indicator ('D' = deprecated;
-    '^' = newer revision installed; 'u' = update available but
-    not installed; 'U' = ugrade available but not installed;
-    '*' = latest revision).
+    Repository details are also preceeded by a single-character
+    'status' indicator ('D' = deprecated; '^' = newer revision
+    installed; 'u' = update available but not installed; 'U' =
+    upgrade available but not installed; '*' = latest revision).
 
-    If the --tsv option is specified then the output is in a
-    more compact tab-delimited value format, with each line
-    containing just the toolshed, owner, repository, changeset
-    id and tool panel section. Output from this format is
-    suitable for input into 'install_tools_from_file' command.
+    If the --list-tools option is specified then additionally
+    after each repository the tools associated with the repository
+    will be listed along with their descriptions and versions.
     """
     # Get a Galaxy instance
     gi = context.galaxy_instance(galaxy)
@@ -638,12 +629,55 @@ def install_tool(context,galaxy,toolshed,owner,repository,
         tool_panel_section=tool_panel_section)
 
 @nebulizer.command()
+@click.option('--name',metavar='NAME',
+              help="only list tool repositories matching NAME. Can "
+              "include glob-style wild-cards.")
+@click.option('--toolshed',metavar='TOOLSHED',
+              help="only list repositories installed from toolshed "
+              "matching TOOLSHED. Can include glob-style wild-cards.")
+@click.option('--owner',metavar='OWNER',
+              help="only list repositories from matching OWNER. "
+              "Can include glob-style wild-cards.")
+@click.option('--updateable',is_flag=True,
+              help="only show repositories with uninstalled updates "
+              "or upgrades.")
+@click.argument("galaxy")
+@pass_context
+def list_repositories(context,galaxy,name,toolshed,owner,updateable):
+    """
+    List installed tool repos for (re)install.
+
+    Prints details of installed tool repositories in GALAXY
+    instance in a format suitable for input into the
+    'install_repositories' command.
+
+    The output is a set of tab-delimited values, with each line
+    consisting of:
+
+    TOOLSHED|OWNER|REPOSITORY|CHANGESET|TOOL_PANEL_SECTION
+
+    The tool panel section will be empty if the repository
+    was installed outside of any section in the tool panel.
+    """
+    # Get a Galaxy instance
+    gi = context.galaxy_instance(galaxy)
+    if gi is None:
+        logging.critical("Failed to connect to Galaxy instance")
+        return 1
+    # List repositories
+    tools.list_installed_repositories(gi,name=name,
+                                      toolshed=toolshed,
+                                      owner=owner,
+                                      only_updateable=updateable,
+                                      tsv=True)
+
+@nebulizer.command()
 @click.argument("galaxy")
 @click.argument("file",type=click.File('r'))
 @pass_context
-def install_tools_from_file(context,galaxy,file):
+def install_repositories(context,galaxy,file):
     """
-    Install tools listed in a file.
+    Install tool repositories listed in a file.
 
     Installs the tools specified in FILE into GALAXY.
 
@@ -675,10 +709,14 @@ def install_tools_from_file(context,galaxy,file):
             return 1
         try:
             revision = line[3]
+            if not revision:
+                revision = None
         except KeyError:
             revision = None
         try:
             tool_panel_section = line[4]
+            if not tool_panel_section:
+                tool_panel_section = None
         except KeyError:
             tool_panel_section = None
         tools.install_tool(gi,toolshed,repository,owner,
