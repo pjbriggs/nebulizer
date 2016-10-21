@@ -275,7 +275,6 @@ class TestToolPanelSection(unittest.TestCase):
         self.assertEqual(section.model_class,'Tool')
         self.assertFalse(section.is_toolsection)
         self.assertTrue(section.is_tool)
-        self.assertEqual(section.is_tool)
         self.assertEqual(len(section.elems),0)
 
 class TestNormaliseToolshedUrl(unittest.TestCase):
