@@ -842,20 +842,25 @@ def install_tool(gi,tool_shed,name,owner,
         return TOOL_INSTALL_OK
     # Look up tool panel section
     tool_panel_section_id = None
-    if tool_panel_section is not None:
+    new_tool_panel_section = None
+    if tool_panel_section is None:
+        print "Installing into top level tool panel (no section specified)"
+    else:
+        # Look for an existing section which matches the
+        # supplied name or id
         for section in get_tool_panel_sections(gi):
             if tool_panel_section == section.id or \
                tool_panel_section == section.name:
+                # Found existing tool panel section
                 tool_panel_section_id = section.id
+                print "Installing into existing tool panel section: " \
+                    "'%s' (id '%s')" % (section.name,tool_panel_section_id)
                 break
         if not tool_panel_section_id:
-            print "New tool panel section: '%s'" % tool_panel_section
-        else:
-            print "Existing tool panel section: '%s' (id '%s')" % \
-                (section.name,tool_panel_section_id)
-            tool_panel_section = None
-    else:
-        print "No tool panel section specified"
+            # No matching section exists, make a new one
+            print "Installing into new tool panel section: '%s'" % \
+                tool_panel_section
+            new_tool_panel_section = tool_panel_section
     # Get toolshed URL
     tool_shed_url = normalise_toolshed_url(tool_shed)
     print "Toolshed URL: %s" % tool_shed_url
@@ -868,7 +873,7 @@ def install_tool(gi,tool_shed,name,owner,
             install_tool_dependencies=True,
             install_repository_dependencies=True,
             tool_panel_section_id=tool_panel_section_id,
-            new_tool_panel_section_label=tool_panel_section)
+            new_tool_panel_section_label=new_tool_panel_section)
     except ConnectionError,ex:
         print "Error from Galaxy API: %s (ignored)" % ex
     # Check installation status
