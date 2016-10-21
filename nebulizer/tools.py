@@ -357,6 +357,57 @@ class ToolPanelSection:
         """
         return (self.model_class == "Tool")
 
+class ToolPanel:
+    """
+    Class wrapping extraction of tool panel
+
+    Provides an interface for accessing data about the
+    tool panel in a Galaxy instance, and which
+    has been retrieved via a call to the Galaxy API
+    using bioblend.
+
+    """
+    def __init__(self,gi):
+        """
+        Create a new ToolPanel instance
+
+        Arguments:
+          gi (bioblend.galaxy.GalaxyInstance): Galaxy instance
+        """
+        self.sections = []
+        tool_client = galaxy.tools.ToolClient(gi)
+        for data in tool_client.get_tool_panel():
+            self.sections.append(ToolPanelSection(data))
+
+    def tool_index(self,tool):
+        """
+        Return index of tool in tool panel
+
+        Given a tool, return an integer 'index'
+        corresponding to the position of the tool in
+        the tool panel.
+
+        Arguments:
+          tool (Tool): Tool instance
+
+        Returns:
+          Integer: position of the tool in the tool
+            panel, or -1 if it can't be located.
+        """
+        index_ = -1
+        for section in self.sections:
+            if section.is_toolsection:
+                for elem in section.elems:
+                    index_ += 1
+                    if elem.id == tool.id:
+                        return index_
+            elif section.is_tool:
+                index_ += 1
+                if section.id == tool.id:
+                    return index_
+        # Not found
+        return -1
+
 # Functions
 
 def get_tools(gi):
@@ -632,7 +683,14 @@ def list_installed_repositories(gi,name=None,
                                    include_deleted=include_deleted,
                                    only_updateable=only_updateable)
     if tsv:
-        # Compact TSV output format
+        # Output format for reinstallation of repositories
+        tool_panel = ToolPanel(gi)
+        # Sort into tool panel order
+        repos = sorted(repos,
+                       key=lambda r:
+                       tool_panel.tool_index(r[2][0])
+                       if r[2] else -1)
+        # Print details
         for r in repos:
             repo,revision,tools = r
             if tools:
