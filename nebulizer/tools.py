@@ -418,9 +418,13 @@ def normalise_toolshed_url(toolshed):
         return toolshed
     return "https://%s" % toolshed
 
-def tool_install_status(gi,tool_shed,owner,name,revision):
+def tool_install_status(gi,tool_shed,owner,name,revision=None):
     """
     Return the installation status of a tool repo
+
+    If a revision is not specified then will return the
+    status of the most recent installed version (if there
+    is one).
 
     Arguments:
       gi (bioblend.galaxy.GalaxyInstance): Galaxy instance
@@ -429,7 +433,7 @@ def tool_install_status(gi,tool_shed,owner,name,revision):
       name (str): name of the tool repository
       owner (str): name of the tool repository owner
       revision (str): revision changeset specifying
-        the tool repository version
+        the tool repository version (optional)
 
     Returns:
       String: the tool repository installation status returned
@@ -443,8 +447,11 @@ def tool_install_status(gi,tool_shed,owner,name,revision):
         logging.debug("Unable to fetch tool repository information")
         return "?"
     repo = repos[0]
-    revisions = filter(lambda v: v.changeset_revision == revision,
-                       repo.revisions())
+    if revision:
+        revisions = filter(lambda v: v.changeset_revision == revision,
+                           repo.revisions())
+    else:
+        revisions = repo.revisions()
     if len(revisions) != 1:
         logging.debug("Unable to fetch tool repository revisions")
         return "?"
@@ -645,7 +652,14 @@ def install_tool(gi,tool_shed,name,owner,
             revision = revision.split(':')[1]
         print "Revision  :\t%s" % revision
     else:
-        print "Revision  :\t<newest>"
+        print "Revision  :\t<not specified>"
+    # Check if tool is already installed
+    install_status = tool_install_status(gi,tool_shed,owner,name,
+                                         revision)
+    if install_status.startswith("Installed"):
+        print "%s: already installed (status is \"%s\")" % (name,
+                                                            install_status)
+        return TOOL_INSTALL_OK
     # Get available revisions
     try:
         revisions = shed.repositories.get_ordered_installable_revisions(name,
@@ -668,13 +682,6 @@ def install_tool(gi,tool_shed,name,owner,
         # Set revision to the most recent
         revision = revisions[-1]
         print "Installing newest revision (%s)" % revision
-    # Check if tool is already installed
-    install_status = tool_install_status(gi,tool_shed,owner,name,
-                                         revision)
-    if install_status.startswith("Installed"):
-        print "%s: already installed (status is \"%s\")" % (name,
-                                                            install_status)
-        return TOOL_INSTALL_OK
     # Look up tool panel
     tool_panel_section_id = None
     if tool_panel_section is not None:
@@ -778,5 +785,5 @@ def update_tool(gi,tool_shed,name,owner):
     if tool_panel_section is None:
         logging.warning("%s: no tool panel section found" % name)
     #print "Installing update under %s" % tool_panel_section
-    return install_tool(gi,tool_shed,name,owner,
+    return install_tool(gi,tool_shed,name,owner,revision,
                         tool_panel_section=tool_panel_section)
