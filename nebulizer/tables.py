@@ -34,19 +34,20 @@ class DataTables(object):
     def __init__(self,gi):
         """
         """
-        tool_data_client = galaxy.tool_data.ToolDataClient(gi)
-        self._tables = {}
-        for tbl in tool_data_client.get_data_tables():
-            name = str(tbl['name'])
-            tbl_data = tool_data_client.show_data_table(name)
-            self._tables[name] = DataTable(tbl_data)
+        self._tool_data_client = galaxy.tool_data.ToolDataClient(gi)
+        self._table_names = [str(tbl['name']) for tbl in
+                             self._tool_data_client.get_data_tables()]
+        self._table_names.sort()
 
     @property
     def tables(self):
         """
-        Return list of DataTables
+        Return list of data table names
         """
-        return sorted([self._tables[t] for t in self._tables],
-                      key=lambda tbl: tbl.name)
+        return [name for name in self._table_names]
 
-
+    def get_table(self,name):
+        """
+        Fetch DataTable instance for a tool data table
+        """
+        return DataTable(self._tool_data_client.show_data_table(name))
