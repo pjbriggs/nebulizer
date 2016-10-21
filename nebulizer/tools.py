@@ -335,6 +335,27 @@ class ToolPanelSection:
         """
         self.id = tool_panel_data['id']
         self.name = tool_panel_data['name']
+        self.model_class = tool_panel_data['model_class']
+        self.elems = []
+        try:
+            for elem in tool_panel_data['elems']:
+                self.elems.append(ToolPanelSection(elem))
+        except KeyError:
+            pass
+
+    @property
+    def is_toolsection(self):
+        """
+        Check if section is a tool panel section
+        """
+        return (self.model_class == "ToolSection")
+
+    @property
+    def is_tool(self):
+        """
+        Check if section is a tool
+        """
+        return (self.model_class == "Tool")
 
 # Functions
 
