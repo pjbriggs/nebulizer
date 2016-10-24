@@ -148,7 +148,7 @@ class Credentials:
                     if line.startswith('#') or not line.strip():
                         continue
                     alias,url,api_key = line.strip().split('\t')
-                    if alias == name:
+                    if alias == name or url == name:
                         return (url,api_key)
         raise KeyError("'%s': not found" % name)
 

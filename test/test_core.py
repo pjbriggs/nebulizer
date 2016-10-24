@@ -56,6 +56,9 @@ local\thttp://127.0.0.1:8080\tb8c62624237b6444137ab30
         self.assertEqual(credentials.fetch_key('local'),
                          ('http://127.0.0.1:8080',
                           'b8c62624237b6444137ab30'))
+        self.assertEqual(credentials.fetch_key('http://devel.example.org'),
+                         ('http://devel.example.org',
+                          '137ab30624237b6444b8c62a'))
         self.assertRaises(KeyError,credentials.fetch_key,'nonexistent')
 
     def test_store_key(self):
