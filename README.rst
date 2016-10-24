@@ -1,16 +1,26 @@
-nebulizer
-=========
+.. figure:: https://raw.githubusercontent.com/pjbriggs/nebulizer/master/docs/nebulizer_logo.png
+   :alt: Nebulizer Logo
+   :align: center
+   :figwidth: 100%
+   :target: https://github.com/pjbriggs/nebulizer
 
-``nebulizer`` is a set of command line utilities to help with managing users,
-data libraries and tools in a `Galaxy <https://galaxyproject.org/>`_
-instance, using the Galaxy API via the `Bioblend
-<http://bioblend.readthedocs.org/en/latest/>`_ Python library.
+Command-line utilities to help with managing users, data libraries and
+tools in a `Galaxy <https://galaxyproject.org/>`_ instance, using the
+Galaxy API via the `Bioblend <http://bioblend.readthedocs.org/en/latest/>`_
+library.
 
-**Caveat**
+.. image:: https://readthedocs.org/projects/pip/badge/?version=latest
+   :target: https://nebulizer.readthedocs.io
 
- * This is very much a work in progress, and operations such as user or library
-   creation and tool installation should be used with caution against production
-   instances of Galaxy.
+.. image:: https://travis-ci.org/pjbriggs/nebulizer.png?branch=master
+   :target: https://travis-ci.org/pjbriggs/nebulizer
+
+.. warning::
+
+   **CAVEAT** ``nebulizer`` is still a work in progress; please exercise
+   caution when attempting irreversible operations especially against
+   production Galaxy instances (for example when creating users or data
+   libraries).
 
 Installation
 ------------
@@ -61,51 +71,43 @@ Commands
 All functionality is available as subcommands of the ``nebulizer``
 utility.
 
-User management:
+User management
+~~~~~~~~~~~~~~~
 
  * ``list_users``: List users in Galaxy instance.
  * ``create_user``: Create new Galaxy user.
  * ``create_batch_users``: Create multiple Galaxy users from a template.
  * ``create_users_from_file``: Create multiple Galaxy users from a file.
 
-Data library management:
+Data library management
+~~~~~~~~~~~~~~~~~~~~~~~
 
  * ``list_libraries``:  List data libraries and contents.
  * ``create_library``: Create new data library.
  * ``create_library_folder``: Create new folder in a data library.
  * ``add_library_datasets``: Add datasets to a data library.
 
-Tool management:
+Tool management
+~~~~~~~~~~~~~~~
 
  * ``list_tools``: List tools in Galaxy instance.
  * ``list_tool_panel``: List tool panel contents.
  * ``list_installed_tools``: List installed tool repositories.
  * ``install_tool``: Install tool from toolshed.
 
-Bulk tool management:
+Bulk tool management
+~~~~~~~~~~~~~~~~~~~~
 
  * ``list_repositories``: List installed tool repos for (re)install.
  * ``install_repositories``: Install tool repositories listed in a file.
 
-Local API key management:
+Local API key management
+~~~~~~~~~~~~~~~~~~~~~~~~
 
  * ``add_key``: Store new Galaxy URL and API key.
  * ``list_keys``: List stored Galaxy API keys.
  * ``remove_key``: Remove stored Galaxy API key.
  * ``update_key``: Update stored Galaxy API key.
-
-Deprecated utilities
-~~~~~~~~~~~~~~~~~~~~
-
-The following additional utilities are included for backwards
-compatibility but are deprecated and likely to be removed in a
-future version:
-
- * ``manage_users``: list and create user accounts
- * ``manage_libraries``: list, create and populate data libraries
- * ``manage_tools``: list and install tools from toolsheds
-
-They are not documented further here.
 
 Usage examples
 --------------
@@ -229,3 +231,16 @@ API key, using the ``-u``/``--username`` option, e.g.::
 You will be prompted to enter the password; however you can also use the
 ``-P``/``--galaxy_password`` option to specify it explicitly on the command
 line.
+
+Deprecated utilities
+--------------------
+
+The following additional utilities are included for backwards
+compatibility but are deprecated and likely to be removed in a
+future version:
+
+ * ``manage_users``: list and create user accounts
+ * ``manage_libraries``: list, create and populate data libraries
+ * ``manage_tools``: list and install tools from toolsheds
+
+They are not documented further here.
