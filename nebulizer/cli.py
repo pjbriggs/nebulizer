@@ -247,21 +247,13 @@ def add_key(context,alias,galaxy_url,api_key=None):
         logging.error("'%s' already exists" % alias)
         return 1
     if api_key is None:
-        # No API key supplied as argument
-        if context.api_key:
-            api_key = context.api_key
-        elif context.username:
-            api_key = fetch_new_api_key(galaxy_url,
-                                        context.username,
-                                        context.galaxy_password,
-                                        verify=(not context.no_verify))
-            if api_key is None:
-                logging.error("Failed to get API key from %s" %
-                              galaxy_url)
-                return 1
-        else:
-            logging.error("Need to supply an API key, or a username (-u)")
-            return
+        # No API key supplied as argument, try to connect
+        # to Galaxy and fetch directly
+        gi = context.galaxy_instance(galaxy_url)
+        if gi is None:
+            logging.critical("%s: failed to connect" % galaxy_url)
+            return 1
+        api_key = gi.key
     # Store the entry
     instances.store_key(alias,galaxy_url,api_key)
 
@@ -292,21 +284,12 @@ def update_key(context,alias,new_url,new_api_key,fetch_api_key):
     click.echo("galaxy_url: %s" % galaxy_url)
     click.echo("username  : %s" % context.username)
     if fetch_api_key:
-        # Attempt to fetch new API key
-        try:
-            new_api_key = fetch_new_api_key(galaxy_url,
-                                            context.username,
-                                            context.galaxy_password,
-                                            verify=(not context.no_verify))
-        except AttributeError:
-            new_api_key = None
-        if new_api_key is None:
-            logging.error("Failed to get new API key from %s" %
-                          alias)
-            if context.username is None:
-                logging.error("Invalid existing API key? Try "
-                              "specifying user name with -u")
+        # Attempt to connect to Galaxy and fetch API key
+        gi = context.galaxy_instance(alias)
+        if gi is None:
+            logging.critical("%s: failed to connect" % alias)
             return 1
+        new_api_key = gi.key
     instances.update_key(alias,
                          new_url=new_url,
                          new_api_key=new_api_key)
