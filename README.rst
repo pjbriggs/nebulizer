@@ -1,16 +1,23 @@
 nebulizer
-=========
+---------
 
-``nebulizer`` is a set of command line utilities to help with managing users,
-data libraries and tools in a `Galaxy <https://galaxyproject.org/>`_
-instance, using the Galaxy API via the `Bioblend
-<http://bioblend.readthedocs.org/en/latest/>`_ Python library.
+Command-line utilities to help with managing users, data libraries and
+tools in a `Galaxy <https://galaxyproject.org/>`_ instance, using the
+Galaxy API via the `Bioblend <http://bioblend.readthedocs.org/en/latest/>`_
+library.
 
-**Caveat**
+.. image:: https://readthedocs.org/projects/pip/badge/?version=latest
+   :target: https://nebulizer.readthedocs.io
 
- * This is very much a work in progress, and operations such as user or library
-   creation and tool installation should be used with caution against production
-   instances of Galaxy.
+.. image:: https://travis-ci.org/pjbriggs/nebulizer.png?branch=master
+   :target: https://travis-ci.org/pjbriggs/nebulizer
+
+.. warning::
+
+   **CAVEAT** ``nebulizer`` is still a work in progress; please exercise
+   caution when attempting irreversible operations especially against
+   production Galaxy instances (for example when creating users or data
+   libraries).
 
 Installation
 ------------
