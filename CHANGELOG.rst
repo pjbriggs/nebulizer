@@ -1,5 +1,9 @@
+History
+-------
+
+------------------------------------
 nebulizer v0.2.0 - 17th October 2016
-====================================
+------------------------------------
 
  * Implemented new ``nebulizer`` utility which provides all previous
    functionality via subcommands, plus commands for managing API keys
@@ -19,15 +23,17 @@ nebulizer v0.2.0 - 17th October 2016
    - ``list_installed_tools``: now groups tools under correct repo
      revision when using ``--list-tools`` option.
 
+--------------------------------
 nebulizer v0.1.1 - 16th May 2016
-================================
+--------------------------------
 
  * Add ``-u``/``--username`` and ``-P``/``--galaxy_password`` options
    to all commands to allow interaction with Galaxy instance via API
    using normal login credentials instead of API key.
 
+------------------------------------
 nebulizer v0.1.0 - 6th November 2015
-====================================
+------------------------------------
 
  * Initial release of ``nebulizer`` utilities for administering
    Galaxy instances via the command line.
