@@ -335,6 +335,78 @@ class ToolPanelSection:
         """
         self.id = tool_panel_data['id']
         self.name = tool_panel_data['name']
+        self.model_class = tool_panel_data['model_class']
+        self.elems = []
+        try:
+            for elem in tool_panel_data['elems']:
+                self.elems.append(ToolPanelSection(elem))
+        except KeyError:
+            pass
+
+    @property
+    def is_toolsection(self):
+        """
+        Check if section is a tool panel section
+        """
+        return (self.model_class == "ToolSection")
+
+    @property
+    def is_tool(self):
+        """
+        Check if section is a tool
+        """
+        return (self.model_class == "Tool")
+
+class ToolPanel:
+    """
+    Class wrapping extraction of tool panel
+
+    Provides an interface for accessing data about the
+    tool panel in a Galaxy instance, and which
+    has been retrieved via a call to the Galaxy API
+    using bioblend.
+
+    """
+    def __init__(self,gi):
+        """
+        Create a new ToolPanel instance
+
+        Arguments:
+          gi (bioblend.galaxy.GalaxyInstance): Galaxy instance
+        """
+        self.sections = []
+        tool_client = galaxy.tools.ToolClient(gi)
+        for data in tool_client.get_tool_panel():
+            self.sections.append(ToolPanelSection(data))
+
+    def tool_index(self,tool):
+        """
+        Return index of tool in tool panel
+
+        Given a tool, return an integer 'index'
+        corresponding to the position of the tool in
+        the tool panel.
+
+        Arguments:
+          tool (Tool): Tool instance
+
+        Returns:
+          Integer: position of the tool in the tool
+            panel, or -1 if it can't be located.
+        """
+        index_ = -1
+        for section in self.sections:
+            if section.is_toolsection:
+                for elem in section.elems:
+                    index_ += 1
+                    if elem.id == tool.id:
+                        return index_
+            elif section.is_tool:
+                index_ += 1
+                if section.id == tool.id:
+                    return index_
+        # Not found
+        return -1
 
 # Functions
 
@@ -458,6 +530,86 @@ def tool_install_status(gi,tool_shed,owner,name,revision=None):
     rev = revisions[0]
     return rev.status
 
+def installed_repositories(gi,name=None,
+                           toolshed=None,
+                           owner=None,
+                           include_deleted=False,
+                           only_updateable=False):
+    """
+    Fetch a list of installed repository revisions
+
+    Arguments:
+      gi (bioblend.galaxy.GalaxyInstance): Galaxy instance
+      name (str): optional, only list tool repositiories
+        which match this string (can include wildcards)
+      toolshed (str): optional, only list tool
+        repositories from toolsheds that match this string
+        (can include wildcards)
+      owner (str): optional, only list tool repositiories
+        with owners who match this string (can include
+        wildcards)
+      list_tools (bool): if True then also list the tools
+        provided by the repository
+      include_deleted (bool): if True then also include
+        repository revisions that are marked as deleted
+        (default is to only show those which are not
+        deleted)
+      only_updateable (bool): if True then only report
+        repositories that have uninstalled updates or
+        upgrades available (default is to show all
+        repositories and revisions)
+
+    Returns:
+      List: a list of tuples consisting of three items
+        (repository,revision,tools), where
+        - 'repository' is a populated Repository instance
+        - 'revision' is a populated RepositoryRevision
+        - 'tools' is a list of Tool instances
+
+    """
+    # Get the list of installed repos
+    installed_repos = []
+    repos = get_repositories(gi)
+    # Filter on name
+    if name:
+        name = name.lower()
+        repos = filter(lambda r: fnmatch.fnmatch(r.name.lower(),name),
+                       repos)
+    # Filter on toolshed
+    if toolshed:
+        # Strip leading http(s)://
+        for protocol in ('https://','http://'):
+            if toolshed.startswith(protocol):
+                toolshed = toolshed[len(protocol):]
+        repos = filter(lambda r: fnmatch.fnmatch(r.tool_shed,toolshed),
+                       repos)
+    # Filter on owner
+    if owner:
+        repos = filter(lambda r: fnmatch.fnmatch(r.owner,owner),repos)
+    # Get list of tools
+    tools = get_tools(gi)
+    for repo in repos:
+        # Check each revision
+        for revision in repo.revisions():
+            # Exclude deleted revisions
+            if not include_deleted and revision.deleted:
+                continue
+            # Exclude revisions that don't need updating
+            if only_updateable and \
+               (revision.newer_revision_installed() or \
+                revision.latest_revision):
+                continue
+            # Fetch tools associated with this revision
+            repo_tools = filter(lambda t:
+                                t.tool_repo == repo.id and
+                                t.tool_changeset ==
+                                revision.installed_changeset_revision,
+                                tools)
+            # Append to the list
+            installed_repos.append((repo,revision,repo_tools))
+    # Finished
+    return installed_repos
+
 # Commands
 
 def list_tools(gi,name=None,installed_only=False):
@@ -501,7 +653,8 @@ def list_installed_repositories(gi,name=None,
                                 owner=None,
                                 list_tools=False,
                                 include_deleted=False,
-                                only_updateable=False):
+                                only_updateable=False,
+                                tsv=False):
     """
     Print a list of the installed toolshed repositories
 
@@ -525,45 +678,47 @@ def list_installed_repositories(gi,name=None,
         repositories that have uninstalled updates or
         upgrades available (default is to show all
         repositories and revisions)
+      tsv (bool): if True then output in a compact tab
+        delimited format listing toolshed, owner,
+        repository, changeset and tool panel section
 
     """
     # Get the list of installed repos
-    repos = get_repositories(gi)
-    # Filter on name
-    if name:
-        name = name.lower()
-        repos = filter(lambda r: fnmatch.fnmatch(r.name.lower(),name),
-                       repos)
-    # Filter on toolshed
-    if toolshed:
-        # Strip leading http(s)://
-        for protocol in ('https://','http://'):
-            if toolshed.startswith(protocol):
-                toolshed = toolshed[len(protocol):]
-        repos = filter(lambda r: fnmatch.fnmatch(r.tool_shed,toolshed),
-                       repos)
-    # Filter on owner
-    if owner:
-        repos = filter(lambda r: fnmatch.fnmatch(r.owner,owner),repos)
-    # Get list of tools, if required
-    if list_tools:
-        tools = get_tools(gi)
-    # Report
-    nrevisions = 0
-    for repo in repos:
-        # Check each revision
-        for revision in repo.revisions():
-            # Exclude deleted revisions
-            if not include_deleted and revision.deleted:
-                continue
-            # Exclude revisions that don't need updating
-            if only_updateable and \
-               (revision.newer_revision_installed() or \
-                revision.latest_revision):
-                continue
+    repos = installed_repositories(gi,name=name,
+                                   toolshed=toolshed,
+                                   owner=owner,
+                                   include_deleted=include_deleted,
+                                   only_updateable=only_updateable)
+    if tsv:
+        # Output format for reinstallation of repositories
+        tool_panel = ToolPanel(gi)
+        # Sort into tool panel order
+        repos = sorted(repos,
+                       key=lambda r:
+                       tool_panel.tool_index(r[2][0])
+                       if r[2] else -1)
+        # Print details
+        for r in repos:
+            repo,revision,tools = r
+            if tools:
+                tool_panel_section = tools[0].panel_section
+            else:
+                tool_panel_section = None
+            print "%s" % '\t'.join((repo.tool_shed,
+                                    repo.owner,
+                                    repo.name,
+                                    revision.changeset_revision,
+                                    (tool_panel_section
+                                     if tool_panel_section else '')))
+    else:
+        # Denser more verbose format
+        nrevisions = 0
+        for r in repos:
             # Print details
-            print "%s" % '\t'.join(('%s %s' % (revision.status_indicator,
-                                               repo.name),
+            repo,revision,tools = r
+            print "%s" % '\t'.join(('%s %s' %
+                                    (revision.status_indicator,
+                                     repo.name),
                                     repo.tool_shed,
                                     repo.owner,
                                     revision.revision_id,
@@ -571,15 +726,11 @@ def list_installed_repositories(gi,name=None,
             nrevisions += 1
             # List tools associated with revision
             if list_tools:
-                repo_tools = filter(lambda t:
-                                    t.tool_repo == repo.id and
-                                    t.tool_changeset == revision.installed_changeset_revision,
-                                    tools)
-                for tool in repo_tools:
+                for tool in tools:
                     print "- %s" % '\t'.join((tool.name,
-                                               tool.version,
-                                               tool.description))
-    print "total %s" % nrevisions
+                                              tool.version,
+                                              tool.description))
+        print "total %s" % nrevisions
 
 def list_tool_panel(gi,name=None,list_tools=False):
     """

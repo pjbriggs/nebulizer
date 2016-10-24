@@ -226,7 +226,7 @@ class TestRepository(unittest.TestCase):
 class TestToolPanelSection(unittest.TestCase):
     """
     """
-    def test_load_tool_panel_data(self):
+    def test_load_tool_panel_data_for_toolsection(self):
         tool_panel_data = { u'model_class': u'ToolSection',
                             u'version': u'',
                             u'elems':
@@ -245,6 +245,37 @@ class TestToolPanelSection(unittest.TestCase):
         section = ToolPanelSection(tool_panel_data)
         self.assertEqual(section.name,'NGS: SAM Tools')
         self.assertEqual(section.id,'ngs:_sam_tools')
+        self.assertEqual(section.model_class,'ToolSection')
+        self.assertTrue(section.is_toolsection)
+        self.assertFalse(section.is_tool)
+        self.assertEqual(len(section.elems),1)
+        self.assertEqual(section.elems[0].name,'MPileup')
+        self.assertEqual(section.elems[0].id,'toolshed.g2.bx.psu.edu/repos/devteam/samtools_mpileup/samtools_mpileup/2.0')
+        self.assertEqual(section.elems[0].model_class,'Tool')
+        self.assertFalse(section.elems[0].is_toolsection)
+        self.assertTrue(section.elems[0].is_tool)
+        self.assertEqual(len(section.elems[0].elems),0)
+
+    def test_load_tool_panel_data_for_tool(self):
+        tool_panel_data = { u'panel_section_name': None,
+                            u'config_file': u'/mnt/galaxy/shed_tools/toolshed.g2.bx.psu.edu/repos/devteam/fastqc/3fdc1a74d866/fastqc/rgFastQC.xml',
+                            u'description': u'Read Quality reports',
+                            u'labels': [],
+                            u'name': u'FastQC',
+                            u'panel_section_id': None,
+                            u'version': u'0.65',
+                            u'link': u'/tool_runner?tool_id=toolshed.g2.bx.psu.edu%2Frepos%2Fdevteam%2Ffastqc%2Ffastqc%2F0.65',
+                            u'min_width': -1,
+                            u'model_class': u'Tool',
+                            u'id': u'toolshed.g2.bx.psu.edu/repos/devteam/fastqc/fastqc/0.65',
+                            u'target': u'galaxy_main' }
+        section = ToolPanelSection(tool_panel_data)
+        self.assertEqual(section.name,'FastQC')
+        self.assertEqual(section.id,'toolshed.g2.bx.psu.edu/repos/devteam/fastqc/fastqc/0.65')
+        self.assertEqual(section.model_class,'Tool')
+        self.assertFalse(section.is_toolsection)
+        self.assertTrue(section.is_tool)
+        self.assertEqual(len(section.elems),0)
 
 class TestNormaliseToolshedUrl(unittest.TestCase):
     """
