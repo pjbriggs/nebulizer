@@ -1,5 +1,8 @@
-nebulizer
----------
+.. figure:: https://raw.githubusercontent.com/pjbriggs/nebulizer/master/docs/nebulizer_logo.png
+   :alt: Nebulizer Logo
+   :align: center
+   :figwidth: 100%
+   :target: https://github.com/pjbriggs/nebulizer
 
 Command-line utilities to help with managing users, data libraries and
 tools in a `Galaxy <https://galaxyproject.org/>`_ instance, using the
