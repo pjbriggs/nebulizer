@@ -248,12 +248,14 @@ class TestToolPanelSection(unittest.TestCase):
         self.assertEqual(section.model_class,'ToolSection')
         self.assertTrue(section.is_toolsection)
         self.assertFalse(section.is_tool)
+        self.assertFalse(section.is_label)
         self.assertEqual(len(section.elems),1)
         self.assertEqual(section.elems[0].name,'MPileup')
         self.assertEqual(section.elems[0].id,'toolshed.g2.bx.psu.edu/repos/devteam/samtools_mpileup/samtools_mpileup/2.0')
         self.assertEqual(section.elems[0].model_class,'Tool')
         self.assertFalse(section.elems[0].is_toolsection)
         self.assertTrue(section.elems[0].is_tool)
+        self.assertFalse(section.elems[0].is_label)
         self.assertEqual(len(section.elems[0].elems),0)
 
     def test_load_tool_panel_data_for_tool(self):
@@ -275,6 +277,21 @@ class TestToolPanelSection(unittest.TestCase):
         self.assertEqual(section.model_class,'Tool')
         self.assertFalse(section.is_toolsection)
         self.assertTrue(section.is_tool)
+        self.assertFalse(section.is_label)
+        self.assertEqual(len(section.elems),0)
+
+    def test_load_tool_panel_data_for_label(self):
+        tool_panel_data = { u'model_class': u'ToolSectionLabel',
+                            u'version': u'',
+                            u'id': u'deprecated',
+                            u'text': u'DEPRECATED' }
+        section = ToolPanelSection(tool_panel_data)
+        self.assertEqual(section.name,None)
+        self.assertEqual(section.id,'deprecated')
+        self.assertEqual(section.model_class,'ToolSectionLabel')
+        self.assertFalse(section.is_toolsection)
+        self.assertFalse(section.is_tool)
+        self.assertTrue(section.is_label)
         self.assertEqual(len(section.elems),0)
 
 class TestNormaliseToolshedUrl(unittest.TestCase):
