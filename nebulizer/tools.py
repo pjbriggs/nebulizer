@@ -47,6 +47,10 @@ class Tool:
             self.config_file = tool_data['config_file']
         except KeyError:
             self.config_file = None
+        try:
+            self.tool_shed_repository = tool_data['tool_shed_repository']
+        except KeyError:
+            self.tool_shed_repository = None
 
     @property
     def tool_repo(self):
@@ -63,6 +67,13 @@ class Tool:
         then an empty string is returned.
 
         """
+        if self.tool_shed_repository:
+            # Explicit repository information
+            return '/'.join(
+                [self.tool_shed_repository['tool_shed'],
+                 self.tool_shed_repository['owner'],
+                 self.tool_shed_repository['name']])
+        # Older Galaxy: extract from the tool id
         ele = self.id.split('/')
         try:
             i = ele.index('repos')
@@ -87,8 +98,11 @@ class Tool:
         tool_repo = self.tool_repo
         if not tool_repo:
             return None
-        # Look for the config_file element - something of
-        # the form:
+        if self.tool_shed_repository:
+            # Explicit repository information
+            return str(self.tool_shed_repository['changeset_revision'])
+        # Older Galaxy: look for the config_file element - something
+        # of the form:
         # .../toolshed.g2.bx.psu.edu/repos/devteam/picard/efc56ee1ade4/...
         try:
             ele = tool_repo.split('/')

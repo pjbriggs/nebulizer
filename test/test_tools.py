@@ -88,6 +88,39 @@ class TestTool(unittest.TestCase):
                          'rnachipintegrator')
         self.assertEqual(tool.tool_changeset,'2f0a1f1a5725')
 
+    def test_load_tool_data_with_tool_shed_repository_data(self):
+        tool_data = { u'panel_section_name': u'NGS: SAMtools',
+                      u'description': u'call variants',
+                      u'name': u'MPileup',
+                      u'labels': [],
+                      u'edam_operations': [],
+                      u'form_style': u'regular',
+                      u'edam_topics': [],
+                      u'panel_section_id': u'samtools',
+                      u'version': u'2.1',
+                      u'link': u'/tool_runner?tool_id=toolshed.g2.bx.psu.edu%2Frepos%2Fdevteam%2Fsamtools_mpileup%2Fsamtools_mpileup%2F2.1',
+                      u'min_width': -1,
+                      u'model_class': u'Tool',
+                      u'id': u'toolshed.g2.bx.psu.edu/repos/devteam/samtools_mpileup/samtools_mpileup/2.1',
+                      u'tool_shed_repository':
+                      {u'owner': u'devteam',
+                       u'changeset_revision':
+                       u'820754ab8901',
+                       u'name': u'samtools_mpileup',
+                       u'tool_shed': u'toolshed.g2.bx.psu.edu'},
+                      u'target': u'galaxy_main'}
+        tool = Tool(tool_data)
+        self.assertEqual(tool.name,'MPileup')
+        self.assertEqual(tool.description,"call variants")
+        self.assertEqual(tool.version,'2.1')
+        self.assertEqual(tool.panel_section,'NGS: SAMtools')
+        self.assertEqual(tool.id,
+                         'toolshed.g2.bx.psu.edu/repos/devteam/'
+                         'samtools_mpileup/samtools_mpileup/2.1')
+        self.assertEqual(tool.tool_repo,
+                         'toolshed.g2.bx.psu.edu/devteam/samtools_mpileup')
+        self.assertEqual(tool.tool_changeset,'820754ab8901')
+
     def test_load_tool_data_not_from_toolshed(self):
         tool_data = { u'panel_section_name': u'Get Genomic Scores',
                       u'config_file': u'/galaxy/tools/filters/wiggle_to_simple.xml',
