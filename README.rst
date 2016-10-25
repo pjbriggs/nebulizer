@@ -22,147 +22,121 @@ library.
    production Galaxy instances (for example when creating users or data
    libraries).
 
-Installation
-------------
+Quick Start
+-----------
 
-It is recommended to install ``nebulizer`` via ``pip`` in a virtualenv, for
-example::
+This quick start gives some examples of using ``nebulizer`` commands
+to perform remote administration tasks on a Galaxy instance from the
+command line.
+
+-----------------
+Getting Nebulizer
+-----------------
+
+It is recommended to install Nebulizer via ``pip`` in a virtualenv,
+for example::
 
   % virtualenv .venv; . .venv/bin/activate
   % pip install git+https://github.com/pjbriggs/nebulizer.git
 
-Setup
------
+This will provide an executable called ``nebulizer`` with a number
+of subcommands for performing different tasks remotely on Galaxy
+instances.
 
-Although ``nebulizer``'s commands can be used without additional setup, it is
-possible to create shortcuts in the form of 'aliases' to Galaxy URLs and API
-key pairs, which are stored in a ``.nebulizer`` file in your home directory.
+----------------
+Nebulizer Basics
+----------------
 
-This can be managed using the ``nebulizer`` utility, e.g. to add new alias
-for a local Galaxy instance::
+To interact remotely with a Galaxy instance using Nebulizer requires
+at minimum the URL of the instance and then either an API key or a
+user login name.
 
-  % nebulizer add_key localhost http://127.0.0.1:8080 4af252f2250818d14949b3cf0aed476a
+For example to list data libraries available on Galaxy Main::
 
-Alternatively: if you don't have the API key then nebulizer will fetch it
-if you give it a user name, for example::
+  % nebulizer -k 9b376af2250818d14949b3c list_libraries https://usegalaxy.org
 
-  % nebulizer -u me@example.org add_key localhost http://127.0.0.1:8080
+or::
 
-Each alias is stored in a tab-delimited line with the format
-``alias|URL|API key``, for example::
+  % nebulizer -u peter.briggs@manchester.ac.uk list_libraries https://usegalaxy.org
 
-  localhost	http://127.0.0.1:8080	4af252f2250818d14949b3cf0aed476a
+(in this second case ``nebulizer`` will prompt for the Galaxy
+password to authenticate the user login.)
 
-Then, rather than specifying the full URL and API key each you can just use
-the alias, for example::
+Specifying full API keys and Galaxy URLs each time a command is run
+is tedious, so Nebulizer can store URL-key pairs locally to make this
+easier.
 
-  % nebulizer list_users localhost
+For example to store the API key for Galaxy main::
 
-instead of::
+  % nebulizer add_key main https://usegalaxy.org 9b376af2250818d14949b3c
 
-  % nebulizer -k 4af252f2250818d14949b3cf0aed476a list_users http://127.0.0.1:8080
+stores the API key and URL pair and associates it with the alias ``main``.
 
-See below for more information on managing the stored aliases and
-associated information.
+Alternatively Nebulizer can fetch the API key itself if the user
+login is provided instead, for example::
 
-Commands
---------
+  % nebulizer -u peter.briggs@manchester.ac.uk add_key main https://usegalaxy.org
 
-All functionality is available as subcommands of the ``nebulizer``
-utility.
+The stored alias can then be used as a substitute for the URL with the
+the stored API key being fetched behind the scenes. Then to list the
+data libraries again it is sufficient to do just::
 
-User management
-~~~~~~~~~~~~~~~
+  % nebulizer list_libraries main
 
- * ``list_users``: List users in Galaxy instance.
- * ``create_user``: Create new Galaxy user.
- * ``create_batch_users``: Create multiple Galaxy users from a template.
- * ``create_users_from_file``: Create multiple Galaxy users from a file.
+The following sections contain examples of how Nebulizer might be
+used to perform various administrive tasks.
 
-Data library management
-~~~~~~~~~~~~~~~~~~~~~~~
-
- * ``list_libraries``:  List data libraries and contents.
- * ``create_library``: Create new data library.
- * ``create_library_folder``: Create new folder in a data library.
- * ``add_library_datasets``: Add datasets to a data library.
-
-Tool management
-~~~~~~~~~~~~~~~
-
- * ``list_tools``: List tools in Galaxy instance.
- * ``list_tool_panel``: List tool panel contents.
- * ``list_installed_tools``: List installed tool repositories.
- * ``install_tool``: Install tool from toolshed.
-
-Bulk tool management
-~~~~~~~~~~~~~~~~~~~~
-
- * ``list_repositories``: List installed tool repos for (re)install.
- * ``install_repositories``: Install tool repositories listed in a file.
-
-Local API key management
-~~~~~~~~~~~~~~~~~~~~~~~~
-
- * ``add_key``: Store new Galaxy URL and API key.
- * ``list_keys``: List stored Galaxy API keys.
- * ``remove_key``: Remove stored Galaxy API key.
- * ``update_key``: Update stored Galaxy API key.
-
-Usage examples
 --------------
-
-The following sections have usage examples intended to give a
-flavour of how ``nebulizer`` might be used.
-
-Managing users
-~~~~~~~~~~~~~~
+Managing Users
+--------------
 
 List users matching specific name::
 
-  nebulizer list_users localhost --name="*briggs*"
+  nebulizer list_users galaxy --name="*briggs*"
 
 Add a new user::
 
-  nebulizer create_user localhost -p pa55w0rd a.non@galaxy.org
+  nebulizer create_user galaxy -p pa55w0rd a.non@galaxy.org
 
-Managing data libraries
-~~~~~~~~~~~~~~~~~~~~~~~
+-----------------------
+Managing Data Libraries
+-----------------------
 
 List data libraries::
 
-  nebulizer list_libraries localhost
+  nebulizer list_libraries galaxy
 
 Create a data library called ``NGS data`` and a subfolder ``Run 21``::
 
-  nebulizer create_library localhost \
+  nebulizer create_library galaxy \
     --description="Sequencing data analysed in 2015" "NGS data"
   nebulizer create_library_folder localhost "NGS data/Run 21"
 
 List contents of this folder::
 
-  nebulizer list_libraries localhost "NGS data/Run 21"
+  nebulizer list_libraries galaxy "NGS data/Run 21"
 
 Upload files to it from the local system::
 
-  nebulizer add_library_datasets localhost "NGS data/Run 21" ~/Sample1_R*.fq
+  nebulizer add_library_datasets galaxy "NGS data/Run 21" ~/Sample1_R*.fq
 
 Add a file which is on the Galaxy server filesystem to a library as a
 link::
 
-  nebulizer add_library_datasets localhost --server --link "NGS data/fastqs" \
+  nebulizer add_library_datasets galaxy --server --link "NGS data/fastqs" \
     /galaxy/hosted_data/example.fq
 
-Managing tools
-~~~~~~~~~~~~~~
+--------------
+Managing Tools
+--------------
 
 List all tools that are available in a Galaxy instance::
 
-  nebulizer list_tools localhost
+  nebulizer list_tools galaxy
 
 List all the ``cuff...`` tools that were installed from a toolshed::
 
-  nebulizer list_tools localhost --name="cuff*" --installed
+  nebulizer list_tools galaxy --name="cuff*" --installed
 
 List all the tool repositories that are installed along with the tools
 that they provide::
@@ -183,20 +157,78 @@ Update FastQC tool to latest installable revision::
 
   nebulizer update_tool localhost toolshed.g2.bx.psu.edu devteam fastqc
 
-Fetch a list of tools in one Galaxy instance and install them into
-another automatically::
+Commands
+--------
 
-  nebulizer list_repositories old_galaxy > tools.tsv
-  nebulizer install_repositories new_galaxy tools.tsv
+All functionality is available as subcommands of the ``nebulizer``
+utility.
 
+---------------
+User Management
+---------------
+
+ * ``list_users``: List users in Galaxy instance.
+ * ``create_user``: Create new Galaxy user.
+ * ``create_batch_users``: Create multiple Galaxy users from a template.
+ * ``create_users_from_file``: Create multiple Galaxy users from a file.
+
+-----------------------
+Data Library Management
+-----------------------
+
+ * ``list_libraries``:  List data libraries and contents.
+ * ``create_library``: Create new data library.
+ * ``create_library_folder``: Create new folder in a data library.
+ * ``add_library_datasets``: Add datasets to a data library.
+
+---------------
+Tool Management
+---------------
+
+ * ``list_tools``: List tools in Galaxy instance.
+ * ``list_tool_panel``: List tool panel contents.
+ * ``list_installed_tools``: List installed tool repositories.
+ * ``install_tool``: Install tool from toolshed.
+
+-------------------------------
+Bulk Tool Repository Management
+-------------------------------
+
+ * ``list_repositories``: List installed tool repos for (re)install.
+ * ``install_repositories``: Install tool repositories listed in a file.
+
+------------------------
+Local API Key Management
+------------------------
+
+ * ``add_key``: Store new Galaxy URL and API key.
+ * ``list_keys``: List stored Galaxy API keys.
+ * ``remove_key``: Remove stored Galaxy API key.
+ * ``update_key``: Update stored Galaxy API key.
+
+Hints and Tips
+--------------
+
+------------------------
 Managing Galaxy API keys
-~~~~~~~~~~~~~~~~~~~~~~~~
+------------------------
 
-List the stored aliases and associated Galaxy instances::
+Nebulizer stores the URL-key pairs in the file ``.nebulizer``
+located in the user's home directory. This file consists of
+tab-delimited lines with the following columns::
 
-  nebulizer list_keys
+  alias|Galaxy_URL|API_key
 
-Add a new alias called 'production' for a Galaxy instance::
+This file can be edited by hand using a text editor such as
+``vi``; however Nebulizer provides a set of commands for
+querying and modifying the file contents.
+
+To list the stored aliases with associated Galaxy URLs and
+API keys::
+
+  % nebulizer list_keys
+
+To add a new alias called 'production' for a Galaxy instance::
 
   nebulizer add_key production http:://galaxy.org/ 5e7a1264905c8f0beb80002f7de13a40
 
@@ -208,10 +240,18 @@ Remove the entry for 'production'::
 
   nebulizer remove_key production
 
-Handling SSL certificate failures
----------------------------------
+Multiple URL-key pairs can be stored; only the associated
+aliases need to be unique. For example::
 
-``nebulizer`` commands will fail for Galaxy instances which are served over
+  % nebulizer -u admin@galaxy.org add_key palfinder https://palfinder.ls.manchester.ac.uk
+  ...prompt for password...
+  % nebulizer list_libraries palfinder
+
+----------------------------------------------
+Handling SSL Certificate Verification Failures
+----------------------------------------------
+
+Nebulizer commands will fail for Galaxy instances which are served over
 ``https`` protocol without a valid SSL certificate, reporting an error like::
 
   [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed (_ssl.c:590), 0 attempts left: None
@@ -219,8 +259,9 @@ Handling SSL certificate failures
 In this case adding the ``--no-verify`` (``-n``) option turns off the
 certificate verification and should enable a connection to be made.
 
-Using email and password instead of API key
--------------------------------------------
+---------------------------------------------------------
+Accessing Galaxy with Email & Password instead of API key
+---------------------------------------------------------
 
 It is possible to use your normal Galaxy login credentials (i.e. your email
 and password) to access the API on a Galaxy instance without using the
@@ -232,7 +273,40 @@ You will be prompted to enter the password; however you can also use the
 ``-P``/``--galaxy_password`` option to specify it explicitly on the command
 line.
 
-Deprecated utilities
+-------------------------------------------------
+Installing Multiple Tool Repositories from a List
+-------------------------------------------------
+
+It is possible to install a list of tool repositories into a
+Galaxy instance by using the ``install_repositories`` command::
+
+  nebulizer install_repositories galaxy tools.tsv
+
+The ``tools.tsv`` file must be a tab-delimited list of repositories,
+one repository per line in the format::
+
+  TOOLSHED|OWNER|REPOSITORY|REVISON|SECTION
+
+For example::
+
+  toolshed.g2.bx.psu.edu	devteam	bowtie_wrappers	9ca609a2a421	NGS: Mapping
+
+A list of tool repositories already installed in a Galaxy instance
+can be generated in this format using the ``list_repositories``
+command::
+
+  nebulizer list_repositories galaxy > tools.tsv
+
+In principle the combination of these two commands can be used to
+'clone' the installed tools from one Galaxy instance into another.
+
+For example to replicate the tools installed on the 'Palfinder'
+instance::
+
+  nebulizer list_repositories https://palfinder.ls.manchester.ac.uk > palfinder.tsv
+  nebulizer install_repositories http://127.0.0.1 palfinder.tsv
+
+Deprecated Utilities
 --------------------
 
 The following additional utilities are included for backwards
