@@ -334,7 +334,10 @@ class ToolPanelSection:
 
         """
         self.id = tool_panel_data['id']
-        self.name = tool_panel_data['name']
+        try:
+            self.name = tool_panel_data['name']
+        except KeyError:
+            self.name = None
         self.model_class = tool_panel_data['model_class']
         self.elems = []
         try:
@@ -356,6 +359,13 @@ class ToolPanelSection:
         Check if section is a tool
         """
         return (self.model_class == "Tool")
+
+    @property
+    def is_label(self):
+        """
+        Check if section is a tool panel label
+        """
+        return (self.model_class == "ToolSectionLabel")
 
 class ToolPanel:
     """
