@@ -318,3 +318,8 @@ future version:
  * ``manage_tools``: list and install tools from toolsheds
 
 They are not documented further here.
+
+License
+-------
+
+Nebulizer is licensed under the `Academic Free License (AFL) <https://opensource.org/licenses/AFL-3.0>`_.
