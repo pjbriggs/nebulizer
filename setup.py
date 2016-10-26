@@ -24,9 +24,9 @@ setup(
     packages = ['nebulizer',],
     entry_points = { 'console_scripts': [
         'nebulizer = nebulizer.cli:nebulizer',
-        'manage_users = nebulizer.cli:manage_users',
-        'manage_libraries = nebulizer.cli:manage_libraries',
-        'manage_tools = nebulizer.cli:manage_tools',]
+        'manage_users = nebulizer.deprecated_cli:manage_users',
+        'manage_libraries = nebulizer.deprecated_cli:manage_libraries',
+        'manage_tools = nebulizer.deprecated_cli:manage_tools',]
     },
     license = 'MIT',
     install_requires = ['bioblend',
