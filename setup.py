@@ -28,7 +28,7 @@ setup(
         'manage_libraries = nebulizer.deprecated_cli:manage_libraries',
         'manage_tools = nebulizer.deprecated_cli:manage_tools',]
     },
-    license = 'MIT',
+    license = 'AFL',
     install_requires = ['bioblend',
                         'mako',
                         'click'],
