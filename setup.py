@@ -4,7 +4,7 @@ Description
 Setup script to install nebulizer: command line utilities for managing
 users, tools and data libraries in Galaxy instances via the API
 
-Copyright (C) University of Manchester 2015 Peter Briggs
+Copyright (C) University of Manchester 2015-2016 Peter Briggs
 
 """
 
