@@ -755,6 +755,13 @@ def list_installed_repositories(gi,name=None,
                        key=lambda r:
                        tool_panel.tool_index(r[2][0])
                        if r[2] else -1)
+        # Filter out non-package, non-datamanager repositories
+        # which can't be located in the tool panel
+        repos = filter(lambda r:
+                       r[0].name.startswith("package_") or
+                       r[0].name.startswith("data_manager_") or
+                       (r[2] and tool_panel.tool_index(r[2][0]) > -1),
+                       repos)
         # Print details
         for r in repos:
             repo,revision,tools = r

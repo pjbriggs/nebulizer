@@ -639,11 +639,13 @@ def list_repositories(context,galaxy,name,toolshed,owner,updateable):
 
     TOOLSHED|OWNER|REPOSITORY|CHANGESET|TOOL_PANEL_SECTION
 
-    The tool panel section will be empty if the repository
-    was installed outside of any section in the tool panel.
+    TOOL_PANEL_SECTION will be empty if the repository was
+    installed outside of any section in the tool panel.
 
     The repositories are ordered according to their position
-    in the tool panel.
+    in the tool panel. Note that non-package and
+    non-data-manager repositories which cannot be located
+    within the tool panel will not be listed.
     """
     # Get a Galaxy instance
     gi = context.galaxy_instance(galaxy)
