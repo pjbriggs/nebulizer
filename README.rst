@@ -12,8 +12,15 @@ library.
 .. image:: https://readthedocs.org/projects/pip/badge/?version=latest
    :target: https://nebulizer.readthedocs.io
 
+.. image:: https://badge.fury.io/py/nebulizer.svg
+   :target: https://pypi.python.org/pypi/nebulizer/
+
 .. image:: https://travis-ci.org/pjbriggs/nebulizer.png?branch=master
    :target: https://travis-ci.org/pjbriggs/nebulizer
+
+* Free software: Academic Free License version 3.0
+* Documentation: https://nebulizer.readthedocs.io
+* Code: https://github.com/pjbriggs/nebulizer
 
 .. warning::
 
@@ -37,7 +44,7 @@ It is recommended to install Nebulizer via ``pip`` in a virtualenv,
 for example::
 
   % virtualenv .venv; . .venv/bin/activate
-  % pip install git+https://github.com/pjbriggs/nebulizer.git
+  % pip install nebulizer
 
 This will provide an executable called ``nebulizer`` with a number
 of subcommands for performing different tasks remotely on Galaxy
