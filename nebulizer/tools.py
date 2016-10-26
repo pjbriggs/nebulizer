@@ -803,12 +803,14 @@ def list_tool_panel(gi,name=None,list_tools=False):
 
     """
     # Get the list of tool panel sections
-    sections = get_tool_panel_sections(gi)
+    tool_panel = ToolPanel(gi)
     # Filter on name
     if name:
         name = name.lower()
         sections = filter(lambda s: fnmatch.fnmatch(s.name.lower(),name),
-                          sections)
+                          tool_panel.sections)
+    else:
+        sections = tool_panel.sections
     # Get list of tools, if required
     if list_tools:
         tools = get_tools(gi)
@@ -817,9 +819,12 @@ def list_tool_panel(gi,name=None,list_tools=False):
         print "'%s' (%s)" % (section.name,
                              section.id)
         if list_tools:
-            for tool in filter(lambda t: t.panel_section == section.name,
-                               tools):
-                print "- %s" % '\t'.join((tool.name,
+            for tool in sorted(filter(lambda t:
+                                      t.panel_section == section.name,
+                                      tools),
+                               key=lambda t: tool_panel.tool_index(t)):
+                print "- %s" % '\t'.join((str(tool_panel.tool_index(tool)),
+                                          tool.name,
                                           tool.version,
                                           tool.description))
     print "total %s" % len(sections)
