@@ -403,7 +403,7 @@ class ToolPanel:
         for data in tool_client.get_tool_panel():
             self.sections.append(ToolPanelSection(data))
 
-    def tool_index(self,tool):
+    def tool_index(self,tool,strict=False):
         """
         Return index of tool in tool panel
 
@@ -411,25 +411,59 @@ class ToolPanel:
         corresponding to the position of the tool in
         the tool panel.
 
+        By default if a tool at the specified
+        version is not located then the index of the
+        closest matching tool which matches the toolshed,
+        owner and repository name but not the version
+        will be returned instead.
+
+        This is intended to deal with multiple versions
+        of the same tool, where only one version (normally
+        the most recent) appears in the tool panel.
+        Other versions of the tool are accessible in Galaxy
+        by selecting them from within the tool, so they
+        could be considered to be 'hidden behind' the
+        version that is explicitly installed.
+
+        This behaviour can be disabled by setting the
+        'strict' argument to True.
+
         Arguments:
           tool (Tool): Tool instance
+          strict (boolean): if True then only return
+            an index if there is a precise match to the
+            tool (default is to try and return closest
+            match if precise match cannot be found)
 
         Returns:
           Integer: position of the tool in the tool
             panel, or -1 if it can't be located.
         """
+        # Convenience variables
+        tool_id = tool.id
+        tool_id_no_version = '/'.join(tool_id.split('/')[:-1])
         index_ = -1
+        fallback_index = None
+        # Traverse tool panel looking for a match
         for section in self.sections:
             if section.is_toolsection:
                 for elem in section.elems:
                     index_ += 1
-                    if elem.id == tool.id:
+                    if elem.id == tool_id:
                         return index_
+                    elif elem.id.startswith(tool_id_no_version) and \
+                         section.name == tool.panel_section:
+                        fallback_index = index_
             elif section.is_tool:
                 index_ += 1
-                if section.id == tool.id:
+                if section.id == tool_id:
                     return index_
-        # Not found
+                elif section.id.startswith(tool_id_no_version):
+                    fallback_index = index_
+        # Not found, return nearest index instead
+        if not strict and fallback_index is not None:
+            return fallback_index
+        # Nothing matching at all
         return -1
 
 # Functions
@@ -721,6 +755,13 @@ def list_installed_repositories(gi,name=None,
                        key=lambda r:
                        tool_panel.tool_index(r[2][0])
                        if r[2] else -1)
+        # Filter out non-package, non-datamanager repositories
+        # which can't be located in the tool panel
+        repos = filter(lambda r:
+                       r[0].name.startswith("package_") or
+                       r[0].name.startswith("data_manager_") or
+                       (r[2] and tool_panel.tool_index(r[2][0]) > -1),
+                       repos)
         # Print details
         for r in repos:
             repo,revision,tools = r
@@ -769,12 +810,14 @@ def list_tool_panel(gi,name=None,list_tools=False):
 
     """
     # Get the list of tool panel sections
-    sections = get_tool_panel_sections(gi)
+    tool_panel = ToolPanel(gi)
     # Filter on name
     if name:
         name = name.lower()
         sections = filter(lambda s: fnmatch.fnmatch(s.name.lower(),name),
-                          sections)
+                          tool_panel.sections)
+    else:
+        sections = tool_panel.sections
     # Get list of tools, if required
     if list_tools:
         tools = get_tools(gi)
@@ -783,9 +826,12 @@ def list_tool_panel(gi,name=None,list_tools=False):
         print "'%s' (%s)" % (section.name,
                              section.id)
         if list_tools:
-            for tool in filter(lambda t: t.panel_section == section.name,
-                               tools):
-                print "- %s" % '\t'.join((tool.name,
+            for tool in sorted(filter(lambda t:
+                                      t.panel_section == section.name,
+                                      tools),
+                               key=lambda t: tool_panel.tool_index(t)):
+                print "- %s" % '\t'.join((str(tool_panel.tool_index(tool)),
+                                          tool.name,
                                           tool.version,
                                           tool.description))
     print "total %s" % len(sections)
