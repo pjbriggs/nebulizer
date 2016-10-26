@@ -17,6 +17,13 @@ import tools
 
 logging.basicConfig(format="%(levelname)s %(message)s")
 
+def deprecation_warning():
+    """
+    Issue a deprecation warning
+    """
+    logging.warning("*********** THIS UTILITY IS NOW DEPRECATED ***********")
+    logging.warning("*********** Use 'nebulizer CMD...' instead ***********")
+
 def base_parser(usage=None,description=None):
     """
     Create base parser with common options
@@ -59,6 +66,7 @@ def manage_users(args=None):
     Implements the 'manage_users' utility
 
     """
+    deprecation_warning()
     if args is None:
         args = sys.argv[1:]
 
@@ -205,6 +213,7 @@ def manage_libraries(args=None):
     Implements the 'manage_libraries' utility
 
     """
+    deprecation_warning()
     if args is None:
         args = sys.argv[1:]
 
@@ -332,6 +341,7 @@ def manage_tools(args=None):
     Implements the 'manage_tools' utility
 
     """
+    deprecation_warning()
     if args is None:
         args = sys.argv[1:]
 
