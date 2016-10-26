@@ -2,6 +2,36 @@ History
 -------
 
 -------------------
+v0.3.0 (2016-10-26)
+-------------------
+
+ * New class ``tools.ToolPanel`` and updates to existing
+   ``tools.ToolPanelSection`` clas.
+ * ``install_tool``: fix behaviour so that command does nothing if
+   a version is not specified and at least one version of the tool is
+   already installed.
+ * ``list_repositories`` and ``install_repositories``: new commands
+   to generate a list of installed tool repositories from a Galaxy
+   instance and then reinstall tool repositories from a list with
+   the same format
+   (`PR #19 <https://github.com/pjbriggs/nebulizer/pull/19>`_).
+ * ``install_tool``: fix incorrect reporting of target tool panel
+   section
+   (`PR #20 <https://github.com/pjbriggs/nebulizer/pull/20>`_)
+ * ``add_key`` and ``update_key``: fix automatic retrieval of API
+   key, which only worked previously if connecting user was an
+   admin account
+   (`PR #23 <https://github.com/pjbriggs/nebulizer/pull/23`_)
+ * ``list_tool_panel``: shows tools in order they appear in Galaxy
+   when using ``--list-tools`` option.
+ * Deprecated utilities (``manage_users``, ``manage_tools`` and
+   ``manage_libraries``) issue warnings when run.
+ * License updated to Academic Free License (AFL).
+ * Initial version of documentation also made available via
+   `ReadTheDocs <http://nebulizer.readthedocs.io>`_
+   (`PR #21 <https://github.com/pjbriggs/nebulizer/pull/21>`_)
+
+-------------------
 v0.2.0 (2016-10-17)
 -------------------
 
