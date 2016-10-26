@@ -40,7 +40,7 @@ setup(
                  "Intended Audience :: End Users/Desktop",
                  "Intended Audience :: System Administrators",
                  "Intended Audience :: Developers",
-                 "License :: OSI Approved :: MIT License",
+                 "License :: OSI Approved :: Academic Free License (AFL)",
                  "Operating System :: OS Independent",
                  "Topic :: Scientific/Engineering",
                  "Topic :: Scientific/Engineering :: Bio-Informatics",
