@@ -956,6 +956,7 @@ def install_tool(gi,tool_shed,name,owner,
                                                         install_status)
             return TOOL_INSTALL_OK
         elif install_status.startswith("Installing") or \
+             install_status == "New" or \
              install_status == "Cloning" or \
              install_status == "Never installed":
             ntries += 1
