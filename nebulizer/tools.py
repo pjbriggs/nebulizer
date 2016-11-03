@@ -13,6 +13,7 @@ from bioblend import ConnectionError as BioblendConnectionError
 TOOL_INSTALL_OK = 0
 TOOL_INSTALL_FAIL = 1
 TOOL_INSTALL_TIMEOUT = 2
+TOOL_INSTALL_PENDING = 3
 TOOL_UPDATE_OK = 0
 TOOL_UPDATE_FAIL = 1
 
@@ -846,8 +847,9 @@ def list_tool_panel(gi,name=None,list_tools=False):
                                           tool.description))
     print "total %s" % len(sections)
 
-def install_tool(gi,tool_shed,name,owner,
-                 revision=None,tool_panel_section=None):
+def install_tool(gi,tool_shed,name,owner,revision=None,
+                 tool_panel_section=None,timeout=600,
+                 poll_interval=30,no_wait=False):
     """
     Install a tool repository into a Galaxy instance
 
@@ -867,11 +869,19 @@ def install_tool(gi,tool_shed,name,owner,
         the tool panel section to install the tools under; if
         the tool panel section doesn't already exist it will
         be created.
+      timeout (int): optional, sets the maximum time (in
+        seconds) to wait for a tool to complete installing
+        before giving up (default is 600s). Ignored if
+        'no_wait' is True.
+      poll_interval (int): optional, sets the time interval
+        for polling Galaxy to check if a tool has completed
+        installing (default is to check every 30s). Ignored
+        if 'no_wait' is True.
+      no_wait (boolean): optional, if True then don't wait
+        for tool installation to complete (default is False
+        i.e. do wait for tool to finish installing).
 
     """
-    # Local constants
-    timeout = 600
-    poll_interval = 30
     # Locate the repository on the toolshed
     shed = toolshed.ToolShedInstance(url=tool_shed)
     print "Toolshed  :\t%s" % tool_shed
@@ -971,10 +981,17 @@ def install_tool(gi,tool_shed,name,owner,
         elif install_status.startswith("Installing") or \
              install_status == "New" or \
              install_status == "Cloning" or \
-             install_status == "Never installed":
+             install_status == "Never installed" or \
+             install_status == "?":
+            if no_wait:
+                # Don't wait for install to complete
+                print "%s: still installing (status is \"%s\")" % \
+                    (name,install_status)
+                print "Not waiting for install to complete"
+                return TOOL_INSTALL_PENDING
             ntries += 1
-            print "- Status \"%s\": waiting for install to complete [#%s]" % \
-                (install_status,ntries)
+            print "- %s: %s (waiting for install to complete) [#%s]" % \
+                (name,install_status,ntries)
             time.sleep(poll_interval)
         else:
             logging.critical("%s: failed (%s)" % (name,install_status))
@@ -983,7 +1000,8 @@ def install_tool(gi,tool_shed,name,owner,
     logging.critical("%s: timed out waiting for install" % name)
     return TOOL_INSTALL_TIMEOUT
 
-def update_tool(gi,tool_shed,name,owner):
+def update_tool(gi,tool_shed,name,owner,timeout=600,poll_interval=30,
+                no_wait=False):
     """
     Update a tool repository in a Galaxy instance
 
@@ -993,6 +1011,17 @@ def update_tool(gi,tool_shed,name,owner):
         tool from
       name (str): name of the tool repository
       owner (str): name of the tool repository owner
+      timeout (int): optional, sets the maximum time (in
+        seconds) to wait for a tool to complete installing
+        before giving up (default is 600s). Ignored if
+        'no_wait' is True.
+      poll_interval (int): optional, sets the time interval
+        for polling Galaxy to check if a tool has completed
+        installing (default is to check every 30s). Ignored
+        if 'no_wait' is True.
+      no_wait (boolean): optional, if True then don't wait
+        for tool installation to complete (default is False
+        i.e. do wait for tool to finish installing).
 
     """
     # Locate the existing installation
@@ -1034,4 +1063,6 @@ def update_tool(gi,tool_shed,name,owner):
         logging.warning("%s: no tool panel section found" % name)
     #print "Installing update under %s" % tool_panel_section
     return install_tool(gi,tool_shed,name,owner,revision,
-                        tool_panel_section=tool_panel_section)
+                        tool_panel_section=tool_panel_section,
+                        timeout=timeout,poll_interval=poll_interval,
+                        no_wait=no_wait)

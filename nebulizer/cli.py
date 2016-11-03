@@ -537,6 +537,12 @@ def list_tool_panel(context,galaxy,name,list_tools):
               "then it will be created. If this option is "
               "omitted then the tool will be installed at the "
               "top-level i.e. not in any section.")
+@click.option('--timeout',metavar='TIMEOUT',default=600,
+              help="wait up to TIMEOUT seconds for tool installations"
+              "to complete (default is 600).")
+@click.option('--no-wait',is_flag=True,
+              help="don't wait for lengthy tool installations to "
+              "complete.")
 @click.argument("galaxy")
 @click.argument("toolshed")
 @click.argument("owner")
@@ -544,7 +550,7 @@ def list_tool_panel(context,galaxy,name,list_tools):
 @click.argument("revision",required=False)
 @pass_context
 def install_tool(context,galaxy,toolshed,owner,repository,
-                 revision,tool_panel_section):
+                 revision,tool_panel_section,timeout,no_wait):
     """
     Install tool from toolshed.
 
@@ -567,7 +573,8 @@ def install_tool(context,galaxy,toolshed,owner,repository,
     # Install tool
     return tools.install_tool(
         gi,toolshed,repository,owner,revision=revision,
-        tool_panel_section=tool_panel_section)
+        tool_panel_section=tool_panel_section,
+        timeout=timeout,no_wait=no_wait)
 
 @nebulizer.command()
 @click.option('--name',metavar='NAME',
@@ -618,10 +625,16 @@ def list_repositories(context,galaxy,name,toolshed,owner,updateable):
                                       tsv=True)
 
 @nebulizer.command()
+@click.option('--timeout',metavar='TIMEOUT',default=600,
+              help="wait up to TIMEOUT seconds for tool installations"
+              "to complete (default is 600).")
+@click.option('--no-wait',is_flag=True,
+              help="don't wait for lengthy tool installations to "
+              "complete.")
 @click.argument("galaxy")
 @click.argument("file",type=click.File('r'))
 @pass_context
-def install_repositories(context,galaxy,file):
+def install_repositories(context,galaxy,file,timeout,no_wait):
     """
     Install tool repositories listed in a file.
 
@@ -667,9 +680,16 @@ def install_repositories(context,galaxy,file):
             tool_panel_section = None
         tools.install_tool(gi,toolshed,repository,owner,
                            revision=revision,
-                           tool_panel_section=tool_panel_section)
+                           tool_panel_section=tool_panel_section,
+                           timeout=timeout,no_wait=no_wait)
 
 @nebulizer.command()
+@click.option('--timeout',metavar='TIMEOUT',default=600,
+              help="wait up to TIMEOUT seconds for tool installations"
+              "to complete (default is 600).")
+@click.option('--no-wait',is_flag=True,
+              help="don't wait for lengthy tool installations to "
+              "complete.")
 @click.argument("galaxy")
 @click.argument("toolshed")
 @click.argument("owner")
@@ -693,7 +713,8 @@ def update_tool(context,galaxy,toolshed,owner,repository):
         logging.critical("Failed to connect to Galaxy instance")
         return 1
     # Install tool
-    return tools.update_tool(gi,toolshed,repository,owner)
+    return tools.update_tool(gi,toolshed,repository,owner,
+                             timeout=timeout,no_wait=no_wait)
 
 @nebulizer.command()
 @click.option('-l','long_listing',is_flag=True,
