@@ -571,9 +571,16 @@ def tool_install_status(gi,tool_shed,owner,name,revision=None):
         from Galaxy (or '?' if the status cannot be retrieved)
 
     """
-    repos = filter(lambda r: r.name == name,get_repositories(gi))
-    repos = filter(lambda r: r.owner == owner,repos)
-    repos = filter(lambda r: r.tool_shed == tool_shed,repos)
+    try:
+        repos = get_repositories(gi)
+    except ConnectionError as connection_error:
+        logging.warning("Got connection error from Galaxy API: %s"
+                        % connection_error.status_code)
+        return "?"
+    repos = filter(lambda r:
+                   r.name == name and
+                   r.owner == owner and
+                   r.tool_shed == tool_shed,repos)
     if len(repos) != 1:
         logging.debug("Unable to fetch tool repository information")
         return "?"
@@ -888,8 +895,9 @@ def install_tool(gi,tool_shed,name,owner,
     try:
         revisions = shed.repositories.get_ordered_installable_revisions(name,
                                                                         owner)
-    except BioblendConnectionError:
-        logging.critical("Unable to connect to toolshed '%s'" % tool_shed)
+    except BioblendConnectionError as connection_error:
+        logging.critical("Unable to connect to toolshed '%s': %s" %
+                         (tool_shed,connection_error.status_code))
         return TOOL_INSTALL_FAIL
     #print "%s" % revisions
     if not revisions:
@@ -947,8 +955,10 @@ def install_tool(gi,tool_shed,name,owner,
             install_repository_dependencies=True,
             tool_panel_section_id=tool_panel_section_id,
             new_tool_panel_section_label=new_tool_panel_section)
-    except ConnectionError,ex:
-        print "Error from Galaxy API: %s (ignored)" % ex
+    except ConnectionError as connection_error:
+        # Handle error
+        logging.warning("Got connection error from Galaxy API: %s "
+                        "(ignored)" % connection_error.status_code)
     # Check installation status
     ntries = 0
     while (ntries*poll_interval) < timeout:
