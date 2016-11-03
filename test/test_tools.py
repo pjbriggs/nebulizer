@@ -179,6 +179,7 @@ class TestRepository(unittest.TestCase):
         self.assertEqual(revisions[0].installed_changeset_revision,
                          'a60283899c6d')
         self.assertEqual(revisions[0].status,'Installed')
+        self.assertEqual(revisions[0].error_message,'')
         self.assertFalse(revisions[0].deleted)
         self.assertFalse(revisions[0].revision_update)
         self.assertFalse(revisions[0].revision_upgrade)
@@ -239,6 +240,7 @@ class TestRepository(unittest.TestCase):
         self.assertEqual(revisions[0].installed_changeset_revision,
                          'a60283899c6d')
         self.assertEqual(revisions[0].status,'Installed')
+        self.assertEqual(revisions[0].error_message,'')
         self.assertFalse(revisions[0].deleted)
         self.assertFalse(revisions[0].revision_update)
         self.assertFalse(revisions[0].revision_upgrade)
@@ -250,6 +252,7 @@ class TestRepository(unittest.TestCase):
         self.assertEqual(revisions[1].installed_changeset_revision,
                          '3358c3d30143')
         self.assertEqual(revisions[1].status,'Installed')
+        self.assertEqual(revisions[1].error_message,'')
         self.assertFalse(revisions[1].deleted)
         self.assertFalse(revisions[1].revision_update)
         self.assertTrue(revisions[1].revision_upgrade)

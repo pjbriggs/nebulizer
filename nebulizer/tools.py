@@ -147,6 +147,7 @@ class RepositoryRevision:
         self.changeset_revision = repo_data['changeset_revision']
         self.installed_changeset_revision = repo_data['installed_changeset_revision']
         self.status = repo_data['status']
+        self.error_message = repo_data['error_message']
         self.deleted = repo_data['deleted']
         # Repository revision status
         revision = repo_data['tool_shed_status']
@@ -586,6 +587,8 @@ def tool_install_status(gi,tool_shed,owner,name,revision=None):
         logging.debug("Unable to fetch tool repository revisions")
         return "?"
     rev = revisions[0]
+    if rev.error_message:
+        return rev.error_message
     return rev.status
 
 def installed_repositories(gi,name=None,
