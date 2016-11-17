@@ -15,7 +15,10 @@ import users
 import libraries
 import tools
 
+# Initialise logging
 logger = logging.getLogger(__name__)
+# Suppress errors from bioblend
+logging.getLogger("bioblend").setLevel(logging.CRITICAL)
 
 def handle_ssl_warnings(verify=True):
     """
