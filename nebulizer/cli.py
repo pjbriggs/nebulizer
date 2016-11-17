@@ -866,7 +866,7 @@ def ping(context,galaxy,count,interval=5):
         galaxy_url = galaxy
     click.echo("PING %s" % galaxy_url)
     nrequests = 0
-    while (count == 0) or (nrequests < count):
+    while True:
         try:
             # Get a Galaxy instance
             gi = context.galaxy_instance(galaxy_url)
@@ -881,7 +881,12 @@ def ping(context,galaxy,count,interval=5):
                     msg = "ok"
                 click.echo("%s: status = %s time = %.3f (ms)" %
                            (galaxy_url,msg,response_time*1000.0))
-            nrequests += 1
+            # Deal with count limit, if set
+            if count != 0:
+                nrequests += 1
+                if nrequests >= count:
+                    break
+            # Wait before sending next request
             time.sleep(interval)
         except KeyboardInterrupt:
             break
