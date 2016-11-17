@@ -4,6 +4,7 @@
 import logging
 import os
 import fnmatch
+from .core import get_current_user
 from bioblend import galaxy
 import logging
 
@@ -264,6 +265,10 @@ def add_library_datasets(gi,path,files,
     """
     Add datasets to a data library
 
+    Note that the Galaxy instance must be associated with a
+    real user in order to upload data; 'userless' instances
+    (for example if using the master API) will be refused.
+
     Arguments:
       gi (bioblend.galaxy.GalaxyInstance): Galaxy instance
       path (str): path of folder to add datasets to
@@ -281,6 +286,12 @@ def add_library_datasets(gi,path,files,
         files (default is '?')
 
     """
+    # Check that we're not using a 'userless' API key (e.g.
+    # master key)
+    if get_current_user(gi) is None:
+        logger.error("No user associated with this API key, "
+                     "data upload aborted")
+        return
     # Break up the path
     library_name,folder_path = split_library_path(path)
     # Get name and id for parent data library
