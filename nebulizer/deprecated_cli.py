@@ -15,14 +15,14 @@ import users
 import libraries
 import tools
 
-logging.basicConfig(format="%(levelname)s %(message)s")
+logger = logging.getLogger(__name__)
 
 def deprecation_warning():
     """
     Issue a deprecation warning
     """
-    logging.warning("*********** THIS UTILITY IS NOW DEPRECATED ***********")
-    logging.warning("*********** Use 'nebulizer CMD...' instead ***********")
+    logger.warning("*********** THIS UTILITY IS NOW DEPRECATED ***********")
+    logger.warning("*********** Use 'nebulizer CMD...' instead ***********")
 
 def base_parser(usage=None,description=None):
     """
@@ -151,7 +151,7 @@ def manage_users(args=None):
                              email=email,password=password,
                              verify_ssl=(not options.no_verify))
     if gi is None:
-        logging.critical("Failed to connect to Galaxy instance")
+        logger.critical("Failed to connect to Galaxy instance")
         sys.exit(1)
 
     # Execute command
@@ -162,12 +162,12 @@ def manage_users(args=None):
         # Check message template is .mako file
         if options.message_template:
             if not os.path.isfile(options.message_template):
-                logging.critical("Message template '%s' not found"
-                                 % options.message_template)
+                logger.critical("Message template '%s' not found"
+                                % options.message_template)
                 sys.exit(1)
             elif not options.message_template.endswith(".mako"):
-                logging.critical("Message template '%s' is not a .mako file"
-                                 % options.message_template)
+                logger.critical("Message template '%s' is not a .mako file"
+                                % options.message_template)
                 sys.exit(1)
         if options.template:
             # Get the template and range of indices
@@ -194,9 +194,9 @@ def manage_users(args=None):
             try:
                 name = args[1]
                 if not users.check_username_format(name):
-                    logging.critical("Invalid name: must contain only "
-                                     "lower-case letters, numbers and "
-                                     "'-'")
+                    logger.critical("Invalid name: must contain only "
+                                    "lower-case letters, numbers and "
+                                    "'-'")
                     sys.exit(1)
             except IndexError:
                 # No public name supplied, make from email address
@@ -299,7 +299,7 @@ def manage_libraries(args=None):
                              email=email,password=password,
                              verify_ssl=(not options.no_verify))
     if gi is None:
-        logging.critical("Failed to connect to Galaxy instance")
+        logger.critical("Failed to connect to Galaxy instance")
         sys.exit(1)
 
     # Execute command
@@ -430,7 +430,7 @@ def manage_tools(args=None):
                              email=email,password=password,
                              verify_ssl=(not options.no_verify))
     if gi is None:
-        logging.critical("Failed to connect to Galaxy instance")
+        logger.critical("Failed to connect to Galaxy instance")
         sys.exit(1)
 
     # Execute command

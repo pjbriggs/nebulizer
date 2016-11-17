@@ -7,6 +7,8 @@ import fnmatch
 from bioblend import galaxy
 import logging
 
+logger = logging.getLogger(__name__)
+
 def list_data_libraries(gi):
     """
     Return list of data libraries
@@ -52,10 +54,10 @@ def folder_id_from_name(gi,library_id,folder_name):
     """
     lib_client = galaxy.libraries.LibraryClient(gi)
     folder_name = normalise_folder_path(folder_name)
-    logging.debug("Looking for '%s' in library %s" % (folder_name,
+    logger.debug("Looking for '%s' in library %s" % (folder_name,
                                                       library_id))
     for folder in lib_client.get_folders(library_id):
-        logging.debug("Checking '%s'" % folder['name'])
+        logger.debug("Checking '%s'" % folder['name'])
         if folder['name'] == folder_name:
             return folder['id']
     return None
@@ -78,17 +80,17 @@ def list_library_contents(gi,path,long_listing_format=False):
 
     """
     # Get name and id for parent data library
-    logging.debug("Path '%s'" % path)
+    logger.debug("Path '%s'" % path)
     lib_client = galaxy.libraries.LibraryClient(gi)
     library_name,folder_path = split_library_path(path)
-    logging.debug("library_name '%s'" % library_name)
+    logger.debug("library_name '%s'" % library_name)
     library_id = library_id_from_name(gi,library_name)
     if library_id is None:
         print "No library '%s'" % library_name
         return
     # Get library contents
     library_contents = lib_client.show_library(library_id,contents=True)
-    logging.debug("folder_path '%s'" % folder_path)
+    logger.debug("folder_path '%s'" % folder_path)
     # Bioblend class for getting more info for datasets if
     # using a long listing format
     dataset_client = galaxy.datasets.DatasetClient(gi)
@@ -107,8 +109,8 @@ def list_library_contents(gi,path,long_listing_format=False):
         matches = filter(lambda x: x['name'] == pattern,
                          library_contents)
         if not matches:
-            logging.error("Cannot access %s: no matching libraries "
-                          "or folders" % path)
+            logger.error("Cannot access %s: no matching libraries "
+                         "or folders" % path)
             return
         for item in matches:
             if item['type'] == 'folder':
@@ -138,8 +140,8 @@ def list_library_contents(gi,path,long_listing_format=False):
                          and x['name'].count('/') == nlevels,
                          library_contents)
         if not matches:
-            logging.error("Cannot access %s: no matching libraries "
-                          "or folders\n" % path)
+            logger.error("Cannot access %s: no matching libraries "
+                         "or folders\n" % path)
             return
         # Identify the folders that are matched exactly
         folders = []
@@ -228,8 +230,8 @@ def create_folder(gi,path,description=None):
     """
     # Break up the path
     library_name,folder_path = split_library_path(path)
-    logging.debug("library_name: %s" % library_name)
-    logging.debug("folder_path : %s" % folder_path)
+    logger.debug("library_name: %s" % library_name)
+    logger.debug("folder_path : %s" % folder_path)
     # Get name and id for parent data library
     lib_client = galaxy.libraries.LibraryClient(gi)
     library_id = library_id_from_name(gi,library_name)
@@ -365,7 +367,7 @@ def report_folder(folder_data,long_listing=False):
         long listing format when reporting items
 
     """
-    logging.debug("%s" % folder_data)
+    logger.debug("%s" % folder_data)
     if long_listing:
         print "%s/\t%s\t%s" % (folder_data['name'],
                                 folder_data['description'],
@@ -384,7 +386,7 @@ def report_dataset(dataset_data,long_listing=False):
         long listing format when reporting items
 
     """
-    logging.debug("%s" % dataset_data)
+    logger.debug("%s" % dataset_data)
     if long_listing:
         print '\t'.join([str(x) for x in (dataset_data['name'],
                                           dataset_data['file_ext'],

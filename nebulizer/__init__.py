@@ -6,3 +6,8 @@ def get_version():
 
     """
     return __version__
+
+# Setup logging
+import logging
+logging.basicConfig()
+logger = logging.getLogger("nebulizer")

@@ -9,6 +9,9 @@ from bioblend import toolshed
 from bioblend.galaxy.client import ConnectionError
 from bioblend import ConnectionError as BioblendConnectionError
 
+# Logging
+logger = logging.getLogger(__name__)
+
 # Constants
 TOOL_INSTALL_OK = 0
 TOOL_INSTALL_FAIL = 1
@@ -575,15 +578,15 @@ def tool_install_status(gi,tool_shed,owner,name,revision=None):
     try:
         repos = get_repositories(gi)
     except ConnectionError as connection_error:
-        logging.warning("Got connection error from Galaxy API: %s"
-                        % connection_error.status_code)
+        logger.warning("Got connection error from Galaxy API: %s"
+                       % connection_error.status_code)
         return "?"
     repos = filter(lambda r:
                    r.name == name and
                    r.owner == owner and
                    r.tool_shed == tool_shed,repos)
     if len(repos) != 1:
-        logging.debug("Unable to fetch tool repository information")
+        logger.debug("Unable to fetch tool repository information")
         return "?"
     repo = repos[0]
     if revision:
@@ -592,7 +595,7 @@ def tool_install_status(gi,tool_shed,owner,name,revision=None):
     else:
         revisions = repo.revisions()
     if len(revisions) != 1:
-        logging.debug("Unable to fetch tool repository revisions")
+        logger.debug("Unable to fetch tool repository revisions")
         return "?"
     rev = revisions[0]
     if rev.error_message:
@@ -906,18 +909,18 @@ def install_tool(gi,tool_shed,name,owner,revision=None,
         revisions = shed.repositories.get_ordered_installable_revisions(name,
                                                                         owner)
     except BioblendConnectionError as connection_error:
-        logging.critical("Unable to connect to toolshed '%s': %s" %
-                         (tool_shed,connection_error.status_code))
+        logger.critical("Unable to connect to toolshed '%s': %s" %
+                        (tool_shed,connection_error.status_code))
         return TOOL_INSTALL_FAIL
     #print "%s" % revisions
     if not revisions:
-        logging.critical("%s: no installable revisions found" % name)
+        logger.critical("%s: no installable revisions found" % name)
         return TOOL_INSTALL_FAIL
     # Revisions are listed oldest to newest
     if revision is not None:
         # Check that specified revision can be installed
         if revision not in revisions:
-            logging.critical("%s: requested revision is not installable"
+            logger.critical("%s: requested revision is not installable"
                              % name)
             return TOOL_INSTALL_FAIL
     else:
@@ -967,8 +970,8 @@ def install_tool(gi,tool_shed,name,owner,revision=None,
             new_tool_panel_section_label=new_tool_panel_section)
     except ConnectionError as connection_error:
         # Handle error
-        logging.warning("Got connection error from Galaxy API: %s "
-                        "(ignored)" % connection_error.status_code)
+        logger.warning("Got connection error from Galaxy API: %s "
+                       "(ignored)" % connection_error.status_code)
     # Check installation status
     ntries = 0
     while (ntries*poll_interval) < timeout:
@@ -994,10 +997,10 @@ def install_tool(gi,tool_shed,name,owner,revision=None,
                 (name,install_status,ntries)
             time.sleep(poll_interval)
         else:
-            logging.critical("%s: failed (%s)" % (name,install_status))
+            logger.critical("%s: failed (%s)" % (name,install_status))
             return TOOL_INSTALL_FAIL
     # Reaching here means timed out
-    logging.critical("%s: timed out waiting for install" % name)
+    logger.critical("%s: timed out waiting for install" % name)
     return TOOL_INSTALL_TIMEOUT
 
 def update_tool(gi,tool_shed,name,owner,timeout=600,poll_interval=30,
@@ -1033,8 +1036,8 @@ def update_tool(gi,tool_shed,name,owner,timeout=600,poll_interval=30,
             update_repo = repo
             break
     if update_repo is None:
-        logging.critical("%s: unable to find repository for update" %
-                         name)
+        logger.critical("%s: unable to find repository for update" %
+                        name)
         return TOOL_UPDATE_FAIL
     print "Toolshed:\t%s" % tool_shed
     print "Repository:\t%s" % name
@@ -1050,7 +1053,7 @@ def update_tool(gi,tool_shed,name,owner,timeout=600,poll_interval=30,
     revisions = shed.repositories.get_ordered_installable_revisions(name,
                                                                     owner)
     if not revisions:
-        logging.critical("%s: no installable revisions found" % name)
+        logger.critical("%s: no installable revisions found" % name)
         return TOOL_UPDATE_FAIL
     revision = revisions[-1]
     # Locate tool panel section for existing tools
@@ -1060,7 +1063,7 @@ def update_tool(gi,tool_shed,name,owner,timeout=600,poll_interval=30,
             tool_panel_section = tool.panel_section
             break
     if tool_panel_section is None:
-        logging.warning("%s: no tool panel section found" % name)
+        logger.warning("%s: no tool panel section found" % name)
     #print "Installing update under %s" % tool_panel_section
     return install_tool(gi,tool_shed,name,owner,revision,
                         tool_panel_section=tool_panel_section,
