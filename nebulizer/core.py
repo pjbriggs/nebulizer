@@ -6,6 +6,7 @@ import os
 import re
 import fnmatch
 import logging
+import time
 from bioblend import galaxy
 from bioblend.galaxy.client import ConnectionError
 
@@ -191,17 +192,73 @@ def get_galaxy_instance(galaxy_url,api_key=None,email=None,password=None,
     else:
         gi = galaxy.GalaxyInstance(url=galaxy_url,key=api_key)
     gi.verify = verify
-    try:
-        galaxy.config.ConfigClient(gi).get_config()
-    except ConnectionError,ex:
-        print ex
+    if not get_galaxy_config(gi):
         return None
-    try:
-        user = galaxy.users.UserClient(gi).get_current_user()
+    user = get_current_user(gi)
+    if user is not None:
         print "## Connected as user %s" % user['email']
-    except ConnectionError:
+    else:
         print "## Unable to determine associated user"
     return gi
+
+def get_galaxy_config(gi):
+    """
+    Requests configuration data for a Galaxy instance
+
+    Arguments:
+      gi (bioblend.galaxy.GalaxyInstance): Galaxy instance
+
+    Returns:
+      Dictionary: the configuration data for the Galaxy
+        instance (will be empty if this couldn't be
+        retrieved)
+    """
+    try:
+        return galaxy.config.ConfigClient(gi).get_config()
+    except ConnectionError as ex:
+        print ex
+        return {}
+
+def get_current_user(gi):
+    """
+    Requests data on the user for an API connection
+
+    Arguments:
+      gi (bioblend.galaxy.GalaxyInstance): Galaxy instance
+
+    Returns:
+      Dictionary: the data on the user, or 'None' if the user
+        couldn't be determined.
+    """
+    try:
+        return galaxy.users.UserClient(gi).get_current_user()
+    except ConnectionError:
+        return None
+
+def ping_galaxy_instance(gi):
+    """
+    Send a request to a Galaxy instance and report result
+
+    Arguments:
+      gi (bioblend.galaxy.GalaxyInstance): Galaxy instance
+
+    Returns:
+      Tuple: a tuple of the form (retcode,time). 'retcode'
+        will be zero if the response from the server was okay,
+        otherwise it is set to the status code of the failed
+        response. 'time' is the time taken for the request to
+        be sent and the response to be received, in seconds.
+
+    """
+    # Make a request
+    try:
+        start = time.time()
+        galaxy.config.ConfigClient(gi).get_config()
+        retcode = 0
+    except ConnectionError as ex:
+        retcode = ex.status_code
+    end = time.time()
+    return (retcode,end-start)
 
 def turn_off_urllib3_warnings():
     """

@@ -4,8 +4,10 @@
 import getpass
 import logging
 import click
+import time
 from nebulizer import get_version
 from .core import get_galaxy_instance
+from .core import ping_galaxy_instance
 from .core import turn_off_urllib3_warnings
 from .core import Credentials
 import users
@@ -841,3 +843,33 @@ def add_library_datasets(context,galaxy,dest,file,file_type,
                                    link_only=link,
                                    file_type=file_type,
                                    dbkey=dbkey)
+
+@nebulizer.command()
+@click.argument("galaxy")
+@pass_context
+def ping(context,galaxy):
+    """
+    'Ping' a Galaxy instance.
+
+    Sends a request to GALAXY and reports the status of the
+    response and the time taken.
+    """
+    print "PING %s" % galaxy
+    while True:
+        try:
+            # Get a Galaxy instance
+            gi = context.galaxy_instance(galaxy)
+            if gi is None:
+                print "%s: failed to connect" % galaxy
+            else:
+                status = ping_galaxy_instance(gi)
+                if status[0] != 0:
+                    msg = "failed (error code %s)" % status[0]
+                else:
+                    msg = "ok"
+                print "%s: status = %s time = %.3f (ms)" % (galaxy,
+                                                            msg,
+                                                            (status[1]*1000.0))
+            time.sleep(5)
+        except KeyboardInterrupt:
+            break
