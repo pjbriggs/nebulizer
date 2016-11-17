@@ -848,9 +848,12 @@ def add_library_datasets(context,galaxy,dest,file,file_type,
 @click.option('-c','--count',metavar='COUNT',default=0,
               help="if set then stop after sending COUNT requests "
               "(default is to send requests forever).")
+@click.option('-i','--interval',metavar='INTERVAL',default=5,
+              help="set the interval between sending requests in "
+              "seconds (default is 5 seconds).")
 @click.argument("galaxy")
 @pass_context
-def ping(context,galaxy,count):
+def ping(context,galaxy,count,interval=5):
     """
     'Ping' a Galaxy instance.
 
@@ -879,7 +882,7 @@ def ping(context,galaxy,count):
                 click.echo("%s: status = %s time = %.3f (ms)" %
                            (galaxy_url,msg,response_time*1000.0))
             nrequests += 1
-            time.sleep(5)
+            time.sleep(interval)
         except KeyboardInterrupt:
             break
     return status_code
