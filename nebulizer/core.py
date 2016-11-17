@@ -185,7 +185,7 @@ def get_galaxy_instance(galaxy_url,api_key=None,email=None,password=None,
         stored_key = None
     if api_key is None:
         api_key = stored_key
-    print "## Connecting to %s" % galaxy_url
+    logging.debug("Connecting to %s" % galaxy_url)
     if email is not None:
         gi = galaxy.GalaxyInstance(url=galaxy_url,email=email,
                                    password=password)
@@ -196,9 +196,9 @@ def get_galaxy_instance(galaxy_url,api_key=None,email=None,password=None,
         return None
     user = get_current_user(gi)
     if user is not None:
-        print "## Connected as user %s" % user['email']
+        logging.debug("Connected as user %s" % user['email'])
     else:
-        print "## Unable to determine associated user"
+        logging.debug("Unable to determine associated user")
     return gi
 
 def get_galaxy_config(gi):
