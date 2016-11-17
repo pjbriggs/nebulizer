@@ -662,6 +662,8 @@ def install_repositories(context,galaxy,file,timeout,no_wait):
     if gi is None:
         logger.critical("Failed to connect to Galaxy instance")
         return 1
+    # Keep a list of failed tool installs
+    failed_install = []
     # Install tools
     for line in file:
         if line.startswith('#'):
@@ -685,10 +687,22 @@ def install_repositories(context,galaxy,file,timeout,no_wait):
                 tool_panel_section = None
         except KeyError:
             tool_panel_section = None
-        tools.install_tool(gi,toolshed,repository,owner,
-                           revision=revision,
-                           tool_panel_section=tool_panel_section,
-                           timeout=timeout,no_wait=no_wait)
+        status = tools.install_tool(gi,
+                                    toolshed,repository,owner,
+                                    revision=revision,
+                                    tool_panel_section=tool_panel_section,
+                                    timeout=timeout,no_wait=no_wait)
+        if status != tools.TOOL_INSTALL_OK:
+            failed_install.append(line)
+    # List any failed tool installations
+    if failed_install:
+        logger.error("Some requested tool repositories couldn't be "
+                     "installed")
+        for repo in failed_install:
+            click.echo('\t'.join(repo))
+        return 1
+    # Looks like everything worked
+    return 0
 
 @nebulizer.command()
 @click.option('--timeout',metavar='TIMEOUT',default=600,
