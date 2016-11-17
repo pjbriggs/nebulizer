@@ -98,7 +98,7 @@ def fetch_new_api_key(galaxy_url,email,password=None,verify=True):
         prompt="Please supply password for %s: " % galaxy_url)
     gi = get_galaxy_instance(galaxy_url,
                              email=email,password=password,
-                             verify=verify)
+                             verify_ssl=verify)
     return users.get_user_api_key(gi,username=email)
 
 class Context(object):
@@ -125,7 +125,7 @@ class Context(object):
             prompt="Password for %s: " % alias)
         gi = get_galaxy_instance(alias,api_key=self.api_key,
                                  email=email,password=password,
-                                 verify=(not self.no_verify))
+                                 verify_ssl=(not self.no_verify))
         return gi
 
 pass_context = click.make_pass_decorator(Context,ensure=True)
@@ -845,9 +845,12 @@ def add_library_datasets(context,galaxy,dest,file,file_type,
                                    dbkey=dbkey)
 
 @nebulizer.command()
+@click.option('-c','--count',metavar='COUNT',default=0,
+              help="if set then stop after sending COUNT requests "
+              "(default is to send requests forever).")
 @click.argument("galaxy")
 @pass_context
-def ping(context,galaxy):
+def ping(context,galaxy,count):
     """
     'Ping' a Galaxy instance.
 
@@ -859,7 +862,8 @@ def ping(context,galaxy):
     except KeyError:
         galaxy_url = galaxy
     click.echo("PING %s" % galaxy_url)
-    while True:
+    nrequests = 0
+    while (count == 0) or (nrequests < count):
         try:
             # Get a Galaxy instance
             gi = context.galaxy_instance(galaxy_url)
@@ -874,6 +878,8 @@ def ping(context,galaxy):
                     msg = "ok"
                 click.echo("%s: status = %s time = %.3f (ms)" %
                            (galaxy_url,msg,response_time*1000.0))
+            nrequests += 1
             time.sleep(5)
         except KeyboardInterrupt:
-            return status_code
+            break
+    return status_code
