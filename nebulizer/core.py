@@ -154,7 +154,7 @@ class Credentials:
         raise KeyError("'%s': not found" % name)
 
 def get_galaxy_instance(galaxy_url,api_key=None,email=None,password=None,
-                        verify=True):
+                        verify_ssl=True):
     """
     Return Bioblend GalaxyInstance
 
@@ -169,7 +169,7 @@ def get_galaxy_instance(galaxy_url,api_key=None,email=None,password=None,
         (alternative to api_key; also need to supply a password)
       password (str): password of Galaxy account corresponding to
         email address (alternative to api_key)
-      verify (bool): if True then turn off verification of SSL
+      verify_ssl (bool): if True then turn off verification of SSL
         certificates for HTTPs connections
 
     Returns:
@@ -191,7 +191,7 @@ def get_galaxy_instance(galaxy_url,api_key=None,email=None,password=None,
                                    password=password)
     else:
         gi = galaxy.GalaxyInstance(url=galaxy_url,key=api_key)
-    gi.verify = verify
+    gi.verify = verify_ssl
     if not get_galaxy_config(gi):
         return None
     user = get_current_user(gi)
