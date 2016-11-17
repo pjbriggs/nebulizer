@@ -854,22 +854,26 @@ def ping(context,galaxy):
     Sends a request to GALAXY and reports the status of the
     response and the time taken.
     """
-    print "PING %s" % galaxy
+    try:
+        galaxy_url,_ = Credentials().fetch_key(galaxy)
+    except KeyError:
+        galaxy_url = galaxy
+    click.echo("PING %s" % galaxy_url)
     while True:
         try:
             # Get a Galaxy instance
-            gi = context.galaxy_instance(galaxy)
+            gi = context.galaxy_instance(galaxy_url)
             if gi is None:
-                print "%s: failed to connect" % galaxy
+                click.echo("%s: failed to connect" % galaxy_url)
+                return 1
             else:
-                status = ping_galaxy_instance(gi)
-                if status[0] != 0:
+                status_code,response_time = ping_galaxy_instance(gi)
+                if status_code != 0:
                     msg = "failed (error code %s)" % status[0]
                 else:
                     msg = "ok"
-                print "%s: status = %s time = %.3f (ms)" % (galaxy,
-                                                            msg,
-                                                            (status[1]*1000.0))
+                click.echo("%s: status = %s time = %.3f (ms)" %
+                           (galaxy_url,msg,response_time*1000.0))
             time.sleep(5)
         except KeyboardInterrupt:
-            break
+            return status_code
