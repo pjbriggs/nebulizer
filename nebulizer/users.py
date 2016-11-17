@@ -8,6 +8,9 @@ import fnmatch
 from bioblend import galaxy
 from mako.template import Template
 
+# Logging
+logger = logging.getLogger(__name__)
+
 # Classes
 
 class User:
@@ -131,7 +134,7 @@ def create_user(gi,email,username=None,passwd=None,only_check=False,
         try:
             passwd = get_passwd()
         except Exception, ex:
-            logging.error("%s" % ex)
+            logger.error("%s" % ex)
             return 1
     # Create the new user
     try:
@@ -187,18 +190,18 @@ def create_users_from_template(gi,template,start,end,passwd=None,
     # Check template
     name,domain = template.split('@')
     if name.count('#') != 1 or domain.count('#') != 0:
-        logging.error("Incorrect email template format")
+        logger.error("Incorrect email template format")
         return 1
     # Deal with password
     if passwd is not None:
         if not validate_password(passwd):
-            logging.error("Invalid password")
+            logger.error("Invalid password")
             return 1
     else:
         try:
             passwd = get_passwd()
         except Exception, ex:
-            logging.error("%s" % ex)
+            logger.error("%s" % ex)
             return 1
     # Generate emails
     emails = [template.replace('#',str(i)) for i in range(start,end+1)]
@@ -272,13 +275,13 @@ def create_batch_of_users(gi,tsv,only_check=False,mako_template=None):
             pass
         # Do checks
         if email in users:
-            logging.error("%s: appears multiple times" % email)
+            logger.error("%s: appears multiple times" % email)
             return 1
         if passwd is None:
-            logging.error("%s: no password supplied" % email)
+            logger.error("%s: no password supplied" % email)
             return 1
         elif not validate_password(passwd):
-            logging.error("%s: invalid password\n" % email)
+            logger.error("%s: invalid password\n" % email)
             return 1
         if name is None:
             name = get_username_from_login(email)
@@ -309,7 +312,7 @@ def check_new_user_info(gi,email,username):
         for user in lookup_user:
             error_msg += "\n%s" % ('\t'.join([user.email,
                                              user.username]))
-        logging.error(error_msg)
+        logger.error(error_msg)
         return False
     return True
 
@@ -329,12 +332,12 @@ def get_user_api_key(gi,username=None):
             user = galaxy.users.UserClient(gi).get_current_user()
             print "Username: %s" % username
         except galaxy.client.ConnectionError:
-            logging.error("Cannot determine user associated with "
+            logger.error("Cannot determine user associated with "
                           "this instance")
             return
         except AttributeError:
-            logging.error("Unable to fetch user associated with "
-                          "this instance")
+            logger.error("Unable to fetch user associated with "
+                         "this instance")
             return
     else:
         # Fetch the details for the specified user
@@ -344,7 +347,7 @@ def get_user_api_key(gi,username=None):
                 user = u
                 break
     if user is None:
-        logging.error("Cannot get info for user '%s'\n" % username)
+        logger.error("Cannot get info for user '%s'\n" % username)
         return
     # Get the API key
     user_id = user.id

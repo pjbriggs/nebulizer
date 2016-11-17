@@ -15,6 +15,8 @@ import users
 import libraries
 import tools
 
+logger = logging.getLogger(__name__)
+
 def handle_ssl_warnings(verify=True):
     """
     Turn off SSL warnings from urllib3
@@ -25,8 +27,8 @@ def handle_ssl_warnings(verify=True):
 
     """
     if not verify:
-        logging.warning("SSL certificate verification has "
-                        "been disabled")
+        logger.warning("SSL certificate verification has "
+                       "been disabled")
         turn_off_urllib3_warnings()
 
 def handle_debug(debug=True):
@@ -38,9 +40,10 @@ def handle_debug(debug=True):
 
     """
     if debug:
-        logging.getLogger().setLevel(logging.DEBUG)
+        level = logging.DEBUG
     else:
-        logging.getLogger().setLevel(logging.WARNING)
+        level = logging.WARNING
+    logging.getLogger("nebulizer").setLevel(level)
 
 def handle_suppress_warnings(suppress_warnings=True):
     """
@@ -52,9 +55,7 @@ def handle_suppress_warnings(suppress_warnings=True):
 
     """
     if suppress_warnings:
-        logging.getLogger().setLevel(logging.ERROR)
-    else:
-        logging.getLogger().setLevel(logging.WARNING)
+        logging.getLogger("nebulizer").setLevel(logging.ERROR)
 
 def handle_credentials(email,password,prompt="Password: "):
     """
@@ -205,14 +206,14 @@ def add_key(context,alias,galaxy_url,api_key=None):
     """
     instances = Credentials()
     if alias in instances.list_keys():
-        logging.error("'%s' already exists" % alias)
+        logger.error("'%s' already exists" % alias)
         return 1
     if api_key is None:
         # No API key supplied as argument, try to connect
         # to Galaxy and fetch directly
         gi = context.galaxy_instance(galaxy_url)
         if gi is None:
-            logging.critical("%s: failed to connect" % galaxy_url)
+            logger.critical("%s: failed to connect" % galaxy_url)
             return 1
         api_key = gi.key
     # Store the entry
@@ -236,7 +237,7 @@ def update_key(context,alias,new_url,new_api_key,fetch_api_key):
     """
     instances = Credentials()
     if alias not in instances.list_keys():
-        logging.error("'%s': not found" % alias)
+        logger.error("'%s': not found" % alias)
         return 1
     if new_url:
         galaxy_url = new_url
@@ -248,7 +249,7 @@ def update_key(context,alias,new_url,new_api_key,fetch_api_key):
         # Attempt to connect to Galaxy and fetch API key
         gi = context.galaxy_instance(alias)
         if gi is None:
-            logging.critical("%s: failed to connect" % alias)
+            logger.critical("%s: failed to connect" % alias)
             return 1
         new_api_key = gi.key
     instances.update_key(alias,
@@ -286,7 +287,7 @@ def list_users(context,galaxy,name,long_listing):
     # Get a Galaxy instance
     gi = context.galaxy_instance(galaxy)
     if gi is None:
-        logging.critical("Failed to connect to Galaxy instance")
+        logger.critical("Failed to connect to Galaxy instance")
         return 1
     # List users
     users.list_users(gi,name=name,long_listing_format=long_listing)
@@ -320,19 +321,19 @@ def create_user(context,galaxy,email,public_name,password,only_check,
     # Check message template is a .mako file
     if message_template:
         if not message_template.endswith(".mako"):
-            logging.critical("Message template '%s' is not a .mako file"
-                             % message_template)
+            logger.critical("Message template '%s' is not a .mako file"
+                            % message_template)
             return 1
     # Get a Galaxy instance
     gi = context.galaxy_instance(galaxy)
     if gi is None:
-        logging.critical("Failed to connect to Galaxy instance")
+        logger.critical("Failed to connect to Galaxy instance")
         return 1
     # Sort out email and public name
     if public_name:
         if not users.check_username_format(public_name):
-            logging.critical("Invalid public name: must contain only "
-                             "lower-case letters, numbers and '-'")
+            logger.critical("Invalid public name: must contain only "
+                            "lower-case letters, numbers and '-'")
             return 1
     else:
         # No public name supplied, make from email address
@@ -381,7 +382,7 @@ def create_batch_users(context,galaxy,template,start,end,
     # Get a Galaxy instance
     gi = context.galaxy_instance(galaxy)
     if gi is None:
-        logging.critical("Failed to connect to Galaxy instance")
+        logger.critical("Failed to connect to Galaxy instance")
         return 1
     # Sort out start and end indices
     if end is None:
@@ -418,13 +419,13 @@ def create_users_from_file(context,galaxy,file,message_template,
     # Check message template is a .mako file
     if message_template:
         if not message_template.endswith(".mako"):
-            logging.critical("Message template '%s' is not a .mako file"
-                             % message_template)
+            logger.critical("Message template '%s' is not a .mako file"
+                            % message_template)
             return 1
     # Get a Galaxy instance
     gi = context.galaxy_instance(galaxy)
     if gi is None:
-        logging.critical("Failed to connect to Galaxy instance")
+        logger.critical("Failed to connect to Galaxy instance")
         return 1
     # Create users
     return users.create_batch_of_users(gi,file,
@@ -451,7 +452,7 @@ def list_tools(context,galaxy,name,installed_only):
     # Get a Galaxy instance
     gi = context.galaxy_instance(galaxy)
     if gi is None:
-        logging.critical("Failed to connect to Galaxy instance")
+        logger.critical("Failed to connect to Galaxy instance")
         return 1
     # List tools
     tools.list_tools(gi,name=name,installed_only=installed_only)
@@ -498,7 +499,7 @@ def list_installed_tools(context,galaxy,name,toolshed,owner,list_tools,
     # Get a Galaxy instance
     gi = context.galaxy_instance(galaxy)
     if gi is None:
-        logging.critical("Failed to connect to Galaxy instance")
+        logger.critical("Failed to connect to Galaxy instance")
         return 1
     # List repositories
     tools.list_installed_repositories(gi,name=name,
@@ -527,7 +528,7 @@ def list_tool_panel(context,galaxy,name,list_tools):
     # Get a Galaxy instance
     gi = context.galaxy_instance(galaxy)
     if gi is None:
-        logging.critical("Failed to connect to Galaxy instance")
+        logger.critical("Failed to connect to Galaxy instance")
         return 1
     # List tool panel contents
     tools.list_tool_panel(gi,name=name,
@@ -571,7 +572,7 @@ def install_tool(context,galaxy,toolshed,owner,repository,
     # Get a Galaxy instance
     gi = context.galaxy_instance(galaxy)
     if gi is None:
-        logging.critical("Failed to connect to Galaxy instance")
+        logger.critical("Failed to connect to Galaxy instance")
         return 1
     # Install tool
     return tools.install_tool(
@@ -618,7 +619,7 @@ def list_repositories(context,galaxy,name,toolshed,owner,updateable):
     # Get a Galaxy instance
     gi = context.galaxy_instance(galaxy)
     if gi is None:
-        logging.critical("Failed to connect to Galaxy instance")
+        logger.critical("Failed to connect to Galaxy instance")
         return 1
     # List repositories
     tools.list_installed_repositories(gi,name=name,
@@ -656,7 +657,7 @@ def install_repositories(context,galaxy,file,timeout,no_wait):
     # Get a Galaxy instance
     gi = context.galaxy_instance(galaxy)
     if gi is None:
-        logging.critical("Failed to connect to Galaxy instance")
+        logger.critical("Failed to connect to Galaxy instance")
         return 1
     # Install tools
     for line in file:
@@ -667,7 +668,7 @@ def install_repositories(context,galaxy,file,timeout,no_wait):
         try:
             toolshed,owner,repository = line[:3]
         except ValueError:
-            logging.critical("Couldn't parse line")
+            logger.critical("Couldn't parse line")
             return 1
         try:
             revision = line[3]
@@ -713,7 +714,7 @@ def update_tool(context,galaxy,toolshed,owner,repository):
     # Get a Galaxy instance
     gi = context.galaxy_instance(galaxy)
     if gi is None:
-        logging.critical("Failed to connect to Galaxy instance")
+        logger.critical("Failed to connect to Galaxy instance")
         return 1
     # Install tool
     return tools.update_tool(gi,toolshed,repository,owner,
@@ -739,7 +740,7 @@ def list_libraries(context,galaxy,path,long_listing):
     # Get a Galaxy instance
     gi = context.galaxy_instance(galaxy)
     if gi is None:
-        logging.critical("Failed to connect to Galaxy instance")
+        logger.critical("Failed to connect to Galaxy instance")
         return 1
     # List folders in data library
     if path:
@@ -767,7 +768,7 @@ def create_library(context,galaxy,name,description,synopsis):
     # Get a Galaxy instance
     gi = context.galaxy_instance(galaxy)
     if gi is None:
-        logging.critical("Failed to connect to Galaxy instance")
+        logger.critical("Failed to connect to Galaxy instance")
         return 1
     # Create new data library
     libraries.create_library(gi,name,
@@ -795,7 +796,7 @@ def create_library_folder(context,galaxy,path,description):
     # Get a Galaxy instance
     gi = context.galaxy_instance(galaxy)
     if gi is None:
-        logging.critical("Failed to connect to Galaxy instance")
+        logger.critical("Failed to connect to Galaxy instance")
         return 1
     # Create new folder
     libraries.create_folder(gi,path,description=description)
@@ -836,7 +837,7 @@ def add_library_datasets(context,galaxy,dest,file,file_type,
     # Get a Galaxy instance
     gi = context.galaxy_instance(galaxy)
     if gi is None:
-        logging.critical("Failed to connect to Galaxy instance")
+        logger.critical("Failed to connect to Galaxy instance")
         return 1
     # Add the datasets
     libraries.add_library_datasets(gi,dest,file,
@@ -900,13 +901,14 @@ def whoami(context,galaxy,):
     """
     Print user details associated with API key.
     """
+    logger.debug("Debugging mode")
     # Get a Galaxy instance
     gi = context.galaxy_instance(galaxy)
     if gi is None:
-        logging.critical("Failed to connect to Galaxy instance")
+        logger.critical("Failed to connect to Galaxy instance")
         return 1
     user = get_current_user(gi)
     if user is None:
-        logging.warning("No associated user for this API key")
+        logger.warning("No associated user for this API key")
     else:
         click.echo("%s" % user['email'])

@@ -10,6 +10,8 @@ import time
 from bioblend import galaxy
 from bioblend.galaxy.client import ConnectionError
 
+logger = logging.getLogger(__name__)
+
 class Credentials:
     """Class for managing credentials for Galaxy instances
 
@@ -84,7 +86,7 @@ class Credentials:
         """
         key_names = self.list_keys()
         if name not in key_names:
-            logging.error("'%s': not found" % name)
+            logger.error("'%s': not found" % name)
             return
         # Store the keys
         cached_keys = {
@@ -117,7 +119,7 @@ class Credentials:
         try:
             url,api_key = self.fetch_key(name)
         except KeyError:
-            logging.error("'%s': not found" % name)
+            logger.error("'%s': not found" % name)
             return
         if new_url:
             url = new_url
@@ -180,12 +182,12 @@ def get_galaxy_instance(galaxy_url,api_key=None,email=None,password=None,
     try:
         galaxy_url,stored_key = Credentials().fetch_key(galaxy_url)
     except KeyError,ex:
-        logging.warning("Failed to find credentials for %s" %
-                        galaxy_url)
+        logger.warning("Failed to find credentials for %s" %
+                       galaxy_url)
         stored_key = None
     if api_key is None:
         api_key = stored_key
-    logging.debug("Connecting to %s" % galaxy_url)
+    logger.debug("Connecting to %s" % galaxy_url)
     if email is not None:
         gi = galaxy.GalaxyInstance(url=galaxy_url,email=email,
                                    password=password)
@@ -196,9 +198,9 @@ def get_galaxy_instance(galaxy_url,api_key=None,email=None,password=None,
         return None
     user = get_current_user(gi)
     if user is not None:
-        logging.debug("Connected as user %s" % user['email'])
+        logger.debug("Connected as user %s" % user['email'])
     else:
-        logging.debug("Unable to determine associated user")
+        logger.debug("Unable to determine associated user")
     return gi
 
 def get_galaxy_config(gi):
