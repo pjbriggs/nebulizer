@@ -149,7 +149,7 @@ def manage_users(args=None):
     # Get a Galaxy instance
     gi = get_galaxy_instance(galaxy_url,api_key=options.api_key,
                              email=email,password=password,
-                             verify=(not options.no_verify))
+                             verify_ssl=(not options.no_verify))
     if gi is None:
         logging.critical("Failed to connect to Galaxy instance")
         sys.exit(1)
@@ -297,7 +297,7 @@ def manage_libraries(args=None):
     # Get a Galaxy instance
     gi = get_galaxy_instance(galaxy_url,api_key=options.api_key,
                              email=email,password=password,
-                             verify=(not options.no_verify))
+                             verify_ssl=(not options.no_verify))
     if gi is None:
         logging.critical("Failed to connect to Galaxy instance")
         sys.exit(1)
@@ -428,7 +428,7 @@ def manage_tools(args=None):
     # Get a Galaxy instance
     gi = get_galaxy_instance(galaxy_url,api_key=options.api_key,
                              email=email,password=password,
-                             verify=(not options.no_verify))
+                             verify_ssl=(not options.no_verify))
     if gi is None:
         logging.critical("Failed to connect to Galaxy instance")
         sys.exit(1)

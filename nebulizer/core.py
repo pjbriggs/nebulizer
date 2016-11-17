@@ -6,6 +6,7 @@ import os
 import re
 import fnmatch
 import logging
+import time
 from bioblend import galaxy
 from bioblend.galaxy.client import ConnectionError
 
@@ -153,7 +154,7 @@ class Credentials:
         raise KeyError("'%s': not found" % name)
 
 def get_galaxy_instance(galaxy_url,api_key=None,email=None,password=None,
-                        verify=True):
+                        verify_ssl=True):
     """
     Return Bioblend GalaxyInstance
 
@@ -168,7 +169,7 @@ def get_galaxy_instance(galaxy_url,api_key=None,email=None,password=None,
         (alternative to api_key; also need to supply a password)
       password (str): password of Galaxy account corresponding to
         email address (alternative to api_key)
-      verify (bool): if True then turn off verification of SSL
+      verify_ssl (bool): if True then turn off verification of SSL
         certificates for HTTPs connections
 
     Returns:
@@ -184,24 +185,80 @@ def get_galaxy_instance(galaxy_url,api_key=None,email=None,password=None,
         stored_key = None
     if api_key is None:
         api_key = stored_key
-    print "## Connecting to %s" % galaxy_url
+    logging.debug("Connecting to %s" % galaxy_url)
     if email is not None:
         gi = galaxy.GalaxyInstance(url=galaxy_url,email=email,
                                    password=password)
     else:
         gi = galaxy.GalaxyInstance(url=galaxy_url,key=api_key)
-    gi.verify = verify
-    try:
-        galaxy.config.ConfigClient(gi).get_config()
-    except ConnectionError,ex:
-        print ex
+    gi.verify = verify_ssl
+    if not get_galaxy_config(gi):
         return None
-    try:
-        user = galaxy.users.UserClient(gi).get_current_user()
-        print "## Connected as user %s" % user['email']
-    except ConnectionError:
-        print "## Unable to determine associated user"
+    user = get_current_user(gi)
+    if user is not None:
+        logging.debug("Connected as user %s" % user['email'])
+    else:
+        logging.debug("Unable to determine associated user")
     return gi
+
+def get_galaxy_config(gi):
+    """
+    Requests configuration data for a Galaxy instance
+
+    Arguments:
+      gi (bioblend.galaxy.GalaxyInstance): Galaxy instance
+
+    Returns:
+      Dictionary: the configuration data for the Galaxy
+        instance (will be empty if this couldn't be
+        retrieved)
+    """
+    try:
+        return galaxy.config.ConfigClient(gi).get_config()
+    except ConnectionError as ex:
+        print ex
+        return {}
+
+def get_current_user(gi):
+    """
+    Requests data on the user for an API connection
+
+    Arguments:
+      gi (bioblend.galaxy.GalaxyInstance): Galaxy instance
+
+    Returns:
+      Dictionary: the data on the user, or 'None' if the user
+        couldn't be determined.
+    """
+    try:
+        return galaxy.users.UserClient(gi).get_current_user()
+    except ConnectionError:
+        return None
+
+def ping_galaxy_instance(gi):
+    """
+    Send a request to a Galaxy instance and report result
+
+    Arguments:
+      gi (bioblend.galaxy.GalaxyInstance): Galaxy instance
+
+    Returns:
+      Tuple: a tuple of the form (retcode,time). 'retcode'
+        will be zero if the response from the server was okay,
+        otherwise it is set to the status code of the failed
+        response. 'time' is the time taken for the request to
+        be sent and the response to be received, in seconds.
+
+    """
+    # Make a request
+    try:
+        start = time.time()
+        galaxy.config.ConfigClient(gi).get_config()
+        retcode = 0
+    except ConnectionError as ex:
+        retcode = ex.status_code
+    end = time.time()
+    return (retcode,end-start)
 
 def turn_off_urllib3_warnings():
     """

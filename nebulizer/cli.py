@@ -4,8 +4,10 @@
 import getpass
 import logging
 import click
+import time
 from nebulizer import get_version
 from .core import get_galaxy_instance
+from .core import ping_galaxy_instance
 from .core import turn_off_urllib3_warnings
 from .core import Credentials
 import users
@@ -96,7 +98,7 @@ def fetch_new_api_key(galaxy_url,email,password=None,verify=True):
         prompt="Please supply password for %s: " % galaxy_url)
     gi = get_galaxy_instance(galaxy_url,
                              email=email,password=password,
-                             verify=verify)
+                             verify_ssl=verify)
     return users.get_user_api_key(gi,username=email)
 
 class Context(object):
@@ -123,7 +125,7 @@ class Context(object):
             prompt="Password for %s: " % alias)
         gi = get_galaxy_instance(alias,api_key=self.api_key,
                                  email=email,password=password,
-                                 verify=(not self.no_verify))
+                                 verify_ssl=(not self.no_verify))
         return gi
 
 pass_context = click.make_pass_decorator(Context,ensure=True)
@@ -841,3 +843,51 @@ def add_library_datasets(context,galaxy,dest,file,file_type,
                                    link_only=link,
                                    file_type=file_type,
                                    dbkey=dbkey)
+
+@nebulizer.command()
+@click.option('-c','--count',metavar='COUNT',default=0,
+              help="if set then stop after sending COUNT requests "
+              "(default is to send requests forever).")
+@click.option('-i','--interval',metavar='INTERVAL',default=5,
+              help="set the interval between sending requests in "
+              "seconds (default is 5 seconds).")
+@click.argument("galaxy")
+@pass_context
+def ping(context,galaxy,count,interval=5):
+    """
+    'Ping' a Galaxy instance.
+
+    Sends a request to GALAXY and reports the status of the
+    response and the time taken.
+    """
+    try:
+        galaxy_url,_ = Credentials().fetch_key(galaxy)
+    except KeyError:
+        galaxy_url = galaxy
+    click.echo("PING %s" % galaxy_url)
+    nrequests = 0
+    while True:
+        try:
+            # Get a Galaxy instance
+            gi = context.galaxy_instance(galaxy_url)
+            if gi is None:
+                click.echo("%s: failed to connect" % galaxy_url)
+                return 1
+            else:
+                status_code,response_time = ping_galaxy_instance(gi)
+                if status_code != 0:
+                    msg = "failed (error code %s)" % status[0]
+                else:
+                    msg = "ok"
+                click.echo("%s: status = %s time = %.3f (ms)" %
+                           (galaxy_url,msg,response_time*1000.0))
+            # Deal with count limit, if set
+            if count != 0:
+                nrequests += 1
+                if nrequests >= count:
+                    break
+            # Wait before sending next request
+            time.sleep(interval)
+        except KeyboardInterrupt:
+            break
+    return status_code

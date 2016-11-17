@@ -164,6 +164,15 @@ Update FastQC tool to latest installable revision::
 
   nebulizer update_tool localhost toolshed.g2.bx.psu.edu devteam fastqc
 
+----------------------------------
+Checking status of a Galaxy server
+----------------------------------
+
+'Ping' a Galaxy instance to check it's alive and responding to
+requests::
+
+    nebulizer ping localhost
+
 Commands
 --------
 
@@ -212,6 +221,12 @@ Local API Key Management
  * ``list_keys``: List stored Galaxy API keys.
  * ``remove_key``: Remove stored Galaxy API key.
  * ``update_key``: Update stored Galaxy API key.
+
+--------------
+Other commands
+--------------
+
+ * ``ping``: 'Ping' a Galaxy instance.
 
 Hints and Tips
 --------------
