@@ -90,6 +90,10 @@ data libraries again it is sufficient to do just::
 
   % nebulizer list_libraries main
 
+To find out which user is associated with an alias do::
+
+  % nebulizer whoami main
+
 The following sections contain examples of how Nebulizer might be
 used to perform various administrive tasks.
 
@@ -227,6 +231,7 @@ Other commands
 --------------
 
  * ``ping``: 'Ping' a Galaxy instance.
+ * ``whoami``: Print user details associated with API key.
 
 Hints and Tips
 --------------

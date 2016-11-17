@@ -7,6 +7,7 @@ import click
 import time
 from nebulizer import get_version
 from .core import get_galaxy_instance
+from .core import get_current_user
 from .core import ping_galaxy_instance
 from .core import turn_off_urllib3_warnings
 from .core import Credentials
@@ -891,3 +892,21 @@ def ping(context,galaxy,count,interval=5):
         except KeyboardInterrupt:
             break
     return status_code
+
+@nebulizer.command()
+@click.argument("galaxy")
+@pass_context
+def whoami(context,galaxy,):
+    """
+    Print user details associated with API key.
+    """
+    # Get a Galaxy instance
+    gi = context.galaxy_instance(galaxy)
+    if gi is None:
+        logging.critical("Failed to connect to Galaxy instance")
+        return 1
+    user = get_current_user(gi)
+    if user is None:
+        logging.warning("No associated user for this API key")
+    else:
+        click.echo("%s" % user['email'])
