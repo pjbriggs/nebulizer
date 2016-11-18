@@ -2,11 +2,34 @@ History
 -------
 
 -------------------
+v0.4.0 (2016-11-18)
+-------------------
+
+ * New subcommand ``ping``: 'ping' a Galaxy instance to see if it's
+   responsive
+   (`PR #33 <https://github.com/pjbriggs/nebulizer/pull/33>`_).
+ * New subcommand ``whoami``: reports user associated with the API
+   key
+   (`PR #37 <https://github.com/pjbriggs/nebulizer/pull/37>`_).
+ * ``add_library_datasets``: refuses to perform upload if using the
+   master API key (essentially API key must have an associated user).
+ * ``install_repositories``: prints a list of all tool repositories
+   that couldn't be installed.
+ * New ``--timeout`` and ``--nowait`` options added for
+   ``install_tool``, ``update_tool`` and ``install_repositories``
+   subcommands.
+ * Fix to treat tool repositories with status ``New`` as still
+   installing when trying to install tools
+   (`PR #31 <https://github.com/pjbriggs/nebulizer/pull/31>`_).
+ * Some improvements to logging
+   (`PR #38 <https://github.com/pjbriggs/nebulizer/pull/38>`_).
+
+-------------------
 v0.3.0 (2016-10-26)
 -------------------
 
  * New class ``tools.ToolPanel`` and updates to existing
-   ``tools.ToolPanelSection`` clas.
+   ``tools.ToolPanelSection`` class.
  * ``install_tool``: fix behaviour so that command does nothing if
    a version is not specified and at least one version of the tool is
    already installed.
