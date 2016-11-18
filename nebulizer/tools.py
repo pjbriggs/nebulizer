@@ -535,6 +535,36 @@ def get_tool_panel_sections(gi):
         tool_panel_sections.append(ToolPanelSection(data))
     return tool_panel_sections
 
+def repository_is_deprecated(shed_url,owner,name):
+    """
+    Check if tool repository is deprecated
+
+    Arguments:
+      shed_url (str): URL of the source tool shed
+      owner (str): tool repository owner
+      name (str): name of the tool repository to check
+
+    Returns:
+      Boolean: True if tool repository is deprecated,
+      False if not.
+
+    Raises:
+      Exception: if the tool repository cannot be located
+      in the specified tool shed.
+
+    """
+    # Get toolshed instance
+    shed_url = normalise_toolshed_url(shed_url)
+    ti = toolshed.ToolShedInstance(shed_url)
+    # List repositories
+    repo_client = toolshed.repositories.ToolShedRepositoryClient(ti)
+    for repo in repo_client.get_repositories():
+        if repo['owner'] == owner and repo['name'] == name:
+            return repo['deprecated']
+    # Repository not found
+    raise Exception("Repository '%s' owned by '%s' not found at %s" %
+                    (name,owner,shed_url))
+
 def normalise_toolshed_url(toolshed):
     """
     Return complete URL for a tool shed
@@ -851,7 +881,8 @@ def list_tool_panel(gi,name=None,list_tools=False):
     print "total %s" % len(sections)
 
 def install_tool(gi,tool_shed,name,owner,revision=None,
-                 tool_panel_section=None,timeout=600,
+                 tool_panel_section=None,
+                 install_deprecated=False,timeout=600,
                  poll_interval=30,no_wait=False):
     """
     Install a tool repository into a Galaxy instance
@@ -872,6 +903,10 @@ def install_tool(gi,tool_shed,name,owner,revision=None,
         the tool panel section to install the tools under; if
         the tool panel section doesn't already exist it will
         be created.
+      install_deprecated (boolean): if True then install
+        repository even if the specified revision is marked
+        as 'deprecated' in the toolshed (default is not to
+        install deprecated tools).
       timeout (int): optional, sets the maximum time (in
         seconds) to wait for a tool to complete installing
         before giving up (default is 600s). Ignored if
@@ -897,6 +932,13 @@ def install_tool(gi,tool_shed,name,owner,revision=None,
         print "Revision  :\t%s" % revision
     else:
         print "Revision  :\t<not specified>"
+    # Check if repository is deprecated
+    try:
+        deprecated = repository_is_deprecated(tool_shed,owner,name)
+        print "Deprecated:\t%s" % ('yes' if deprecated else 'no')
+    except Exception as ex:
+        deprecated = None
+        print "Deprecated:\t<unknown>"
     # Check if tool is already installed
     install_status = tool_install_status(gi,tool_shed,owner,name,
                                          revision)
@@ -934,6 +976,10 @@ def install_tool(gi,tool_shed,name,owner,revision=None,
         print "%s: already installed (status is \"%s\")" % (name,
                                                             install_status)
         return TOOL_INSTALL_OK
+    # Check for deprecated repository
+    if deprecated and not install_deprecated:
+        logger.error("%s: repository is deprecated" % name)
+        return TOOL_INSTALL_FAIL
     # Look up tool panel section
     tool_panel_section_id = None
     new_tool_panel_section = None

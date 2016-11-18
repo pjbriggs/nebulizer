@@ -544,6 +544,9 @@ def list_tool_panel(context,galaxy,name,list_tools):
               "then it will be created. If this option is "
               "omitted then the tool will be installed at the "
               "top-level i.e. not in any section.")
+@click.option('--deprecated',is_flag=True,
+              help="force installation of tool even if repository "
+              "is marked as 'deprecated' in the toolshed.")
 @click.option('--timeout',metavar='TIMEOUT',default=600,
               help="wait up to TIMEOUT seconds for tool installations"
               "to complete (default is 600).")
@@ -557,7 +560,8 @@ def list_tool_panel(context,galaxy,name,list_tools):
 @click.argument("revision",required=False)
 @pass_context
 def install_tool(context,galaxy,toolshed,owner,repository,
-                 revision,tool_panel_section,timeout,no_wait):
+                 revision,tool_panel_section,deprecated,
+                 timeout,no_wait):
     """
     Install tool from toolshed.
 
@@ -581,6 +585,7 @@ def install_tool(context,galaxy,toolshed,owner,repository,
     return tools.install_tool(
         gi,toolshed,repository,owner,revision=revision,
         tool_panel_section=tool_panel_section,
+        install_deprecated=deprecated,
         timeout=timeout,no_wait=no_wait)
 
 @nebulizer.command()
@@ -632,6 +637,9 @@ def list_repositories(context,galaxy,name,toolshed,owner,updateable):
                                       tsv=True)
 
 @nebulizer.command()
+@click.option('--deprecated',is_flag=True,
+              help="force installation of repositories that are marked "
+              "as 'deprecated' in the toolshed.")
 @click.option('--timeout',metavar='TIMEOUT',default=600,
               help="wait up to TIMEOUT seconds for tool installations"
               "to complete (default is 600).")
@@ -641,7 +649,7 @@ def list_repositories(context,galaxy,name,toolshed,owner,updateable):
 @click.argument("galaxy")
 @click.argument("file",type=click.File('r'))
 @pass_context
-def install_repositories(context,galaxy,file,timeout,no_wait):
+def install_repositories(context,galaxy,file,deprecated,timeout,no_wait):
     """
     Install tool repositories listed in a file.
 
@@ -691,6 +699,7 @@ def install_repositories(context,galaxy,file,timeout,no_wait):
                                     toolshed,repository,owner,
                                     revision=revision,
                                     tool_panel_section=tool_panel_section,
+                                    install_deprecated=deprecated,
                                     timeout=timeout,no_wait=no_wait)
         if status != tools.TOOL_INSTALL_OK:
             failed_install.append(line)
