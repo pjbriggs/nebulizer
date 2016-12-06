@@ -716,7 +716,8 @@ def install_repositories(context,galaxy,file,timeout,no_wait):
 @click.argument("owner")
 @click.argument("repository")
 @pass_context
-def update_tool(context,galaxy,toolshed,owner,repository):
+def update_tool(context,galaxy,toolshed,owner,repository,
+                timeout,no_wait):
     """
     Update tool installed from toolshed.
 
