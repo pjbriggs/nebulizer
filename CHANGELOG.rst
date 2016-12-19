@@ -2,6 +2,13 @@ History
 -------
 
 -------------------
+v0.4.1 (2016-12-19)
+-------------------
+
+ * Fix broken ``update_tool`` command
+   (`PR #40 <https://github.com/pjbriggs/nebulizer/pull/40>`_).
+
+-------------------
 v0.4.0 (2016-11-18)
 -------------------
 
