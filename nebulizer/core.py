@@ -68,11 +68,14 @@ class Credentials:
         Arguments:
           name (str): alias to store the key against
           url (str): URL of the Galaxy instance
-          api_key (str): API key for the Galaxy instance 
+          api_key (str): API key for the Galaxy instance
 
+        Returns:
+          Boolean: True if key was updated, False on error.
         """
         with open(self._key_file,'a') as fp:
             fp.write("%s\t%s\t%s\n" % (name,url,api_key))
+        return True
 
     def remove_key(self,name):
         """
@@ -83,11 +86,13 @@ class Credentials:
         Arguments:
           name (str) alias of the key to be removed
 
+        Returns:
+          Boolean: True if key was removed, False on error.
         """
         key_names = self.list_keys()
         if name not in key_names:
             logger.error("'%s': not found" % name)
-            return
+            return False
         # Store the keys
         cached_keys = {
             name: list(self.fetch_key(name))
@@ -101,6 +106,7 @@ class Credentials:
             if name != alias:
                 url,api_key = cached_keys[alias]
                 self.store_key(alias,url,api_key)
+        return True
 
     def update_key(self,name,new_url=None,new_api_key=None):
         """
@@ -114,19 +120,22 @@ class Credentials:
             instance
           new_api_key (str): optional, new API key for the
             Galaxy instance
-        
+
+        Returns:
+          Boolean: True if key was updated, False on error.
         """
         try:
             url,api_key = self.fetch_key(name)
         except KeyError:
             logger.error("'%s': not found" % name)
-            return
+            return False
         if new_url:
             url = new_url
         if new_api_key:
             api_key = new_api_key
         self.remove_key(name)
         self.store_key(name,url,api_key)
+        return True
 
     def fetch_key(self,name):
         """
@@ -143,7 +152,6 @@ class Credentials:
 
         Returns:
           Tuple: consisting of (GALAXY_URL,API_KEY)
-
         """
         if os.path.exists(self._key_file):
             with open(self._key_file,'r') as fp:

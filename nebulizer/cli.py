@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 #
 # cli: functions for building command utilities
+import sys
 import getpass
 import logging
 import click
@@ -210,17 +211,18 @@ def add_key(context,alias,galaxy_url,api_key=None):
     instances = Credentials()
     if alias in instances.list_keys():
         logger.error("'%s' already exists" % alias)
-        return 1
+        sys.exit(1)
     if api_key is None:
         # No API key supplied as argument, try to connect
         # to Galaxy and fetch directly
         gi = context.galaxy_instance(galaxy_url)
         if gi is None:
             logger.critical("%s: failed to connect" % galaxy_url)
-            return 1
+            sys.exit(1)
         api_key = gi.key
     # Store the entry
-    instances.store_key(alias,galaxy_url,api_key)
+    if not instances.store_key(alias,galaxy_url,api_key):
+        sys.exit(1)
 
 @nebulizer.command()
 @click.option('--new-url',
@@ -241,7 +243,7 @@ def update_key(context,alias,new_url,new_api_key,fetch_api_key):
     instances = Credentials()
     if alias not in instances.list_keys():
         logger.error("'%s': not found" % alias)
-        return 1
+        sys.exit(1)
     if new_url:
         galaxy_url = new_url
     else:
@@ -253,11 +255,12 @@ def update_key(context,alias,new_url,new_api_key,fetch_api_key):
         gi = context.galaxy_instance(alias)
         if gi is None:
             logger.critical("%s: failed to connect" % alias)
-            return 1
+            sys.exit(1)
         new_api_key = gi.key
-    instances.update_key(alias,
-                         new_url=new_url,
-                         new_api_key=new_api_key)
+    if not instances.update_key(alias,
+                                new_url=new_url,
+                                new_api_key=new_api_key):
+        sys.exit(1)
 
 @nebulizer.command()
 @click.argument("alias")
@@ -270,7 +273,8 @@ def remove_key(context,alias):
     ALIAS from the list of stored keys.
     """
     instances = Credentials()
-    instances.remove_key(alias)
+    if not instances.remove_key(alias):
+        sys.exit(1)
 
 @nebulizer.command()
 @click.option("--name",
@@ -291,9 +295,10 @@ def list_users(context,galaxy,name,long_listing):
     gi = context.galaxy_instance(galaxy)
     if gi is None:
         logger.critical("Failed to connect to Galaxy instance")
-        return 1
+        sys.exit(1)
     # List users
-    users.list_users(gi,name=name,long_listing_format=long_listing)
+    sys.exit(users.list_users(gi,name=name,
+                              long_listing_format=long_listing))
 
 @nebulizer.command()
 @click.option('--password','-p',
@@ -326,27 +331,27 @@ def create_user(context,galaxy,email,public_name,password,only_check,
         if not message_template.endswith(".mako"):
             logger.critical("Message template '%s' is not a .mako file"
                             % message_template)
-            return 1
+            sys.exit(1)
     # Get a Galaxy instance
     gi = context.galaxy_instance(galaxy)
     if gi is None:
         logger.critical("Failed to connect to Galaxy instance")
-        return 1
+        sys.exit(1)
     # Sort out email and public name
     if public_name:
         if not users.check_username_format(public_name):
             logger.critical("Invalid public name: must contain only "
                             "lower-case letters, numbers and '-'")
-            return 1
+            sys.exit(1)
     else:
         # No public name supplied, make from email address
         public_name = users.get_username_from_login(email)
     # Create user
     print "Email : %s" % email
     print "Name  : %s" % public_name
-    return users.create_user(gi,email,public_name,password,
-                             only_check=only_check,
-                             mako_template=message_template)
+    sys.exit(users.create_user(gi,email,public_name,password,
+                               only_check=only_check,
+                               mako_template=message_template))
 
 @nebulizer.command()
 @click.option('--password','-p',
@@ -386,15 +391,15 @@ def create_batch_users(context,galaxy,template,start,end,
     gi = context.galaxy_instance(galaxy)
     if gi is None:
         logger.critical("Failed to connect to Galaxy instance")
-        return 1
+        sys.exit(1)
     # Sort out start and end indices
     if end is None:
         end = start
         start = 1
     # Create users
-    return users.create_users_from_template(gi,template,
-                                            start,end,password,
-                                            only_check=only_check)
+    sys.exit(users.create_users_from_template(gi,template,
+                                              start,end,password,
+                                              only_check=only_check))
 
 @nebulizer.command()
 @click.option('--check','-c','only_check',is_flag=True,
@@ -424,16 +429,16 @@ def create_users_from_file(context,galaxy,file,message_template,
         if not message_template.endswith(".mako"):
             logger.critical("Message template '%s' is not a .mako file"
                             % message_template)
-            return 1
+            sys.exit(1)
     # Get a Galaxy instance
     gi = context.galaxy_instance(galaxy)
     if gi is None:
         logger.critical("Failed to connect to Galaxy instance")
-        return 1
+        sys.exit(1)
     # Create users
-    return users.create_batch_of_users(gi,file,
-                                       only_check=only_check,
-                                       mako_template=message_template)
+    sys.exit(users.create_batch_of_users(gi,file,
+                                         only_check=only_check,
+                                         mako_template=message_template))
 
 @nebulizer.command()
 @click.option('--name',metavar='NAME',
@@ -456,9 +461,10 @@ def list_tools(context,galaxy,name,installed_only):
     gi = context.galaxy_instance(galaxy)
     if gi is None:
         logger.critical("Failed to connect to Galaxy instance")
-        return 1
+        sys.exit(1)
     # List tools
-    tools.list_tools(gi,name=name,installed_only=installed_only)
+    sys.exit(tools.list_tools(gi,name=name,
+                              installed_only=installed_only))
 
 @nebulizer.command()
 @click.option('--name',metavar='NAME',
@@ -503,13 +509,14 @@ def list_installed_tools(context,galaxy,name,toolshed,owner,list_tools,
     gi = context.galaxy_instance(galaxy)
     if gi is None:
         logger.critical("Failed to connect to Galaxy instance")
-        return 1
+        sys.exit(1)
     # List repositories
-    tools.list_installed_repositories(gi,name=name,
-                                      toolshed=toolshed,
-                                      owner=owner,
-                                      list_tools=list_tools,
-                                      only_updateable=updateable)
+    sys.exit(tools.list_installed_repositories(
+        gi,name=name,
+        toolshed=toolshed,
+        owner=owner,
+        list_tools=list_tools,
+        only_updateable=updateable))
 
 @nebulizer.command()
 @click.option('--name',metavar='NAME',
@@ -532,10 +539,10 @@ def list_tool_panel(context,galaxy,name,list_tools):
     gi = context.galaxy_instance(galaxy)
     if gi is None:
         logger.critical("Failed to connect to Galaxy instance")
-        return 1
+        sys.exit(1)
     # List tool panel contents
-    tools.list_tool_panel(gi,name=name,
-                          list_tools=list_tools)
+    sys.exit(tools.list_tool_panel(gi,name=name,
+                                   list_tools=list_tools))
 
 @nebulizer.command()
 @click.option('--tool-panel-section',
@@ -576,12 +583,12 @@ def install_tool(context,galaxy,toolshed,owner,repository,
     gi = context.galaxy_instance(galaxy)
     if gi is None:
         logger.critical("Failed to connect to Galaxy instance")
-        return 1
+        sys.exit(1)
     # Install tool
-    return tools.install_tool(
+    sys.exit(tools.install_tool(
         gi,toolshed,repository,owner,revision=revision,
         tool_panel_section=tool_panel_section,
-        timeout=timeout,no_wait=no_wait)
+        timeout=timeout,no_wait=no_wait))
 
 @nebulizer.command()
 @click.option('--name',metavar='NAME',
@@ -623,13 +630,14 @@ def list_repositories(context,galaxy,name,toolshed,owner,updateable):
     gi = context.galaxy_instance(galaxy)
     if gi is None:
         logger.critical("Failed to connect to Galaxy instance")
-        return 1
+        sys.exit(1)
     # List repositories
-    tools.list_installed_repositories(gi,name=name,
-                                      toolshed=toolshed,
-                                      owner=owner,
-                                      only_updateable=updateable,
-                                      tsv=True)
+    sys.exit(tools.list_installed_repositories(
+        gi,name=name,
+        toolshed=toolshed,
+        owner=owner,
+        only_updateable=updateable,
+        tsv=True))
 
 @nebulizer.command()
 @click.option('--timeout',metavar='TIMEOUT',default=600,
@@ -661,7 +669,7 @@ def install_repositories(context,galaxy,file,timeout,no_wait):
     gi = context.galaxy_instance(galaxy)
     if gi is None:
         logger.critical("Failed to connect to Galaxy instance")
-        return 1
+        sys.exit(1)
     # Keep a list of failed tool installs
     failed_install = []
     # Install tools
@@ -674,7 +682,7 @@ def install_repositories(context,galaxy,file,timeout,no_wait):
             toolshed,owner,repository = line[:3]
         except ValueError:
             logger.critical("Couldn't parse line")
-            return 1
+            sys.exit(1)
         try:
             revision = line[3]
             if not revision:
@@ -700,9 +708,9 @@ def install_repositories(context,galaxy,file,timeout,no_wait):
                      "installed")
         for repo in failed_install:
             click.echo('\t'.join(repo))
-        return 1
+        sys.exit(1)
     # Looks like everything worked
-    return 0
+    sys.exit(0)
 
 @nebulizer.command()
 @click.option('--timeout',metavar='TIMEOUT',default=600,
@@ -733,10 +741,10 @@ def update_tool(context,galaxy,toolshed,owner,repository,
     gi = context.galaxy_instance(galaxy)
     if gi is None:
         logger.critical("Failed to connect to Galaxy instance")
-        return 1
+        sys.exit(1)
     # Install tool
-    return tools.update_tool(gi,toolshed,repository,owner,
-                             timeout=timeout,no_wait=no_wait)
+    sys.exit(tools.update_tool(gi,toolshed,repository,owner,
+                               timeout=timeout,no_wait=no_wait))
 
 @nebulizer.command()
 @click.option('-l','long_listing',is_flag=True,
@@ -759,14 +767,14 @@ def list_libraries(context,galaxy,path,long_listing):
     gi = context.galaxy_instance(galaxy)
     if gi is None:
         logger.critical("Failed to connect to Galaxy instance")
-        return 1
+        sys.exit(1)
     # List folders in data library
     if path:
-        libraries.list_library_contents(gi,path,
-                                        long_listing_format=
-                                        long_listing)
+        sys.exit(libraries.list_library_contents(
+            gi,path,
+            long_listing_format=long_listing))
     else:
-        libraries.list_data_libraries(gi)
+        sys.exit(libraries.list_data_libraries(gi))
 
 @nebulizer.command()
 @click.option('-d','--description',
@@ -787,7 +795,7 @@ def create_library(context,galaxy,name,description,synopsis):
     gi = context.galaxy_instance(galaxy)
     if gi is None:
         logger.critical("Failed to connect to Galaxy instance")
-        return 1
+        sys.exit(1)
     # Create new data library
     libraries.create_library(gi,name,
                              description=description,
@@ -815,9 +823,11 @@ def create_library_folder(context,galaxy,path,description):
     gi = context.galaxy_instance(galaxy)
     if gi is None:
         logger.critical("Failed to connect to Galaxy instance")
-        return 1
+        sys.exit(1)
     # Create new folder
-    libraries.create_folder(gi,path,description=description)
+    if libraries.create_folder(gi,path,
+                               description=description) is None:
+        sys.exit(1)
 
 @nebulizer.command()
 @click.option('--file-type',default='auto',
@@ -856,7 +866,7 @@ def add_library_datasets(context,galaxy,dest,file,file_type,
     gi = context.galaxy_instance(galaxy)
     if gi is None:
         logger.critical("Failed to connect to Galaxy instance")
-        return 1
+        sys.exit(1)
     # Add the datasets
     libraries.add_library_datasets(gi,dest,file,
                                    from_server=from_server,
@@ -892,7 +902,7 @@ def ping(context,galaxy,count,interval=5):
             gi = context.galaxy_instance(galaxy_url)
             if gi is None:
                 click.echo("%s: failed to connect" % galaxy_url)
-                return 1
+                sys.exit(1)
             else:
                 status_code,response_time = ping_galaxy_instance(gi)
                 if status_code != 0:
@@ -910,7 +920,7 @@ def ping(context,galaxy,count,interval=5):
             time.sleep(interval)
         except KeyboardInterrupt:
             break
-    return status_code
+    sys.exit(status_code)
 
 @nebulizer.command()
 @click.argument("galaxy")
@@ -924,7 +934,7 @@ def whoami(context,galaxy,):
     gi = context.galaxy_instance(galaxy)
     if gi is None:
         logger.critical("Failed to connect to Galaxy instance")
-        return 1
+        sys.exit(1)
     user = get_current_user(gi)
     if user is None:
         logger.warning("No associated user for this API key")
