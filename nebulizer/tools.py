@@ -3,6 +3,7 @@
 # tools: functions for managing tools
 import fnmatch
 import time
+import json
 import logging
 from bioblend import galaxy
 from bioblend import toolshed
@@ -970,8 +971,11 @@ def install_tool(gi,tool_shed,name,owner,revision=None,
             new_tool_panel_section_label=new_tool_panel_section)
     except ConnectionError as connection_error:
         # Handle error
-        logger.warning("Got connection error from Galaxy API: %s "
-                       "(ignored)" % connection_error.status_code)
+        logger.warning("Got error from Galaxy API on attempted install "
+                       "(ignored)")
+        logger.warning("Status code: %s" % connection_error.status_code)
+        logger.warning("Message    : \"%s\"" %
+                       json.loads(connection_error.body)["err_msg"])
     # Check installation status
     ntries = 0
     while (ntries*poll_interval) < timeout:
