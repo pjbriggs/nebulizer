@@ -95,7 +95,7 @@ else
 fi
 #
 # Get the test functions
-test_cases="$(grep ^function ../test.cases.sh | cut -d' ' -f2 | cut -d'(' -f1)"
+test_cases="$(grep ^function $(dirname $0)/test.cases.sh | cut -d' ' -f2 | cut -d'(' -f1)"
 # Run tests
 init_testing
 for t in $test_cases ; do
