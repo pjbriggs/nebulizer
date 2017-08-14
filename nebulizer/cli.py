@@ -482,10 +482,14 @@ def list_tools(context,galaxy,name,installed_only):
 @click.option('--updateable',is_flag=True,
               help="only show repositories with uninstalled updates "
               "or upgrades.")
+@click.option('--check-toolshed',is_flag=True,
+              help="check installed revisions directly against those "
+              "available in the toolshed. NB this can be extremely "
+              "slow.")
 @click.argument("galaxy")
 @pass_context
 def list_installed_tools(context,galaxy,name,toolshed,owner,list_tools,
-                         updateable):
+                         updateable,check_toolshed):
     """
     List installed tool repositories.
 
@@ -500,6 +504,14 @@ def list_installed_tools(context,galaxy,name,toolshed,owner,list_tools,
     'status' indicator ('D' = deprecated; '^' = newer revision
     installed; 'u' = update available but not installed; 'U' =
     upgrade available but not installed; '*' = latest revision).
+
+    Note that there may still be a newer revision of a tool
+    available from the toolshed, even when the repository is
+    marked as '*'. Use the --check-toolshed option to also
+    explicitly check against the toolshed, in which case a '!'
+    status indicates that a newer version has been found on
+    toolshed. Note that this option incurs a significant overhead
+    when checking a large number of tools.
 
     If the --list-tools option is specified then additionally
     after each repository the tools associated with the repository
@@ -516,7 +528,8 @@ def list_installed_tools(context,galaxy,name,toolshed,owner,list_tools,
         tool_shed=toolshed,
         owner=owner,
         list_tools=list_tools,
-        only_updateable=updateable))
+        only_updateable=updateable,
+        check_tool_shed=check_toolshed))
 
 @nebulizer.command()
 @click.option('--name',metavar='NAME',
@@ -719,13 +732,16 @@ def install_repositories(context,galaxy,file,timeout,no_wait):
 @click.option('--no-wait',is_flag=True,
               help="don't wait for lengthy tool installations to "
               "complete.")
+@click.option('--check-toolshed',is_flag=True,
+              help="check installed revisions directly against those "
+              "available in the toolshed")
 @click.argument("galaxy")
 @click.argument("toolshed")
 @click.argument("owner")
 @click.argument("repository")
 @pass_context
 def update_tool(context,galaxy,toolshed,owner,repository,
-                timeout,no_wait):
+                timeout,no_wait,check_toolshed):
     """
     Update tool installed from toolshed.
 
@@ -744,7 +760,8 @@ def update_tool(context,galaxy,toolshed,owner,repository,
         sys.exit(1)
     # Install tool
     sys.exit(tools.update_tool(gi,toolshed,repository,owner,
-                               timeout=timeout,no_wait=no_wait))
+                               timeout=timeout,no_wait=no_wait,
+                               check_tool_shed=check_toolshed))
 
 @nebulizer.command()
 @click.option('-l','long_listing',is_flag=True,
