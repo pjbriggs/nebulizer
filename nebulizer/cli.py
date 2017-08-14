@@ -513,7 +513,7 @@ def list_installed_tools(context,galaxy,name,toolshed,owner,list_tools,
     # List repositories
     sys.exit(tools.list_installed_repositories(
         gi,name=name,
-        toolshed=toolshed,
+        tool_shed=toolshed,
         owner=owner,
         list_tools=list_tools,
         only_updateable=updateable))
@@ -634,7 +634,7 @@ def list_repositories(context,galaxy,name,toolshed,owner,updateable):
     # List repositories
     sys.exit(tools.list_installed_repositories(
         gi,name=name,
-        toolshed=toolshed,
+        tool_shed=toolshed,
         owner=owner,
         only_updateable=updateable,
         tsv=True))

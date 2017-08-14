@@ -81,10 +81,10 @@ class Tool:
         ele = self.id.split('/')
         try:
             i = ele.index('repos')
-            toolshed = '/'.join(ele[:i])
+            tool_shed = '/'.join(ele[:i])
             owner = ele[i+1]
             repo = ele[i+2]
-            return '/'.join((toolshed,owner,repo))
+            return '/'.join((tool_shed,owner,repo))
         except ValueError:
             return ''
 
@@ -110,7 +110,7 @@ class Tool:
         # .../toolshed.g2.bx.psu.edu/repos/devteam/picard/efc56ee1ade4/...
         try:
             ele = tool_repo.split('/')
-            toolshed = '/'.join(ele[:-2])
+            tool_shed = '/'.join(ele[:-2])
             owner = ele[-2]
             repo = ele[-1]
             search_string = "/repos/%s/%s/" % (owner,repo)
@@ -558,12 +558,12 @@ def get_revisions_from_toolshed(tool_shed,name,owner):
                         (tool_shed,connection_error.status_code))
         return []
 
-def normalise_toolshed_url(toolshed):
+def normalise_toolshed_url(tool_shed):
     """
     Return complete URL for a tool shed
 
     Arguments:
-      toolshed (str): partial or full URL for a
+      tool_shed (str): partial or full URL for a
         toolshed server
 
     Returns:
@@ -571,10 +571,10 @@ def normalise_toolshed_url(toolshed):
         leading protocol.
 
     """
-    if toolshed.startswith('http://') or \
-       toolshed.startswith('https://'):
-        return toolshed
-    return "https://%s" % toolshed
+    if tool_shed.startswith('http://') or \
+       tool_shed.startswith('https://'):
+        return tool_shed
+    return "https://%s" % tool_shed
 
 def tool_install_status(gi,tool_shed,owner,name,revision=None):
     """
@@ -626,7 +626,7 @@ def tool_install_status(gi,tool_shed,owner,name,revision=None):
     return rev.status
 
 def installed_repositories(gi,name=None,
-                           toolshed=None,
+                           tool_shed=None,
                            owner=None,
                            include_deleted=False,
                            only_updateable=False):
@@ -637,7 +637,7 @@ def installed_repositories(gi,name=None,
       gi (bioblend.galaxy.GalaxyInstance): Galaxy instance
       name (str): optional, only list tool repositiories
         which match this string (can include wildcards)
-      toolshed (str): optional, only list tool
+      tool_shed (str): optional, only list tool
         repositories from toolsheds that match this string
         (can include wildcards)
       owner (str): optional, only list tool repositiories
@@ -671,12 +671,12 @@ def installed_repositories(gi,name=None,
         repos = filter(lambda r: fnmatch.fnmatch(r.name.lower(),name),
                        repos)
     # Filter on toolshed
-    if toolshed:
+    if tool_shed:
         # Strip leading http(s)://
         for protocol in ('https://','http://'):
-            if toolshed.startswith(protocol):
-                toolshed = toolshed[len(protocol):]
-        repos = filter(lambda r: fnmatch.fnmatch(r.tool_shed,toolshed),
+            if tool_shed.startswith(protocol):
+                tool_shed = tool_shed[len(protocol):]
+        repos = filter(lambda r: fnmatch.fnmatch(r.tool_shed,tool_shed),
                        repos)
     # Filter on owner
     if owner:
@@ -744,7 +744,7 @@ def list_tools(gi,name=None,installed_only=False):
     print "total %s" % len(tools)
 
 def list_installed_repositories(gi,name=None,
-                                toolshed=None,
+                                tool_shed=None,
                                 owner=None,
                                 list_tools=False,
                                 include_deleted=False,
@@ -757,7 +757,7 @@ def list_installed_repositories(gi,name=None,
       gi (bioblend.galaxy.GalaxyInstance): Galaxy instance
       name (str): optional, only list tool repositiories
         which match this string (can include wildcards)
-      toolshed (str): optional, only list tool
+      tool_shed (str): optional, only list tool
         repositories from toolsheds that match this string
         (can include wildcards)
       owner (str): optional, only list tool repositiories
@@ -780,7 +780,7 @@ def list_installed_repositories(gi,name=None,
     """
     # Get the list of installed repos
     repos = installed_repositories(gi,name=name,
-                                   toolshed=toolshed,
+                                   tool_shed=tool_shed,
                                    owner=owner,
                                    include_deleted=include_deleted,
                                    only_updateable=only_updateable)
