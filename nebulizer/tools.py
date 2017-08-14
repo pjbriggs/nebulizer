@@ -174,6 +174,8 @@ class RepositoryRevision:
             self.deprecated = None
         # Indicates whether a newer revision is installed
         self._newer_revision_installed = None
+        # Indicates whether a newer revision is available on toolshed
+        self._tool_shed_has_newer_revision = None
 
     def newer_revision_installed(self,status=None):
         """
@@ -185,12 +187,29 @@ class RepositoryRevision:
         False (no newer instance has been installed).
 
         Returns the last value of ``status`` that was
-        explicitly specified.
-
+        explicitly specified, or 'None' if no status
+        has been set.
         """
         if status is not None:
             self._newer_revision_installed = status
         return self._newer_revision_installed
+
+    def tool_shed_has_newer_revision(self,status=None):
+        """
+        Query or set flag indicating if newer version is available on toolshed
+
+        If ``status`` is set then should be True
+        (indicating that a newer version of the tool
+        is available on the toolshed) or False (no
+        newer version is available).
+
+        Returns the last value of ``status`` that was
+        explicitly specified, or 'None' if no status
+        has been set.
+        """
+        if status is not None:
+            self._tool_shed_has_newer_revision = status
+        return self._tool_shed_has_newer_revision
 
     @property
     def status_indicator(self):
@@ -203,7 +222,8 @@ class RepositoryRevision:
         'D' = deprecated
         '^' = newer revision installed
         'u' = update available but not installed
-        'U' = ugrade available but not installed
+        'U' = upgrade available but not installed
+        '!' = newer version available on toolshed
         '*' = this is latest revision
 
         """
@@ -212,6 +232,8 @@ class RepositoryRevision:
             status_indicator += 'D'
         elif self.newer_revision_installed():
             status_indicator += '^'
+        elif self.tool_shed_has_newer_revision():
+            status_indicator += '!'
         elif self.latest_revision:
             status_indicator += '*'
         elif self.revision_update:
@@ -269,6 +291,7 @@ class Repository:
         self.tool_shed = repo_data['tool_shed']
         self.owner = repo_data['owner']
         self._revisions = []
+        self._tool_shed_revisions = None
         self.add_revision(repo_data)
 
     def add_revision(self,repo_data):
@@ -283,19 +306,64 @@ class Repository:
         # Sort into order (newest to oldest)
         self._revisions.sort(key=lambda r: int(r.revision_number),
                              reverse=True)
+        # Find more recent installed version
+        latest_installed_revision = None
+        for i,r in enumerate(self._revisions):
+            if not r.deleted:
+                latest_installed_revision = \
+                                self._revisions[i].changeset_revision
+                break
         # Set status indicating whether newer version is
         # installed
         for r in self._revisions:
             r.newer_revision_installed(status=None)
-        latest_revision = None
-        for i,r in enumerate(self._revisions):
-            if not r.deleted:
-                latest_revision = i
-                break
-        if latest_revision is not None:
+        if latest_installed_revision is not None:
             self._revisions[i].newer_revision_installed(status=False)
             for r in self._revisions[i+1:]:
                 r.newer_revision_installed(status=True)
+
+    def update_tool_shed_revision_status(self):
+        """
+        Update the 'newer toolshed revision' status of the repository
+
+        For each installed revision of the repository, set the
+        ``tool_shed_has_newer_revision`` status to True if a
+        newer revision is available on the toolshed, or False
+        if not.
+        """
+        # Get the latest available revision from the toolshed
+        tool_shed_revisions = self.tool_shed_revisions()
+        if tool_shed_revisions is not None:
+            latest_shed_revision = tool_shed_revisions[-1]
+            if self._revisions[0].changeset_revision != latest_shed_revision:
+                self._revisions[0].tool_shed_has_newer_revision(status=True)
+            else:
+                self._revisions[0].tool_shed_has_newer_revision(status=False)
+
+    def tool_shed_revisions(self):
+        """
+        Fetch available repository revisions from toolshed
+
+        Returns a list of the available installable revisions
+        (aka changeset ids) from the toolshed, ordered oldest
+        to newest.
+
+        If the revision list can't be obtained (e.g. the tool
+        shed is not available) then returns 'None', otherwise
+        returns a list.
+        """
+        if self._tool_shed_revisions is None:
+            # Fetch available revisions from the tool shed
+            shed = toolshed.ToolShedInstance(url=self.tool_shed)
+            try:
+                self._tool_shed_revisions = \
+                    shed.repositories.get_ordered_installable_revisions(
+                        self.name,
+                        self.owner)
+            except BioblendConnectionError as connection_error:
+                logger.critical("Unable to connect to toolshed '%s': %s" %
+                                (self.tool_shed,connection_error.status_code))
+        return self._tool_shed_revisions
 
     def revisions(self,include_deleted=False):
         """
@@ -629,7 +697,8 @@ def installed_repositories(gi,name=None,
                            tool_shed=None,
                            owner=None,
                            include_deleted=False,
-                           only_updateable=False):
+                           only_updateable=False,
+                           check_tool_shed=False):
     """
     Fetch a list of installed repository revisions
 
@@ -653,6 +722,11 @@ def installed_repositories(gi,name=None,
         repositories that have uninstalled updates or
         upgrades available (default is to show all
         repositories and revisions)
+      check_tool_shed (bool): if True then also check
+        revisions against the tool shed, to determine if
+        updates are available for each tool. NB this is
+        an expensive operation to perform so is turned
+        off by default
 
     Returns:
       List: a list of tuples consisting of three items
@@ -684,6 +758,9 @@ def installed_repositories(gi,name=None,
     # Get list of tools
     tools = get_tools(gi)
     for repo in repos:
+        # Also check against tool shed?
+        if check_tool_shed:
+            repo.update_tool_shed_revision_status()
         # Check each revision
         for revision in repo.revisions():
             # Exclude deleted revisions
@@ -691,8 +768,9 @@ def installed_repositories(gi,name=None,
                 continue
             # Exclude revisions that don't need updating
             if only_updateable and \
-               (revision.newer_revision_installed() or \
-                revision.latest_revision):
+               (revision.newer_revision_installed() or
+                (revision.latest_revision and
+                 not revision.tool_shed_has_newer_revision())):
                 continue
             # Fetch tools associated with this revision
             repo_tools = filter(lambda t:
@@ -749,6 +827,7 @@ def list_installed_repositories(gi,name=None,
                                 list_tools=False,
                                 include_deleted=False,
                                 only_updateable=False,
+                                check_tool_shed=False,
                                 tsv=False):
     """
     Print a list of the installed toolshed repositories
@@ -773,6 +852,11 @@ def list_installed_repositories(gi,name=None,
         repositories that have uninstalled updates or
         upgrades available (default is to show all
         repositories and revisions)
+      check_tool_shed (bool): if True then also check
+        revisions against the tool shed, to determine if
+        updates are available for each tool. NB this is
+        an expensive operation to perform so is turned
+        off by default
       tsv (bool): if True then output in a compact tab
         delimited format listing toolshed, owner,
         repository, changeset and tool panel section
@@ -783,7 +867,8 @@ def list_installed_repositories(gi,name=None,
                                    tool_shed=tool_shed,
                                    owner=owner,
                                    include_deleted=include_deleted,
-                                   only_updateable=only_updateable)
+                                   only_updateable=only_updateable,
+                                   check_tool_shed=check_tool_shed)
     if tsv:
         # Output format for reinstallation of repositories
         tool_panel = ToolPanel(gi)
@@ -1019,7 +1104,7 @@ def install_tool(gi,tool_shed,name,owner,revision=None,
     return TOOL_INSTALL_TIMEOUT
 
 def update_tool(gi,tool_shed,name,owner,timeout=600,poll_interval=30,
-                no_wait=False):
+                no_wait=False,check_tool_shed=False):
     """
     Update a tool repository in a Galaxy instance
 
@@ -1040,7 +1125,10 @@ def update_tool(gi,tool_shed,name,owner,timeout=600,poll_interval=30,
       no_wait (boolean): optional, if True then don't wait
         for tool installation to complete (default is False
         i.e. do wait for tool to finish installing).
-
+      check_tool_shed (bool): if True then also check
+        revisions against the tool shed, to determine if
+        updates are available for the tool (default is
+        False i.e. do not check status against toolshed)
     """
     # Locate the existing installation
     update_repo = None
@@ -1057,20 +1145,21 @@ def update_tool(gi,tool_shed,name,owner,timeout=600,poll_interval=30,
     print "Toolshed:\t%s" % tool_shed
     print "Repository:\t%s" % name
     print "Owner:\t%s" % owner
+    # Update the toolshed status
+    if check_tool_shed:
+        repo.update_tool_shed_revision_status()
+    # Find latest installable revision
+    if not repo.tool_shed_revisions():
+        logger.critical("%s: no installable revisions found" % name)
+        return TOOL_UPDATE_FAIL
+    revision = repo.tool_shed_revisions()[-1]
     # Check that there is an update available
     for r in repo.revisions():
-        if not r.deleted and r.latest_revision:
+        if not r.deleted and (r.latest_revision and
+                              not r.tool_shed_has_newer_revision()):
             print "%s: version %s already the latest version" \
                 % (name,r.revision_id)
             return TOOL_UPDATE_OK
-    # Find latest installable revision
-    shed = toolshed.ToolShedInstance(url=tool_shed)
-    revisions = shed.repositories.get_ordered_installable_revisions(name,
-                                                                    owner)
-    if not revisions:
-        logger.critical("%s: no installable revisions found" % name)
-        return TOOL_UPDATE_FAIL
-    revision = revisions[-1]
     # Locate tool panel section for existing tools
     tool_panel_section = None
     for tool in get_tools(gi):
