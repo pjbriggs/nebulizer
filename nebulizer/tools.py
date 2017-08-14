@@ -535,6 +535,29 @@ def get_tool_panel_sections(gi):
         tool_panel_sections.append(ToolPanelSection(data))
     return tool_panel_sections
 
+def get_revisions_from_toolshed(tool_shed,name,owner):
+    """
+    Fetch list of installable revisions for a tool from its toolshed
+
+    Arguments:
+      tool_shed (str): tool shed URL
+      name (str): name of the tool repository
+      owner (str): tool repository owner
+
+    Returns:
+      List: ordered list (oldest to newest) of the
+        installable repositoy changesets on the tool
+        shed.
+    """
+    shed = toolshed.ToolShedInstance(url=tool_shed)
+    try:
+        return shed.repositories.get_ordered_installable_revisions(name,
+                                                                   owner)
+    except BioblendConnectionError as connection_error:
+        logger.critical("Unable to connect to toolshed '%s': %s" %
+                        (tool_shed,connection_error.status_code))
+        return []
+
 def normalise_toolshed_url(toolshed):
     """
     Return complete URL for a tool shed
@@ -886,7 +909,6 @@ def install_tool(gi,tool_shed,name,owner,revision=None,
 
     """
     # Locate the repository on the toolshed
-    shed = toolshed.ToolShedInstance(url=tool_shed)
     print "Toolshed  :\t%s" % tool_shed
     print "Repository:\t%s" % name
     print "Owner     :\t%s" % owner
@@ -905,14 +927,7 @@ def install_tool(gi,tool_shed,name,owner,revision=None,
                                                             install_status)
         return TOOL_INSTALL_OK
     # Get available revisions
-    try:
-        revisions = shed.repositories.get_ordered_installable_revisions(name,
-                                                                        owner)
-    except BioblendConnectionError as connection_error:
-        logger.critical("Unable to connect to toolshed '%s': %s" %
-                        (tool_shed,connection_error.status_code))
-        return TOOL_INSTALL_FAIL
-    #print "%s" % revisions
+    revisions = get_revisions_from_toolshed(tool_shed,name,owner)
     if not revisions:
         logger.critical("%s: no installable revisions found" % name)
         return TOOL_INSTALL_FAIL
