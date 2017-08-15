@@ -3,10 +3,11 @@
 # search: functions for searching toolshed
 import logging
 import string
-from bioblend import toolshed
 from core import get_galaxy_instance
 from tools import normalise_toolshed_url
 from tools import get_repositories
+from bioblend import toolshed
+from bioblend import ConnectionError as BioblendConnectionError
 
 # Logging
 logger = logging.getLogger(__name__)
@@ -32,9 +33,15 @@ def search_toolshed(tool_shed,query_string,gi=None):
     shed = toolshed.ToolShedInstance(tool_shed_url)
     # Query the toolshed
     repo_client = toolshed.repositories.ToolShedRepositoryClient(shed)
-    search_result = repo_client.search_repositories(
-        query_string,
-        page_size=SEARCH_PAGE_SIZE)
+    try:
+        search_result = repo_client.search_repositories(
+            query_string,
+            page_size=SEARCH_PAGE_SIZE)
+    except BioblendConnectionError as connection_error:
+        # Handle error
+        logger.warning("Error from Galaxy API: %s"
+                       % connection_error)
+        return connection_error.status_code
     # Deal with the results
     nhits = int(search_result['total_results'])
     if nhits == 0:
