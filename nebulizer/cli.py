@@ -18,6 +18,7 @@ from . import options
 from . import users
 from . import libraries
 from . import tools
+from . import search
 
 # Initialise logging
 logger = logging.getLogger(__name__)
@@ -817,6 +818,34 @@ def update_tool(context,galaxy,toolshed,owner,repository,
                                (install_repository_dependencies== 'yes'),
                                install_resolver_dependencies=
                                (install_resolver_dependencies== 'yes')))
+
+@nebulizer.command()
+@click.option('--galaxy',metavar='GALAXY',
+              help="check if tool repositories are installed in "
+              "GALAXY instance")
+@click.argument("toolshed")
+@click.argument("query_string")
+@pass_context
+def search_toolshed(context,toolshed,query_string,galaxy):
+    """
+    Search for repositories on a toolshed.
+
+    Searches for repositories on TOOLSHED using the
+    specified QUERY_STRING.
+
+    If a GALAXY instance is supplied then also check
+    whether the tool repositories are already installed.
+    """
+    # Get a Galaxy instance, if specified
+    if galaxy is not None:
+        gi = context.galaxy_instance(galaxy)
+        if gi is None:
+            logger.critical("Failed to connect to Galaxy instance")
+            sys.exit(1)
+    else:
+        gi = None
+    # Search the toolshed
+    sys.exit(search.search_toolshed(toolshed,query_string,gi=gi))
 
 @nebulizer.command()
 @click.option('-l','long_listing',is_flag=True,
