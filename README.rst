@@ -181,6 +181,20 @@ Update FastQC tool to latest installable revision::
    option. Note however that this can impose a significant
    overhead which can make the commands much slower.
 
+---------------------------------------------
+Searching for tool repositories on a Toolshed
+---------------------------------------------
+
+Search the main toolshed with the query ``deeptools``::
+
+    nebulizer -n search_toolshed toolshed.g2.bx.psu.edu deeptools
+
+Perform the same search checking which tool repositories are
+already installed on a local Galaxy instance::
+
+    nebulizer -n search_toolshed toolshed.g2.bx.psu.edu deeptools \
+      --galaxy localhost
+
 ----------------------------------------------------
 Checking status and configuration of a Galaxy server
 ----------------------------------------------------
