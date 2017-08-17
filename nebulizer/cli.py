@@ -740,6 +740,9 @@ def install_repositories(context,galaxy,file,timeout,no_wait):
     sys.exit(0)
 
 @nebulizer.command()
+@options.install_tool_dependencies_option(default='yes')
+@options.install_repository_dependencies_option(default='yes')
+@options.install_resolver_dependencies_option(default='yes')
 @click.option('--timeout',metavar='TIMEOUT',default=600,
               help="wait up to TIMEOUT seconds for tool installations"
               "to complete (default is 600).")
@@ -755,6 +758,9 @@ def install_repositories(context,galaxy,file,timeout,no_wait):
 @click.argument("repository")
 @pass_context
 def update_tool(context,galaxy,toolshed,owner,repository,
+                install_tool_dependencies,
+                install_repository_dependencies,
+                install_resolver_dependencies,
                 timeout,no_wait,check_toolshed):
     """
     Update tool installed from toolshed.
@@ -775,7 +781,13 @@ def update_tool(context,galaxy,toolshed,owner,repository,
     # Install tool
     sys.exit(tools.update_tool(gi,toolshed,repository,owner,
                                timeout=timeout,no_wait=no_wait,
-                               check_tool_shed=check_toolshed))
+                               check_tool_shed=check_toolshed,
+                               install_tool_dependencies=
+                               (install_tool_dependencies == 'yes'),
+                               install_repository_dependencies=
+                               (install_repository_dependencies== 'yes'),
+                               install_resolver_dependencies=
+                               (install_resolver_dependencies== 'yes')))
 
 @nebulizer.command()
 @click.option('-l','long_listing',is_flag=True,

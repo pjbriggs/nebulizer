@@ -1127,7 +1127,11 @@ def install_tool(gi,tool_shed,name,owner,revision=None,
     logger.critical("%s: timed out waiting for install" % name)
     return TOOL_INSTALL_TIMEOUT
 
-def update_tool(gi,tool_shed,name,owner,timeout=600,poll_interval=30,
+def update_tool(gi,tool_shed,name,owner,
+                install_tool_dependencies=True,
+                install_repository_dependencies=True,
+                install_resolver_dependencies=True,
+                timeout=600,poll_interval=30,
                 no_wait=False,check_tool_shed=False):
     """
     Update a tool repository in a Galaxy instance
@@ -1138,6 +1142,15 @@ def update_tool(gi,tool_shed,name,owner,timeout=600,poll_interval=30,
         tool from
       name (str): name of the tool repository
       owner (str): name of the tool repository owner
+      install_tool_dependencies (bool): optional, if True
+        then install tool dependencies from the toolshed
+        if possible (default).
+      install_repository_dependencies (bool): optional, if
+        True then install repository dependencies from the
+        toolshed if possible (default).
+      install_resolver_dependencies (bool): optional, if
+        True then install dependencies using a resolver
+        which supports this (e.g. conda) (default).
       timeout (int): optional, sets the maximum time (in
         seconds) to wait for a tool to complete installing
         before giving up (default is 600s). Ignored if
@@ -1193,7 +1206,11 @@ def update_tool(gi,tool_shed,name,owner,timeout=600,poll_interval=30,
     if tool_panel_section is None:
         logger.warning("%s: no tool panel section found" % name)
     #print "Installing update under %s" % tool_panel_section
-    return install_tool(gi,tool_shed,name,owner,revision,
-                        tool_panel_section=tool_panel_section,
-                        timeout=timeout,poll_interval=poll_interval,
-                        no_wait=no_wait)
+    return install_tool(
+        gi,tool_shed,name,owner,revision,
+        install_tool_dependencies=install_tool_dependencies,
+        install_repository_dependencies=install_repository_dependencies,
+        install_resolver_dependencies=install_resolver_dependencies,
+        tool_panel_section=tool_panel_section,
+        timeout=timeout,poll_interval=poll_interval,
+        no_wait=no_wait)
