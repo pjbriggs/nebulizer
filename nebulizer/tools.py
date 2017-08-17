@@ -959,7 +959,11 @@ def list_tool_panel(gi,name=None,list_tools=False):
     print "total %s" % len(sections)
 
 def install_tool(gi,tool_shed,name,owner,revision=None,
-                 tool_panel_section=None,timeout=600,
+                 tool_panel_section=None,
+                 install_tool_dependencies=True,
+                 install_repository_dependencies=True,
+                 install_resolver_dependencies=True,
+                 timeout=600,
                  poll_interval=30,no_wait=False):
     """
     Install a tool repository into a Galaxy instance
@@ -980,6 +984,15 @@ def install_tool(gi,tool_shed,name,owner,revision=None,
         the tool panel section to install the tools under; if
         the tool panel section doesn't already exist it will
         be created.
+      install_tool_dependencies (bool): optional, if True
+        then install tool dependencies from the toolshed
+        if possible (default).
+      install_repository_dependencies (bool): optional, if
+        True then install repository dependencies from the
+        toolshed if possible (default).
+      install_resolver_dependencies (bool): optional, if
+        True then install dependencies using a resolver
+        which supports this (e.g. conda) (default).
       timeout (int): optional, sets the maximum time (in
         seconds) to wait for a tool to complete installing
         before giving up (default is 600s). Ignored if
@@ -1004,6 +1017,16 @@ def install_tool(gi,tool_shed,name,owner,revision=None,
         print "Revision  :\t%s" % revision
     else:
         print "Revision  :\t<not specified>"
+    # Information on dependency installation
+    print "Install tool dependencies from toolshed      : " \
+        "%s" % ('yes' if install_tool_dependencies
+                else 'no')
+    print "Install repository dependencies from toolshed: " \
+        "%s" % ('yes' if install_repository_dependencies
+                else 'no')
+    print "Install dependencies using resolver          : " \
+        "%s" % ('yes' if install_resolver_dependencies
+                else 'no')
     # Check if tool is already installed
     install_status = tool_install_status(gi,tool_shed,owner,name,
                                          revision)
@@ -1064,9 +1087,9 @@ def install_tool(gi,tool_shed,name,owner,revision=None,
         tool_shed_client = galaxy.toolshed.ToolShedClient(gi)
         tool_shed_client.install_repository_revision(
             tool_shed_url,name,owner,revision,
-            install_tool_dependencies=True,
-            install_repository_dependencies=True,
-            install_resolver_dependencies=True,
+            install_tool_dependencies=install_tool_dependencies,
+            install_repository_dependencies=install_repository_dependencies,
+            install_resolver_dependencies=install_resolver_dependencies,
             tool_panel_section_id=tool_panel_section_id,
             new_tool_panel_section_label=new_tool_panel_section)
     except ConnectionError as connection_error:
