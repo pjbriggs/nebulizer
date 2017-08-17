@@ -1066,6 +1066,7 @@ def install_tool(gi,tool_shed,name,owner,revision=None,
             tool_shed_url,name,owner,revision,
             install_tool_dependencies=True,
             install_repository_dependencies=True,
+            install_resolver_dependencies=True,
             tool_panel_section_id=tool_panel_section_id,
             new_tool_panel_section_label=new_tool_panel_section)
     except ConnectionError as connection_error:
