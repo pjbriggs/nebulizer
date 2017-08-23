@@ -12,6 +12,7 @@ from .core import get_current_user
 from .core import ping_galaxy_instance
 from .core import turn_off_urllib3_warnings
 from .core import Credentials
+import options
 import users
 import libraries
 import tools
@@ -482,10 +483,14 @@ def list_tools(context,galaxy,name,installed_only):
 @click.option('--updateable',is_flag=True,
               help="only show repositories with uninstalled updates "
               "or upgrades.")
+@click.option('--check-toolshed',is_flag=True,
+              help="check installed revisions directly against those "
+              "available in the toolshed. NB this can be extremely "
+              "slow.")
 @click.argument("galaxy")
 @pass_context
 def list_installed_tools(context,galaxy,name,toolshed,owner,list_tools,
-                         updateable):
+                         updateable,check_toolshed):
     """
     List installed tool repositories.
 
@@ -501,6 +506,14 @@ def list_installed_tools(context,galaxy,name,toolshed,owner,list_tools,
     installed; 'u' = update available but not installed; 'U' =
     upgrade available but not installed; '*' = latest revision).
 
+    Note that there may still be a newer revision of a tool
+    available from the toolshed, even when the repository is
+    marked as '*'. Use the --check-toolshed option to also
+    explicitly check against the toolshed, in which case a '!'
+    status indicates that a newer version has been found on
+    toolshed. Note that this option incurs a significant overhead
+    when checking a large number of tools.
+
     If the --list-tools option is specified then additionally
     after each repository the tools associated with the repository
     will be listed along with their descriptions and versions.
@@ -513,10 +526,11 @@ def list_installed_tools(context,galaxy,name,toolshed,owner,list_tools,
     # List repositories
     sys.exit(tools.list_installed_repositories(
         gi,name=name,
-        toolshed=toolshed,
+        tool_shed=toolshed,
         owner=owner,
         list_tools=list_tools,
-        only_updateable=updateable))
+        only_updateable=updateable,
+        check_tool_shed=check_toolshed))
 
 @nebulizer.command()
 @click.option('--name',metavar='NAME',
@@ -551,6 +565,9 @@ def list_tool_panel(context,galaxy,name,list_tools):
               "then it will be created. If this option is "
               "omitted then the tool will be installed at the "
               "top-level i.e. not in any section.")
+@options.install_tool_dependencies_option(default='yes')
+@options.install_repository_dependencies_option(default='yes')
+@options.install_resolver_dependencies_option(default='yes')
 @click.option('--timeout',metavar='TIMEOUT',default=600,
               help="wait up to TIMEOUT seconds for tool installations"
               "to complete (default is 600).")
@@ -564,7 +581,11 @@ def list_tool_panel(context,galaxy,name,list_tools):
 @click.argument("revision",required=False)
 @pass_context
 def install_tool(context,galaxy,toolshed,owner,repository,
-                 revision,tool_panel_section,timeout,no_wait):
+                 revision,tool_panel_section,
+                 install_tool_dependencies,
+                 install_repository_dependencies,
+                 install_resolver_dependencies,
+                 timeout,no_wait):
     """
     Install tool from toolshed.
 
@@ -588,7 +609,13 @@ def install_tool(context,galaxy,toolshed,owner,repository,
     sys.exit(tools.install_tool(
         gi,toolshed,repository,owner,revision=revision,
         tool_panel_section=tool_panel_section,
-        timeout=timeout,no_wait=no_wait))
+        timeout=timeout,no_wait=no_wait,
+        install_tool_dependencies=
+        (install_tool_dependencies == 'yes'),
+        install_repository_dependencies=
+        (install_repository_dependencies== 'yes'),
+        install_resolver_dependencies=
+        (install_resolver_dependencies== 'yes')))
 
 @nebulizer.command()
 @click.option('--name',metavar='NAME',
@@ -634,12 +661,15 @@ def list_repositories(context,galaxy,name,toolshed,owner,updateable):
     # List repositories
     sys.exit(tools.list_installed_repositories(
         gi,name=name,
-        toolshed=toolshed,
+        tool_shed=toolshed,
         owner=owner,
         only_updateable=updateable,
         tsv=True))
 
 @nebulizer.command()
+@options.install_tool_dependencies_option(default='yes')
+@options.install_repository_dependencies_option(default='yes')
+@options.install_resolver_dependencies_option(default='yes')
 @click.option('--timeout',metavar='TIMEOUT',default=600,
               help="wait up to TIMEOUT seconds for tool installations"
               "to complete (default is 600).")
@@ -649,7 +679,11 @@ def list_repositories(context,galaxy,name,toolshed,owner,updateable):
 @click.argument("galaxy")
 @click.argument("file",type=click.File('r'))
 @pass_context
-def install_repositories(context,galaxy,file,timeout,no_wait):
+def install_repositories(context,galaxy,file,
+                         install_tool_dependencies,
+                         install_repository_dependencies,
+                         install_resolver_dependencies,
+                         timeout,no_wait):
     """
     Install tool repositories listed in a file.
 
@@ -699,6 +733,12 @@ def install_repositories(context,galaxy,file,timeout,no_wait):
                                     toolshed,repository,owner,
                                     revision=revision,
                                     tool_panel_section=tool_panel_section,
+                                    install_tool_dependencies=
+                                    (install_tool_dependencies == 'yes'),
+                                    install_repository_dependencies=
+                                    (install_repository_dependencies== 'yes'),
+                                    install_resolver_dependencies=
+                                    (install_resolver_dependencies== 'yes'),
                                     timeout=timeout,no_wait=no_wait)
         if status != tools.TOOL_INSTALL_OK:
             failed_install.append(line)
@@ -713,19 +753,28 @@ def install_repositories(context,galaxy,file,timeout,no_wait):
     sys.exit(0)
 
 @nebulizer.command()
+@options.install_tool_dependencies_option(default='yes')
+@options.install_repository_dependencies_option(default='yes')
+@options.install_resolver_dependencies_option(default='yes')
 @click.option('--timeout',metavar='TIMEOUT',default=600,
               help="wait up to TIMEOUT seconds for tool installations"
               "to complete (default is 600).")
 @click.option('--no-wait',is_flag=True,
               help="don't wait for lengthy tool installations to "
               "complete.")
+@click.option('--check-toolshed',is_flag=True,
+              help="check installed revisions directly against those "
+              "available in the toolshed")
 @click.argument("galaxy")
 @click.argument("toolshed")
 @click.argument("owner")
 @click.argument("repository")
 @pass_context
 def update_tool(context,galaxy,toolshed,owner,repository,
-                timeout,no_wait):
+                install_tool_dependencies,
+                install_repository_dependencies,
+                install_resolver_dependencies,
+                timeout,no_wait,check_toolshed):
     """
     Update tool installed from toolshed.
 
@@ -744,7 +793,14 @@ def update_tool(context,galaxy,toolshed,owner,repository,
         sys.exit(1)
     # Install tool
     sys.exit(tools.update_tool(gi,toolshed,repository,owner,
-                               timeout=timeout,no_wait=no_wait))
+                               timeout=timeout,no_wait=no_wait,
+                               check_tool_shed=check_toolshed,
+                               install_tool_dependencies=
+                               (install_tool_dependencies == 'yes'),
+                               install_repository_dependencies=
+                               (install_repository_dependencies== 'yes'),
+                               install_resolver_dependencies=
+                               (install_resolver_dependencies== 'yes')))
 
 @nebulizer.command()
 @click.option('-l','long_listing',is_flag=True,

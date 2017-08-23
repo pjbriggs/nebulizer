@@ -168,6 +168,19 @@ Update FastQC tool to latest installable revision::
 
   nebulizer update_tool localhost toolshed.g2.bx.psu.edu devteam fastqc
 
+.. warning::
+
+   By default checks on the availability of updates for tools
+   performed by the ``list_installed_tools`` and ``update_tool``
+   commands are done using information cached by the Galaxy
+   instance in question. As a result these commands may not
+   always indicate when updates are available.
+
+   To force these commands to check the installed revisions
+   against those in the toolshed, add the ``--check-toolshed``
+   option. Note however that this can impose a significant
+   overhead which can make the commands much slower.
+
 ----------------------------------
 Checking status of a Galaxy server
 ----------------------------------
