@@ -2,6 +2,35 @@ History
 -------
 
 -------------------
+v0.4.2 (2017-08-24)
+-------------------
+
+ * Commands now explicitly return appropriate exit code values
+   indicating success (``0``) or failure (non-zero values).
+ * New option ``--check-toolshed`` added to ``list_installed_tools``
+   and ``update_tool`` commands, to check installed revisions directly
+   against those available in the toolshed
+   (`PR #44 <https://github.com/pjbriggs/nebulizer/pull/41>`_)
+ * Update ``install_tool``, ``update_tool`` and ``install_repositories``
+   to install tool dependencies through a resolver (e.g. ``conda``)
+   by default
+   (`issue #43 <https://github.com/pjbriggs/nebulizer/issues/43>`_)
+ * New options added to ``install_tool``, ``update_tool`` and
+   ``install_repositories`` commands, to explicit control how tool
+   and repository dependencies should be handled
+   (`PR #44 <https://github.com/pjbriggs/nebulizer/pull/40>`_):
+
+   - ``--install-tool-dependencies [yes|no]``: install tool
+     dependencies via the toolshed, if any are defined (default is
+     ``yes``)
+   - ``--install-tool-dependencies [yes|no]``: install tool
+     dependencies via the toolshed, if any are defined (default is
+     ``yes``)
+   - ``--install-resolver-dependencies [yes|no]``: install
+     dependencies through a resolver that supports installation (e.g.
+     ``conda``) (default is ``yes``)
+
+-------------------
 v0.4.1 (2016-12-19)
 -------------------
 
