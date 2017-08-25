@@ -126,7 +126,7 @@ class GalaxyInstance(object):
                  log_file="paster.log",parent_dir=None,
                  port=None,admin_users=None,master_api_key=None,
                  repository="https://github.com/galaxyproject/galaxy.git",
-                 release="release_17.05",
+                 release="release_17.05",conda_auto_init=True,
                  import_db=None):
         """
         Create a GalaxyInstance object
@@ -142,6 +142,8 @@ class GalaxyInstance(object):
                        'database/dependencies',
                        'config/tool_conf.xml',
                        '../shed_tools']
+        # Conda setup
+        self.conda_auto_init = conda_auto_init
         # Galaxy state
         self.is_running = False
         # Host and port
@@ -178,7 +180,8 @@ class GalaxyInstance(object):
         config['app:main'] = { 'database_connection':
                                "sqlite:///./database/%s?isolation_level=IMMEDIATE" % self.database, 
                                'master_api_key': self.master_api_key,
-                               'admin_users': ','.join(self.admin_users)
+                               'admin_users': ','.join(self.admin_users),
+                               'conda_auto_init': self.conda_auto_init,
         }
         self.make_config(sample_galaxy_config,
                          self.galaxy_config_file,
@@ -398,6 +401,83 @@ class GalaxyToolshed(GalaxyInstance):
         if 'port' not in kws:
             kws['port'] = 9090
         GalaxyInstance.__init__(self,**kws)
+
+# Test cases
+
+def get_galaxy():
+    # Clone bare repository for cache
+    Git.clone("https://github.com/galaxyproject/galaxy.git",
+              "galaxy.git",
+              bare=True,ignore_existing=True)
+    # Fetch bootstrap database
+    if not os.path.exists("db_galaxy_rev_0120.sqlite"):
+        with open("db_galaxy_rev_0120.sqlite","wb") as fp:
+            fp.write(urllib2.urlopen("https://github.com/fls-bioinformatics-core/galaxy-tools/blob/master/testing/db_galaxy_rev_0120.sqlite?raw=true").read())
+    # Create a Galaxy instance for testing
+    galaxy = GalaxyServer(parent_dir="nebulizer_test",
+                          repository="galaxy.git",
+                          release="release_17.05",
+                          import_db="db_galaxy_rev_0120.sqlite",
+                          admin_users="admin@localhost.org",
+                          conda_auto_init=False)
+    ##galaxy.reset(keep_virtual_env=True)
+    return galaxy
+
+import unittest
+
+class NebulizerTestCase(unittest.TestCase):
+    def _get_galaxy(self):
+        # Clone bare repository for cache
+        Git.clone("https://github.com/galaxyproject/galaxy.git",
+                  "galaxy.git",
+                  bare=True,ignore_existing=True)
+        # Fetch bootstrap database
+        if not os.path.exists("db_galaxy_rev_0120.sqlite"):
+            with open("db_galaxy_rev_0120.sqlite","wb") as fp:
+                fp.write(urllib2.urlopen("https://github.com/fls-bioinformatics-core/galaxy-tools/blob/master/testing/db_galaxy_rev_0120.sqlite?raw=true").read())
+        # Create a Galaxy instance for testing
+        self.galaxy = GalaxyServer(
+            parent_dir="nebulizer_test",
+            repository="galaxy.git",
+            release="release_17.05",
+            import_db="db_galaxy_rev_0120.sqlite",
+            admin_users="admin@localhost.org",
+            conda_auto_init=False)
+    def setUp(self):
+        # Set up/start Galaxy instance for tests
+        self._get_galaxy()
+        self.galaxy.start()
+        self.galaxy.add_user("admin@localhost.org",
+                             "admin",
+                             "galaxyadmin")
+        self.gi = self.galaxy.galaxy_instance()
+    def tearDown(self):
+        # Stop Galaxy on test completion
+        self.galaxy.stop()
+
+class TestNebulizerCore(NebulizerTestCase):
+    def test_get_galaxy_config(self):
+        config = core.get_galaxy_config(self.gi)
+        self.assertEqual(config['version_major'],'17.05')
+    def test_ping_galaxy_instance(self):
+        self.assertEqual(core.ping_galaxy_instance(self.gi),0)
+    def test_get_current_user(self):
+        self.assertNotEqual(core.get_current_user(self.gi),1)
+
+class TestNebulizerUsers(NebulizerTestCase):
+    def test_list_users(self):
+        self.assertEqual(users.list_users(self.gi),0)
+    def test_create_user(self):
+        self.assertEqual(users.create_user(
+            self.gi,
+            "ann.other@example.edu",
+            username="ann-other",
+            passwd="9@55w0rd"),0)
+    def test_create_user_no_username(self):
+        self.assertEqual(users.create_user(
+            self.gi,
+            "ann.other@example.edu",
+            passwd="9@55w0rd"),0)
 
 # Main program
 
