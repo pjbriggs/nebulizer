@@ -2,6 +2,15 @@ History
 -------
 
 -------------------
+v0.4.3 (2018-10-05)
+-------------------
+
+ * Ensure that ``click`` dependency is version 6.7 or earlier, to
+   avoid subcommand names changing from e.g. ``list_users`` to
+   ``list-users``
+   (`PR #49 <https://github.com/pjbriggs/nebulizer/pull/49>`_)
+
+-------------------
 v0.4.2 (2017-08-24)
 -------------------
 
