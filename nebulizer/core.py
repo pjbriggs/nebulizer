@@ -226,7 +226,7 @@ def get_galaxy_config(gi):
     try:
         return galaxy.config.ConfigClient(gi).get_config()
     except ConnectionError as ex:
-        print ex
+        print(ex)
         return {}
 
 def get_current_user(gi):

@@ -19,8 +19,8 @@ def list_data_libraries(gi):
 
     """
     for lib in galaxy.libraries.LibraryClient(gi).get_libraries():
-        print "%s\t%s\t%s" % (lib['name'],lib['description'],lib['id'])
-        ##print "%s" % lib
+        print("%s\t%s\t%s" % (lib['name'],lib['description'],lib['id']))
+        ##print("%s" % lib)
 
 def library_id_from_name(gi,library_name):
     """
@@ -87,7 +87,7 @@ def list_library_contents(gi,path,long_listing_format=False):
     logger.debug("library_name '%s'" % library_name)
     library_id = library_id_from_name(gi,library_name)
     if library_id is None:
-        print "No library '%s'" % library_name
+        print("No library '%s'" % library_name)
         return
     # Get library contents
     library_contents = lib_client.show_library(library_id,contents=True)
@@ -123,7 +123,7 @@ def list_library_contents(gi,path,long_listing_format=False):
         contents = filter(lambda x: x['name'] != '/',contents)
         # Report
         if long_listing_format:
-            print "total %s" % len(contents)
+            print("total %s" % len(contents))
         for item in contents:
             if item['type'] == 'folder':
                 report_folder(lib_client.show_folder(library_id,
@@ -160,7 +160,7 @@ def list_library_contents(gi,path,long_listing_format=False):
                 parent = os.path.split(item['name'])[0]+'/'
                 for folder in folders:
                     if folder['name'].startswith(parent):
-                        print "Parent = %s" % parent
+                        print("Parent = %s" % parent)
                         implicit_dataset = True
                         break
             # Item outside of folders
@@ -173,11 +173,11 @@ def list_library_contents(gi,path,long_listing_format=False):
                            long_listing=long_listing_format)
         # List the contents of each folder
         for folder in folders:
-            print "\n%s:" % folder['name']
+            print("\n%s:" % folder['name'])
             folder_contents = filter(lambda x: os.path.split(x['name'])[0]
                                      == folder['name'],library_contents)
             if long_listing_format:
-                print "total %s" % len(folder_contents)
+                print("total %s" % len(folder_contents))
             for item in folder_contents:
                 if item['type'] == 'folder':
                     report_folder(lib_client.show_folder(library_id,
@@ -206,12 +206,12 @@ def create_library(gi,name,description=None,synopsis=None):
     """
     lib_client = galaxy.libraries.LibraryClient(gi)
     if library_id_from_name(gi,name):
-        print "Target data library already exists"
+        print("Target data library already exists")
         return library_id_from_name(gi,name)
     library = lib_client.create_library(name,
                                         description=description,
                                         synopsis=synopsis)
-    #print "%s" % library
+    #print("%s" % library)
     return library['id']
 
 def create_folder(gi,path,description=None):
@@ -237,24 +237,24 @@ def create_folder(gi,path,description=None):
     lib_client = galaxy.libraries.LibraryClient(gi)
     library_id = library_id_from_name(gi,library_name)
     if library_id is None:
-        print "Top level data library '%s' not found" % library_name
+        print("Top level data library '%s' not found" % library_name)
         return None
     # Get folder name and base folder
     folder_base,folder_name = os.path.split(folder_path)
     # Check folder with same name doesn't already exist
     folder_id = folder_id_from_name(gi,library_id,folder_path)
-    #print "folder_id '%s' for '%s'" % (folder_id,folder_path)
+    #print("folder_id '%s' for '%s'" % (folder_id,folder_path))
     if folder_id_from_name(gi,library_id,folder_path):
-        print "Target folder already exists"
+        print("Target folder already exists")
         return None
-    #print "folder_name '%s' folder_base '%s'" % (folder_name,
-    #                                             folder_base)
+    #print("folder_name '%s' folder_base '%s'" % (folder_name,
+    #                                             folder_base))
     base_folder_id = folder_id_from_name(gi,library_id,folder_base)
-    #print "base_folder_id %s" % base_folder_id
+    #print("base_folder_id %s" % base_folder_id)
     new_folder = lib_client.create_folder(library_id,folder_name,
                                           description=description,
                                           base_folder_id=base_folder_id)
-    #print "%s" % new_folder
+    #print("%s" % new_folder)
     return new_folder[0]['id']
 
 def add_library_datasets(gi,path,files,
@@ -297,15 +297,15 @@ def add_library_datasets(gi,path,files,
     # Get name and id for parent data library
     lib_client = galaxy.libraries.LibraryClient(gi)
     library_id = library_id_from_name(gi,library_name)
-    print "Library name '%s' id '%s'" % (library_name,library_id)
+    print("Library name '%s' id '%s'" % (library_name,library_id))
     # Get id for parent folder
     folder_id = folder_id_from_name(gi,library_id,folder_path)
-    print "Folder name '%s' id '%s'" % (folder_path,folder_id)
+    print("Folder name '%s' id '%s'" % (folder_path,folder_id))
     if from_server:
         # Assume that files are on Galaxy fileserver not localhost
         filesystem_paths = '\n'.join(files)
-        print "Uploading files from Galaxy server:"
-        print "%s" % filesystem_paths
+        print("Uploading files from Galaxy server:")
+        print("%s" % filesystem_paths)
         lib_client.upload_from_galaxy_filesystem(
             library_id,filesystem_paths,
             folder_id=folder_id,
@@ -316,7 +316,7 @@ def add_library_datasets(gi,path,files,
     else:
         # Files are on localhost
         for f in files:
-            print "Uploading file '%s'" % f
+            print("Uploading file '%s'" % f)
             lib_client.upload_file_from_local_path(
                 library_id,f,
                 folder_id=folder_id,
@@ -380,11 +380,11 @@ def report_folder(folder_data,long_listing=False):
     """
     logger.debug("%s" % folder_data)
     if long_listing:
-        print "%s/\t%s\t%s" % (folder_data['name'],
-                                folder_data['description'],
-                                folder_data['id'])
+        print("%s/\t%s\t%s" % (folder_data['name'],
+                               folder_data['description'],
+                               folder_data['id']))
     else:
-        print "%s/" % os.path.split(folder_data['name'])[1]
+        print("%s/" % os.path.split(folder_data['name'])[1])
 
 def report_dataset(dataset_data,long_listing=False):
     """
@@ -399,10 +399,10 @@ def report_dataset(dataset_data,long_listing=False):
     """
     logger.debug("%s" % dataset_data)
     if long_listing:
-        print '\t'.join([str(x) for x in (dataset_data['name'],
+        print('\t'.join([str(x) for x in (dataset_data['name'],
                                           dataset_data['file_ext'],
                                           dataset_data['genome_build'],
                                           dataset_data['file_size'],
-                                          dataset_data['file_name'],)])
+                                          dataset_data['file_name'],)]))
     else:
-        print "%s" % os.path.split(dataset_data['name'])[1]
+        print("%s" % os.path.split(dataset_data['name'])[1])

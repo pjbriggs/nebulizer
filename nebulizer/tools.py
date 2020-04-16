@@ -40,7 +40,7 @@ class Tool:
         call to bioblend, for example:
 
         >>> for tool_data in galaxy.tools.ToolClient(gi).get_tools():
-        >>>    print Tool(tool_data).name
+        >>>    print(Tool(tool_data).name)
 
         """
         self.name = tool_data['name']
@@ -140,7 +140,7 @@ class RepositoryRevision:
 
         >>> for repo_data in \
         >>>   galaxy.toolshed.ToolShedClient(gi).get_repositories():
-        >>>   print RepositoryRevision(repo_data).revision_number
+        >>>   print(RepositoryRevision(repo_data).revision_number)
 
         However the RepositoryRevision class is most
         likely instantiated implicitly by an instance
@@ -279,7 +279,7 @@ class Repository:
 
         >>> for repo_data in \
         >>>   galaxy.toolshed.ToolShedClient(gi).get_repositories():
-        >>>   print Repository(repo_data).name
+        >>>   print(Repository(repo_data).name)
 
         The Repository instance can store information
         on multiple revisions; additional revisions
@@ -418,7 +418,7 @@ class ToolPanelSection:
 
         >>> galaxy.tools.ToolClient(gi)
         >>> for tool_data in galaxy.tools.ToolClient(gi).get_tools():
-        >>>    print ToolPanelSection(tool_data).name
+        >>>    print(ToolPanelSection(tool_data).name)
 
         """
         self.id = tool_panel_data['id']
@@ -811,7 +811,7 @@ def list_tools(gi,name=None,installed_only=False):
     tools.sort(key=lambda x: x.name.lower())
     # Print info
     for tool in tools:
-        print "%-16s\t%-8s\t%-16s\t%s\t%s" % (tool.name,
+        print("%-16s\t%-8s\t%-16s\t%s\t%s" % (tool.name,
                                               tool.version,
                                               (tool.panel_section
                                                if tool.panel_section
@@ -819,8 +819,8 @@ def list_tools(gi,name=None,installed_only=False):
                                               tool.tool_repo,
                                               (tool.tool_changeset
                                                if tool.tool_changeset
-                                               else ''))
-    print "total %s" % len(tools)
+                                               else '')))
+    print("total %s" % len(tools))
 
 def list_installed_repositories(gi,name=None,
                                 tool_shed=None,
@@ -892,33 +892,33 @@ def list_installed_repositories(gi,name=None,
                 tool_panel_section = tools[0].panel_section
             else:
                 tool_panel_section = None
-            print "%s" % '\t'.join((repo.tool_shed,
+            print("%s" % '\t'.join((repo.tool_shed,
                                     repo.owner,
                                     repo.name,
                                     revision.changeset_revision,
                                     (tool_panel_section
-                                     if tool_panel_section else '')))
+                                     if tool_panel_section else ''))))
     else:
         # Denser more verbose format
         nrevisions = 0
         for r in repos:
             # Print details
             repo,revision,tools = r
-            print "%s" % '\t'.join(('%s %s' %
+            print("%s" % '\t'.join(('%s %s' %
                                     (revision.status_indicator,
                                      repo.name),
                                     repo.tool_shed,
                                     repo.owner,
                                     revision.revision_id,
-                                    revision.status))
+                                    revision.status)))
             nrevisions += 1
             # List tools associated with revision
             if list_tools:
                 for tool in tools:
-                    print "- %s" % '\t'.join((tool.name,
+                    print("- %s" % '\t'.join((tool.name,
                                               tool.version,
-                                              tool.description))
-        print "total %s" % nrevisions
+                                              tool.description)))
+        print("total %s" % nrevisions)
 
 def list_tool_panel(gi,name=None,list_tools=False):
     """
@@ -946,18 +946,18 @@ def list_tool_panel(gi,name=None,list_tools=False):
         tools = get_tools(gi)
     # Report
     for section in sections:
-        print "'%s' (%s)" % (section.name,
-                             section.id)
+        print("'%s' (%s)" % (section.name,
+                             section.id))
         if list_tools:
             for tool in sorted(filter(lambda t:
                                       t.panel_section == section.name,
                                       tools),
                                key=lambda t: tool_panel.tool_index(t)):
-                print "- %s" % '\t'.join((str(tool_panel.tool_index(tool)),
+                print("- %s" % '\t'.join((str(tool_panel.tool_index(tool)),
                                           tool.name,
                                           tool.version,
-                                          tool.description))
-    print "total %s" % len(sections)
+                                          tool.description)))
+    print("total %s" % len(sections))
 
 def install_tool(gi,tool_shed,name,owner,revision=None,
                  tool_panel_section=None,
@@ -1008,32 +1008,29 @@ def install_tool(gi,tool_shed,name,owner,revision=None,
 
     """
     # Locate the repository on the toolshed
-    print "Toolshed  :\t%s" % tool_shed
-    print "Repository:\t%s" % name
-    print "Owner     :\t%s" % owner
+    print("Toolshed  :\t%s" % tool_shed)
+    print("Repository:\t%s" % name)
+    print("Owner     :\t%s" % owner)
     if revision is not None:
         # Normalise revision if necessary
         if ':' in revision:
             revision = revision.split(':')[1]
-        print "Revision  :\t%s" % revision
+        print("Revision  :\t%s" % revision)
     else:
-        print "Revision  :\t<not specified>"
+        print("Revision  :\t<not specified>")
     # Information on dependency installation
-    print "Install tool dependencies from toolshed      : " \
-        "%s" % ('yes' if install_tool_dependencies
-                else 'no')
-    print "Install repository dependencies from toolshed: " \
-        "%s" % ('yes' if install_repository_dependencies
-                else 'no')
-    print "Install dependencies using resolver          : " \
-        "%s" % ('yes' if install_resolver_dependencies
-                else 'no')
+    print("Install tool dependencies from toolshed      : "
+          "%s" % ('yes' if install_tool_dependencies else 'no'))
+    print("Install repository dependencies from toolshed: "
+          "%s" % ('yes' if install_repository_dependencies else 'no'))
+    print("Install dependencies using resolver          : "
+          "%s" % ('yes' if install_resolver_dependencies else 'no'))
     # Check if tool is already installed
     install_status = tool_install_status(gi,tool_shed,owner,name,
                                          revision)
     if install_status.startswith("Installed"):
-        print "%s: already installed (status is \"%s\")" % (name,
-                                                            install_status)
+        print("%s: already installed (status is \"%s\")" % (name,
+                                                            install_status))
         return TOOL_INSTALL_OK
     # Get available revisions
     revisions = get_revisions_from_toolshed(tool_shed,name,owner)
@@ -1050,19 +1047,19 @@ def install_tool(gi,tool_shed,name,owner,revision=None,
     else:
         # Set revision to the most recent
         revision = revisions[-1]
-        print "Installing newest revision (%s)" % revision
+        print("Installing newest revision (%s)" % revision)
     # Check if tool is already installed
     install_status = tool_install_status(gi,tool_shed,owner,name,
                                          revision)
     if install_status.startswith("Installed"):
-        print "%s: already installed (status is \"%s\")" % (name,
-                                                            install_status)
+        print("%s: already installed (status is \"%s\")" % (name,
+                                                            install_status))
         return TOOL_INSTALL_OK
     # Look up tool panel section
     tool_panel_section_id = None
     new_tool_panel_section = None
     if tool_panel_section is None:
-        print "Installing into top level tool panel (no section specified)"
+        print("Installing into top level tool panel (no section specified)")
     else:
         # Look for an existing section which matches the
         # supplied name or id
@@ -1071,19 +1068,20 @@ def install_tool(gi,tool_shed,name,owner,revision=None,
                tool_panel_section == section.name:
                 # Found existing tool panel section
                 tool_panel_section_id = section.id
-                print "Installing into existing tool panel section: " \
-                    "'%s' (id '%s')" % (section.name,tool_panel_section_id)
+                print("Installing into existing tool panel section: "
+                      "'%s' (id '%s')" % (section.name,
+                                          tool_panel_section_id))
                 break
         if not tool_panel_section_id:
             # No matching section exists, make a new one
-            print "Installing into new tool panel section: '%s'" % \
-                tool_panel_section
+            print("Installing into new tool panel section: '%s'" %
+                  tool_panel_section)
             new_tool_panel_section = tool_panel_section
     # Get toolshed URL
     tool_shed_url = normalise_toolshed_url(tool_shed)
-    print "Toolshed URL: %s" % tool_shed_url
+    print("Toolshed URL: %s" % tool_shed_url)
     # Attempt to install
-    print "%s: requesting installation" % name
+    print("%s: requesting installation" % name)
     try:
         tool_shed_client = galaxy.toolshed.ToolShedClient(gi)
         tool_shed_client.install_repository_revision(
@@ -1106,8 +1104,8 @@ def install_tool(gi,tool_shed,name,owner,revision=None,
         install_status = tool_install_status(gi,tool_shed,owner,
                                              name,revision)
         if install_status.startswith("Installed"):
-            print "%s: installed (status is \"%s\")" % (name,
-                                                        install_status)
+            print("%s: installed (status is \"%s\")" % (name,
+                                                        install_status))
             return TOOL_INSTALL_OK
         elif install_status.startswith("Installing") or \
              install_status == "New" or \
@@ -1116,13 +1114,13 @@ def install_tool(gi,tool_shed,name,owner,revision=None,
              install_status == "?":
             if no_wait:
                 # Don't wait for install to complete
-                print "%s: still installing (status is \"%s\")" % \
-                    (name,install_status)
-                print "Not waiting for install to complete"
+                print("%s: still installing (status is \"%s\")" %
+                      (name,install_status))
+                print("Not waiting for install to complete")
                 return TOOL_INSTALL_PENDING
             ntries += 1
-            print "- %s: %s (waiting for install to complete) [#%s]" % \
-                (name,install_status,ntries)
+            print("- %s: %s (waiting for install to complete) [#%s]" %
+                  (name,install_status,ntries))
             time.sleep(poll_interval)
         else:
             logger.critical("%s: failed (%s)" % (name,install_status))
@@ -1183,9 +1181,9 @@ def update_tool(gi,tool_shed,name,owner,
         logger.critical("%s: unable to find repository for update" %
                         name)
         return TOOL_UPDATE_FAIL
-    print "Toolshed:\t%s" % tool_shed
-    print "Repository:\t%s" % name
-    print "Owner:\t%s" % owner
+    print("Toolshed:\t%s" % tool_shed)
+    print("Repository:\t%s" % name)
+    print("Owner:\t%s" % owner)
     # Update the toolshed status
     if check_tool_shed:
         repo.update_tool_shed_revision_status()
@@ -1198,8 +1196,8 @@ def update_tool(gi,tool_shed,name,owner,
     for r in repo.revisions():
         if not r.deleted and (r.latest_revision and
                               not r.tool_shed_has_newer_revision()):
-            print "%s: version %s already the latest version" \
-                % (name,r.revision_id)
+            print("%s: version %s already the latest version" %
+                  (name,r.revision_id))
             return TOOL_UPDATE_OK
     # Locate tool panel section for existing tools
     tool_panel_section = None
@@ -1209,7 +1207,7 @@ def update_tool(gi,tool_shed,name,owner,
             break
     if tool_panel_section is None:
         logger.warning("%s: no tool panel section found" % name)
-    #print "Installing update under %s" % tool_panel_section
+    #print("Installing update under %s" % tool_panel_section)
     return install_tool(
         gi,tool_shed,name,owner,revision,
         install_tool_dependencies=install_tool_dependencies,
