@@ -189,7 +189,7 @@ def get_galaxy_instance(galaxy_url,api_key=None,email=None,password=None,
     """
     try:
         galaxy_url,stored_key = Credentials().fetch_key(galaxy_url)
-    except KeyError,ex:
+    except KeyError as ex:
         logger.warning("Failed to find credentials for %s" %
                        galaxy_url)
         stored_key = None

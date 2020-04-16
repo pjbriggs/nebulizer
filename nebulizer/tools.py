@@ -118,7 +118,7 @@ class Tool:
             i = self.config_file.index(search_string) + len(search_string)
             revision = self.config_file[i:].split('/')[0]
             return revision
-        except AttributeError,ValueError:
+        except (AttributeError,ValueError):
             return None
 
 class RepositoryRevision:

@@ -133,14 +133,14 @@ def create_user(gi,email,username=None,passwd=None,only_check=False,
     if passwd is None:
         try:
             passwd = get_passwd()
-        except Exception, ex:
+        except Exception as ex:
             logger.error("%s" % ex)
             return 1
     # Create the new user
     try:
         galaxy.users.UserClient(gi).create_local_user(username,
                                                       email,passwd)
-    except galaxy.client.ConnectionError,ex:
+    except galaxy.client.ConnectionError as ex:
         print "Failed to create user:"
         print ex
         return 1
@@ -200,7 +200,7 @@ def create_users_from_template(gi,template,start,end,passwd=None,
     else:
         try:
             passwd = get_passwd()
-        except Exception, ex:
+        except Exception as ex:
             logger.error("%s" % ex)
             return 1
     # Generate emails
@@ -353,7 +353,7 @@ def get_user_api_key(gi,username=None):
     user_id = user.id
     try:
         api_key = galaxy.users.UserClient(gi).create_user_apikey(user_id)
-    except galaxy.client.ConnectionError,ex:
+    except galaxy.client.ConnectionError as ex:
         print "Failed to fetch API key for user '%s': " % username
         print ex
         return
