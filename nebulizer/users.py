@@ -30,7 +30,7 @@ class User:
         call to bioblend, for example:
 
         >>> for user_data in galaxy.users.UserClient(gi).get_users():
-        >>>    print User(user_data).name
+        >>>    print(User(user_data).name)
 
         """
         self.email = user_data['email']
@@ -79,13 +79,14 @@ def list_users(gi,name=None,long_listing_format=False):
     users = get_users(gi)
     if name:
         name = name.lower()
-        users = filter(lambda u: fnmatch.fnmatch(u.username.lower(),name) or
-                       fnmatch.fnmatch(u.email.lower(),name),users)
+        users = [u for u in users if
+                 (fnmatch.fnmatch(u.username.lower(),name) or
+                  fnmatch.fnmatch(u.email.lower(),name))]
     users.sort(key=lambda u: u.email)
     for user in users:
         if long_listing_format:
             user = User(galaxy.users.UserClient(gi).show_user(user.id))
-            print '\t'.join([str(x) for x in (user.email,
+            print('\t'.join([str(x) for x in (user.email,
                                               user.username,
                                               user.nice_total_disk_usage,
                                               ("%s%%" % user.quota_percent
@@ -93,11 +94,11 @@ def list_users(gi,name=None,long_listing_format=False):
                                                else "0%"),
                                               ('admin' if user.is_admin
                                                else ''),
-                                              user.id,)])
+                                              user.id,)]))
         else:
-            print "%s\t%s" % (user.email,
-                              user.username)
-    print "total %s" % len(users)
+            print("%s\t%s" % (user.email,
+                              user.username))
+    print("total %s" % len(users))
 
 def create_user(gi,email,username=None,passwd=None,only_check=False,
                 mako_template=None):
@@ -127,26 +128,26 @@ def create_user(gi,email,username=None,passwd=None,only_check=False,
     if not check_new_user_info(gi,email,username):
         return 1
     if only_check:
-        print "Email and username ok: not currently in use"
+        print("Email and username ok: not currently in use")
         return 0
     # Prompt for password
     if passwd is None:
         try:
             passwd = get_passwd()
-        except Exception, ex:
+        except Exception as ex:
             logger.error("%s" % ex)
             return 1
     # Create the new user
     try:
         galaxy.users.UserClient(gi).create_local_user(username,
                                                       email,passwd)
-    except galaxy.client.ConnectionError,ex:
-        print "Failed to create user:"
-        print ex
+    except galaxy.client.ConnectionError as ex:
+        print("Failed to create user:")
+        print(ex)
         return 1
-    print "Created new account for %s" % email
+    print("Created new account for %s" % email)
     if mako_template:
-        print render_mako_template(mako_template,email,passwd)
+        print(render_mako_template(mako_template,email,passwd))
     return 0
 
 def create_users_from_template(gi,template,start,end,passwd=None,
@@ -200,26 +201,26 @@ def create_users_from_template(gi,template,start,end,passwd=None,
     else:
         try:
             passwd = get_passwd()
-        except Exception, ex:
+        except Exception as ex:
             logger.error("%s" % ex)
             return 1
     # Generate emails
     emails = [template.replace('#',str(i)) for i in range(start,end+1)]
     # Check that these are available
-    print "Checking availability"
+    print("Checking availability")
     for email in emails:
         name = get_username_from_login(email)
-        ##print "%s, %s" % (email,name)
+        ##print("%s, %s" % (email,name))
         if not check_new_user_info(gi,email,name):
             return 1
     if only_check:
-        print "All emails and usernames ok: not currently in use"
+        print("All emails and usernames ok: not currently in use")
         return 0
     # Make the accounts
     for email in emails:
         name = get_username_from_login(email)
-        print "Email : %s" % email
-        print "Name  : %s" % name
+        print("Email : %s" % email)
+        print("Name  : %s" % name)
         if create_user(gi,email,name,passwd):
             return 1
     return 0
@@ -257,7 +258,7 @@ def create_batch_of_users(gi,tsv,only_check=False,mako_template=None):
     
     """
     # Open file
-    print "Reading data from file '%s'" % tsv
+    print("Reading data from file '%s'" % tsv)
     users = {}
     for line in open(tsv,'r'):
         # Skip blank or comment lines
@@ -287,7 +288,7 @@ def create_batch_of_users(gi,tsv,only_check=False,mako_template=None):
             name = get_username_from_login(email)
         if check_new_user_info(gi,email,name):
             users[email] = { 'name': name, 'passwd': passwd }
-            print "%s\t%s\t%s" % (email,'*****',name)
+            print("%s\t%s\t%s" % (email,'*****',name))
     if only_check:
         return 0
     # Make the accounts
@@ -297,7 +298,7 @@ def create_batch_of_users(gi,tsv,only_check=False,mako_template=None):
         if create_user(gi,email,name,passwd):
             return 1
         if mako_template:
-            print render_mako_template(mako_template,email,passwd)
+            print(render_mako_template(mako_template,email,passwd))
     return 0
 
 def check_new_user_info(gi,email,username):
@@ -305,8 +306,8 @@ def check_new_user_info(gi,email,username):
     Check if username or login are already in use
 
     """
-    lookup_user = filter(lambda u: u.email == email or
-                         u.username == username,get_users(gi))
+    lookup_user = [u for u in get_users(gi)
+                   if u.email == email or u.username == username]
     if lookup_user:
         error_msg = "User details clash with existing user(s):"
         for user in lookup_user:
@@ -330,7 +331,7 @@ def get_user_api_key(gi,username=None):
         # Fetch the details for the current user
         try:
             user = galaxy.users.UserClient(gi).get_current_user()
-            print "Username: %s" % username
+            print("Username: %s" % username)
         except galaxy.client.ConnectionError:
             logger.error("Cannot determine user associated with "
                           "this instance")
@@ -353,9 +354,9 @@ def get_user_api_key(gi,username=None):
     user_id = user.id
     try:
         api_key = galaxy.users.UserClient(gi).create_user_apikey(user_id)
-    except galaxy.client.ConnectionError,ex:
-        print "Failed to fetch API key for user '%s': " % username
-        print ex
+    except galaxy.client.ConnectionError as ex:
+        print("Failed to fetch API key for user '%s': " % username)
+        print(ex)
         return
     return api_key
 

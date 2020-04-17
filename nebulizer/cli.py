@@ -12,10 +12,10 @@ from .core import get_current_user
 from .core import ping_galaxy_instance
 from .core import turn_off_urllib3_warnings
 from .core import Credentials
-import options
-import users
-import libraries
-import tools
+from . import options
+from . import users
+from . import libraries
+from . import tools
 
 # Initialise logging
 logger = logging.getLogger(__name__)
@@ -99,7 +99,7 @@ def fetch_new_api_key(galaxy_url,email,password=None,verify=True):
         SSL verification)
 
     """
-    print "Fetching API key from %s" % galaxy_url
+    print("Fetching API key from %s" % galaxy_url)
     email,password = handle_credentials(
         email,password,
         prompt="Please supply password for %s: " % galaxy_url)
@@ -348,8 +348,8 @@ def create_user(context,galaxy,email,public_name,password,only_check,
         # No public name supplied, make from email address
         public_name = users.get_username_from_login(email)
     # Create user
-    print "Email : %s" % email
-    print "Name  : %s" % public_name
+    print("Email : %s" % email)
+    print("Name  : %s" % public_name)
     sys.exit(users.create_user(gi,email,public_name,password,
                                only_check=only_check,
                                mako_template=message_template))
@@ -710,7 +710,7 @@ def install_repositories(context,galaxy,file,
     for line in file:
         if line.startswith('#'):
             continue
-        print line.rstrip('\n')
+        print(line.rstrip('\n'))
         line = line.rstrip('\n').split('\t')
         try:
             toolshed,owner,repository = line[:3]
