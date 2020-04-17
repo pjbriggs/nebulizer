@@ -802,7 +802,7 @@ def list_tools(gi,name=None,installed_only=False):
                  if fnmatch.fnmatch(t.name.lower(),name)]
     # Filter on installed
     if installed_only:
-        tools = [t for t in tools if t.tool_repor != '']
+        tools = [t for t in tools if t.tool_repo != '']
     # Sort into name order
     tools.sort(key=lambda x: x.name.lower())
     # Print info
