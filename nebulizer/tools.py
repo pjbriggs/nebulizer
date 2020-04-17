@@ -382,7 +382,7 @@ class Repository:
         """
         revisions = [x for x in self._revisions]
         if not include_deleted:
-            revisions = filter(lambda x: not x.deleted,revisions)
+            revisions = [x for x in revisions if not x.deleted]
         return revisions
 
     @property
@@ -574,7 +574,7 @@ def get_repositories(gi):
     shed_client = galaxy.toolshed.ToolShedClient(gi)
     for repo_data in shed_client.get_repositories():
         repo = Repository(repo_data)
-        existing_repos = filter(lambda x: x.id == repo.id,repos)
+        existing_repos = [x for x in repos if x.id == repo.id]
         if not existing_repos:
             # No entry for this repository
             repos.append(repo)
@@ -673,17 +673,16 @@ def tool_install_status(gi,tool_shed,owner,name,revision=None):
         logger.warning("Got connection error from Galaxy API: %s"
                        % connection_error.status_code)
         return "?"
-    repos = filter(lambda r:
-                   r.name == name and
-                   r.owner == owner and
-                   r.tool_shed == tool_shed,repos)
+    repos = [r for r in repos if (r.name == name and
+                                  r.owner == owner and
+                                  r.tool_shed == tool_shed)]
     if len(repos) != 1:
         logger.debug("Unable to fetch tool repository information")
         return "?"
     repo = repos[0]
     if revision:
-        revisions = filter(lambda v: v.changeset_revision == revision,
-                           repo.revisions())
+        revisions = [v for v in repo.revisions()
+                     if v.changeset_revision == revision]
     else:
         revisions = repo.revisions()
     if len(revisions) != 1:
@@ -743,19 +742,17 @@ def installed_repositories(gi,name=None,
     # Filter on name
     if name:
         name = name.lower()
-        repos = filter(lambda r: fnmatch.fnmatch(r.name.lower(),name),
-                       repos)
+        repos = [r for r in repos if fnmatch.fnmatch(r.name.lower(),name)]
     # Filter on toolshed
     if tool_shed:
         # Strip leading http(s)://
         for protocol in ('https://','http://'):
             if tool_shed.startswith(protocol):
                 tool_shed = tool_shed[len(protocol):]
-        repos = filter(lambda r: fnmatch.fnmatch(r.tool_shed,tool_shed),
-                       repos)
+        repos = [r for r in repos if fnmatch.fnmatch(r.tool_shed,tool_shed)]
     # Filter on owner
     if owner:
-        repos = filter(lambda r: fnmatch.fnmatch(r.owner,owner),repos)
+        repos = [r for r in repos if fnmatch.fnmatch(r.owner,owner)]
     # Get list of tools
     tools = get_tools(gi)
     for repo in repos:
@@ -774,11 +771,10 @@ def installed_repositories(gi,name=None,
                  not revision.tool_shed_has_newer_revision())):
                 continue
             # Fetch tools associated with this revision
-            repo_tools = filter(lambda t:
-                                t.tool_repo == repo.id and
-                                t.tool_changeset ==
-                                revision.installed_changeset_revision,
-                                tools)
+            repo_tools = [t for t in tools
+                          if (t.tool_repo == repo.id and
+                              t.tool_changeset ==
+                              revision.installed_changeset_revision)]
             # Append to the list
             installed_repos.append((repo,revision,repo_tools))
     # Finished
@@ -802,11 +798,11 @@ def list_tools(gi,name=None,installed_only=False):
     # Filter on name
     if name:
         name = name.lower()
-        tools = filter(lambda t: fnmatch.fnmatch(t.name.lower(),name),
-                       tools)
+        tools = [t for t in tools
+                 if fnmatch.fnmatch(t.name.lower(),name)]
     # Filter on installed
     if installed_only:
-        tools = filter(lambda t: t.tool_repo != '',tools)
+        tools = [t for t in tools if t.tool_repor != '']
     # Sort into name order
     tools.sort(key=lambda x: x.name.lower())
     # Print info
@@ -880,11 +876,10 @@ def list_installed_repositories(gi,name=None,
                        if r[2] else -1)
         # Filter out non-package, non-datamanager repositories
         # which can't be located in the tool panel
-        repos = filter(lambda r:
-                       r[0].name.startswith("package_") or
-                       r[0].name.startswith("data_manager_") or
-                       (r[2] and tool_panel.tool_index(r[2][0]) > -1),
-                       repos)
+        repos = [r for r in repos if
+                 (r[0].name.startswith("package_") or
+                  r[0].name.startswith("data_manager_") or
+                  (r[2] and tool_panel.tool_index(r[2][0]) > -1))]
         # Print details
         for r in repos:
             repo,revision,tools = r
@@ -937,8 +932,8 @@ def list_tool_panel(gi,name=None,list_tools=False):
     # Filter on name
     if name:
         name = name.lower()
-        sections = filter(lambda s: fnmatch.fnmatch(s.name.lower(),name),
-                          tool_panel.sections)
+        sections = [s for s in tool_panel.sections
+                    if fnmatch.fnmatch(s.name.lower(),name)]
     else:
         sections = tool_panel.sections
     # Get list of tools, if required
@@ -949,9 +944,8 @@ def list_tool_panel(gi,name=None,list_tools=False):
         print("'%s' (%s)" % (section.name,
                              section.id))
         if list_tools:
-            for tool in sorted(filter(lambda t:
-                                      t.panel_section == section.name,
-                                      tools),
+            for tool in sorted([t for t in tools
+                                if t.panel_section == section.name],
                                key=lambda t: tool_panel.tool_index(t)):
                 print("- %s" % '\t'.join((str(tool_panel.tool_index(tool)),
                                           tool.name,

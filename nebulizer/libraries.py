@@ -107,20 +107,19 @@ def list_library_contents(gi,path,long_listing_format=False):
     # Output mode depends on whether we have wildcards
     if not wildcard_pattern:
         # Exact matches only
-        matches = filter(lambda x: x['name'] == pattern,
-                         library_contents)
+        matches = [x for x in library_contents if x['name'] == pattern]
         if not matches:
             logger.error("Cannot access %s: no matching libraries "
                          "or folders" % path)
             return
         for item in matches:
             if item['type'] == 'folder':
-                contents = filter(lambda x: os.path.split(x['name'])[0]
-                                  == item['name'],library_contents)
+                contents = [x for x in library_contents if
+                            os.path.split(x['name'])[0] == item['name']]
             else:
                 contents = matches
         # Remove 'root' folder
-        contents = filter(lambda x: x['name'] != '/',contents)
+        contents = [x for x in contents if x['name'] != '/']
         # Report
         if long_listing_format:
             print("total %s" % len(contents))
@@ -137,9 +136,9 @@ def list_library_contents(gi,path,long_listing_format=False):
         # Number of levels to match
         nlevels = pattern.count('/')
         # Mixture of matches possible
-        matches = filter(lambda x: fnmatch.fnmatch(x['name'],pattern)
-                         and x['name'].count('/') == nlevels,
-                         library_contents)
+        matches = [x for x in library_contents
+                   if (fnmatch.fnmatch(x['name'],pattern) and
+                       x['name'].count('/') == nlevels)]
         if not matches:
             logger.error("Cannot access %s: no matching libraries "
                          "or folders\n" % path)
@@ -174,8 +173,8 @@ def list_library_contents(gi,path,long_listing_format=False):
         # List the contents of each folder
         for folder in folders:
             print("\n%s:" % folder['name'])
-            folder_contents = filter(lambda x: os.path.split(x['name'])[0]
-                                     == folder['name'],library_contents)
+            folder_contents = [x for x in library_contents if
+                               os.path.split(x['name'])[0] == folder['name']]
             if long_listing_format:
                 print("total %s" % len(folder_contents))
             for item in folder_contents:
@@ -365,7 +364,7 @@ def normalise_folder_path(path):
       str: normalised folder path.
 
     """
-    return '/'+'/'.join(filter(lambda x: x != '',path.split('/')))
+    return  '/'+'/'.join([x for x in path.split('/') if x != ''])
 
 def report_folder(folder_data,long_listing=False):
     """

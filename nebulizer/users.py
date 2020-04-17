@@ -79,8 +79,9 @@ def list_users(gi,name=None,long_listing_format=False):
     users = get_users(gi)
     if name:
         name = name.lower()
-        users = filter(lambda u: fnmatch.fnmatch(u.username.lower(),name) or
-                       fnmatch.fnmatch(u.email.lower(),name),users)
+        users = [u for u in users if
+                 (fnmatch.fnmatch(u.username.lower(),name) or
+                  fnmatch.fnmatch(u.email.lower(),name))]
     users.sort(key=lambda u: u.email)
     for user in users:
         if long_listing_format:
@@ -305,8 +306,8 @@ def check_new_user_info(gi,email,username):
     Check if username or login are already in use
 
     """
-    lookup_user = filter(lambda u: u.email == email or
-                         u.username == username,get_users(gi))
+    lookup_user = [u for u in get_users(gi)
+                   if u.email == email or u.username == username]
     if lookup_user:
         error_msg = "User details clash with existing user(s):"
         for user in lookup_user:
