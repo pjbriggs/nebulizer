@@ -12,10 +12,10 @@ from .core import get_current_user
 from .core import ping_galaxy_instance
 from .core import turn_off_urllib3_warnings
 from .core import Credentials
-import options
-import users
-import libraries
-import tools
+from . import options
+from . import users
+from . import libraries
+from . import tools
 
 # Initialise logging
 logger = logging.getLogger(__name__)
