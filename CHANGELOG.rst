@@ -2,6 +2,14 @@ History
 -------
 
 -------------------
+v0.5.0 (2020-04-20)
+-------------------
+
+ * Add support for Python 3.6, 3.7 and 3.8
+   (`PR #50 <https://github.com/pjbriggs/nebulizer/pull/50>`_,
+   `PR #51 <https://github.com/pjbriggs/nebulizer/pull/51>`_)
+
+ -------------------
 v0.4.3 (2018-10-05)
 -------------------
 
