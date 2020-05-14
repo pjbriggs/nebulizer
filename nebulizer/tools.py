@@ -23,7 +23,7 @@ TOOL_UPDATE_FAIL = 1
 
 # Classes
 
-class Tool:
+class Tool(object):
     """
     Class wrapping extraction of tool data
 
@@ -121,7 +121,7 @@ class Tool:
         except (AttributeError,ValueError):
             return None
 
-class RepositoryRevision:
+class RepositoryRevision(object):
     """
     Class wrapping extraction of toolshed repository version data
 
@@ -260,7 +260,7 @@ class RepositoryRevision:
         return ':'.join((self.revision_number,
                          self.changeset_revision))
 
-class Repository:
+class Repository(object):
     """
     Class wrapping extraction of toolshed repository data
 
@@ -399,7 +399,7 @@ class Repository:
                          self.owner,
                          self.name))
 
-class ToolPanelSection:
+class ToolPanelSection(object):
     """
     Class wrapping extraction of tool panel sections
 
@@ -455,7 +455,7 @@ class ToolPanelSection:
         """
         return (self.model_class == "ToolSectionLabel")
 
-class ToolPanel:
+class ToolPanel(object):
     """
     Class wrapping extraction of tool panel
 

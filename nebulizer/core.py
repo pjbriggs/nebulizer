@@ -12,7 +12,7 @@ from bioblend.galaxy.client import ConnectionError
 
 logger = logging.getLogger(__name__)
 
-class Credentials:
+class Credentials(object):
     """Class for managing credentials for Galaxy instances
 
     Credentials for different galaxy instances can be
