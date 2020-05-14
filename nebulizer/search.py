@@ -3,9 +3,9 @@
 # search: functions for searching toolshed
 import logging
 import string
-from core import get_galaxy_instance
-from tools import normalise_toolshed_url
-from tools import get_repositories
+from .core import get_galaxy_instance
+from .tools import normalise_toolshed_url
+from .tools import get_repositories
 from bioblend import toolshed
 from bioblend import ConnectionError as BioblendConnectionError
 
@@ -45,7 +45,7 @@ def search_toolshed(tool_shed,query_string,gi=None):
     # Deal with the results
     nhits = int(search_result['total_results'])
     if nhits == 0:
-        print "No repositories found"
+        print("No repositories found")
         return 0
     # Sort results on name
     hits = sorted(search_result['hits'],
@@ -57,9 +57,8 @@ def search_toolshed(tool_shed,query_string,gi=None):
             if tool_shed_url.startswith(proc):
                 tool_shed = tool_shed_url[len(proc):]
         # Restrict repos to this tool shed
-        installed_repos = filter(lambda r:
-                                 r.tool_shed == tool_shed,
-                                 get_repositories(gi))
+        installed_repos = [r for r in get_repositories(gi)
+                           if r.tool_shed == tool_shed]
     else:
         installed_repos = []
     # Print the results
@@ -70,20 +69,18 @@ def search_toolshed(tool_shed,query_string,gi=None):
         owner = repo['repo_owner_username']
         description = to_ascii(repo['description']).strip()
         # Look to see it's installed
-        installed = bool(filter(lambda r:
-                                r.name == name and
-                                r.owner == owner,
-                                installed_repos))
+        installed = bool([r for r in installed_repos
+                          if (r.name == name and r.owner == owner)])
         if installed:
             status = "*"
         else:
             status = " "
         # Print details
-        print "% 3d %s" % (i+1,
+        print("% 3d %s" % (i+1,
                            '\t'.join(["%s %s" % (status,name),
                                       owner,
-                                      description]))
-    print "%d repositor%s found" % (nhits,('y' if nhits == 1 else 'ies'))
+                                      description])))
+    print("%d repositor%s found" % (nhits,('y' if nhits == 1 else 'ies')))
     # Finished
     return 0
 
