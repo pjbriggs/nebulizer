@@ -13,7 +13,7 @@ logger = logging.getLogger(__name__)
 
 # Classes
 
-class User:
+class User(object):
     """
     Class wrapping extraction of user data
 
