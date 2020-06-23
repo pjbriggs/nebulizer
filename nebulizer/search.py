@@ -3,6 +3,7 @@
 # search: functions for searching toolshed
 import logging
 import string
+from fnmatch import fnmatch
 from .core import get_galaxy_instance
 from .tools import normalise_toolshed_url
 from .tools import get_repositories
@@ -17,7 +18,8 @@ SEARCH_PAGE_SIZE = 1000
 
 # Functions
 
-def search_toolshed(tool_shed,query_string,gi=None):
+def search_toolshed(tool_shed,query_string,gi=None,
+                    long_listing_format=False):
     """
     Search toolshed and print resulting matches
 
@@ -25,44 +27,51 @@ def search_toolshed(tool_shed,query_string,gi=None):
       tool_shed (str): URL for tool shed to search
       query_string (str): text to use as query
       gi (bioblend.galaxy.GalaxyInstance): Galaxy instance
-      name (str): optional, only list tools which match this
-        string (can include wildcards)
+      long_listing_format (boolean): if True then use a
+        long listing format when reporting items
     """
     # Get a toolshed instance
     tool_shed_url = normalise_toolshed_url(tool_shed)
     shed = toolshed.ToolShedInstance(tool_shed_url)
+    print("Searching %s" % tool_shed_url)
+    # Remove wildcards from start and end of query string
+    shed_query_string = query_string.strip("*")
     # Query the toolshed
     repo_client = toolshed.repositories.ToolShedRepositoryClient(shed)
     try:
         search_result = repo_client.search_repositories(
-            query_string,
+            shed_query_string,
             page_size=SEARCH_PAGE_SIZE)
     except BioblendConnectionError as connection_error:
         # Handle error
         logger.warning("Error from Galaxy API: %s"
                        % connection_error)
         return connection_error.status_code
+    # Filter on name
+    hits = [r for r in search_result['hits'] if
+            fnmatch(r["repository"]["name"].lower(),query_string)]
     # Deal with the results
-    nhits = int(search_result['total_results'])
+    nhits = len(hits)
     if nhits == 0:
         print("No repositories found")
         return 0
-    # Sort results on name
-    hits = sorted(search_result['hits'],
-                  key=lambda r: r['repository']['name'])
     # Get list of installed tool repositories
     if gi is not None:
         # Strip protocol from tool shed URL
+        tool_shed = tool_shed_url
         for proc in ('http://','https://'):
-            if tool_shed_url.startswith(proc):
-                tool_shed = tool_shed_url[len(proc):]
+            if tool_shed.startswith(proc):
+                tool_shed = tool_shed[len(proc):]
+        # Strip trailing slash
+        tool_shed = tool_shed.rstrip('/')
         # Restrict repos to this tool shed
         installed_repos = [r for r in get_repositories(gi)
                            if r.tool_shed == tool_shed]
     else:
         installed_repos = []
     # Print the results
-    for i,hit in enumerate(hits):
+    print("")
+    for hit in hits:
         # Get the repository details
         repo = hit['repository']
         name = repo['name']
@@ -76,11 +85,11 @@ def search_toolshed(tool_shed,query_string,gi=None):
         else:
             status = " "
         # Print details
-        print("% 3d %s" % (i+1,
-                           '\t'.join(["%s %s" % (status,name),
-                                      owner,
-                                      description])))
-    print("%d repositor%s found" % (nhits,('y' if nhits == 1 else 'ies')))
+        items = [owner,"%s %s" % (status,name)]
+        if long_listing_format:
+            items.append(description)
+        print("  %s" % '\t'.join(items))
+    print("\n%d repositor%s found" % (nhits,('y' if nhits == 1 else 'ies')))
     # Finished
     return 0
 
