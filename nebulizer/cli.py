@@ -6,9 +6,11 @@ import getpass
 import logging
 import click
 import time
+import fnmatch
 from nebulizer import get_version
 from .core import get_galaxy_instance
 from .core import get_current_user
+from .core import get_galaxy_config
 from .core import ping_galaxy_instance
 from .core import turn_off_urllib3_warnings
 from .core import Credentials
@@ -929,6 +931,34 @@ def add_library_datasets(context,galaxy,dest,file,file_type,
                                    link_only=link,
                                    file_type=file_type,
                                    dbkey=dbkey)
+
+@nebulizer.command()
+@click.argument("galaxy")
+@click.option('--name',
+              help="only show configuration items that match "
+              "NAME. Can include glob-style wild-cards.")
+@pass_context
+def config(context,galaxy,name=None):
+    """
+    Report the Galaxy configuration.
+
+    Reports the available configuration information from
+    GALAXY. Use --name to filter which items are reported.
+    """
+    # Get a Galaxy instance
+    gi = context.galaxy_instance(galaxy)
+    if gi is None:
+        logger.critical("Failed to connect to Galaxy instance")
+        sys.exit(1)
+    # Fetch and report configuration
+    config = get_galaxy_config(gi)
+    items = sorted(config.keys())
+    if name:
+        name = name.lower()
+        items = [item for item in items if fnmatch.fnmatch(item.lower(),
+                                                           name)]
+    for item in items:
+        click.echo("%s: %s" % (item,config[item]))
 
 @nebulizer.command()
 @click.option('-c','--count',metavar='COUNT',default=0,
