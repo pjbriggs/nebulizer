@@ -250,6 +250,7 @@ Other commands
 
  * ``ping``: 'Ping' a Galaxy instance.
  * ``whoami``: Print user details associated with API key.
+ * ``config``: Report configuration for a Galaxy instance.
 
 Hints and Tips
 --------------
