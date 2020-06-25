@@ -141,6 +141,11 @@ link::
 Managing Tools
 --------------
 
+Search the main Galaxy toolshed for available tools::
+
+  nebulizer search_toolshed trimmomatic
+  nebulizer search_toolshed "deseq*"
+
 List all tools that are available in a Galaxy instance::
 
   nebulizer list_tools galaxy
