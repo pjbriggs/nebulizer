@@ -33,13 +33,39 @@ class User(object):
         >>>    print(User(user_data).name)
 
         """
+        # Initialise
         self.email = user_data['email']
         self.username = user_data['username']
         self.id = user_data['id']
+        self.quota = None
         self.quota_percent = None
         self.total_disk_usage = None
         self.nice_total_disk_usage = None
         self.is_admin = None
+        self.active = None
+        self.deleted = None
+        self.purged = None
+        self.preferences = None
+        # Populate with additional data items
+        self.update(user_data)
+
+    def update(self,user_data):
+        """
+        Update the data items associated with the user
+
+        ``user_data`` is a dictionary returned by a
+        call to bioblend, for example:
+
+        >>> user.update(galaxy.users.UserClient(gi).show_user(user.id))
+
+        """
+        # Check this is the same user ID
+        if user_data['id'] != self.id:
+            raise Exception("Tried to update data for user ID '%s' "
+                            "with data for user ID '%s'" %
+                            (self.id,
+                             user_data['id']))
+        # Update the attributes
         for attr in user_data.keys():
             try:
                 setattr(self,attr,user_data[attr])
