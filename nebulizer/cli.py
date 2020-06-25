@@ -232,7 +232,7 @@ def add_key(context,alias,galaxy_url,api_key=None):
         # to Galaxy and fetch directly
         gi = context.galaxy_instance(galaxy_url)
         if gi is None:
-            logger.critical("%s: failed to connect" % galaxy_url)
+            logger.fatal("%s: failed to connect" % galaxy_url)
             sys.exit(1)
         api_key = gi.key
     # Store the entry
