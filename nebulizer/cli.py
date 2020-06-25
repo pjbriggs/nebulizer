@@ -945,11 +945,13 @@ def config(context,galaxy,name=None):
     Reports the available configuration information from
     GALAXY. Use --name to filter which items are reported.
     """
-    try:
-        galaxy_url,_ = Credentials().fetch_key(galaxy)
-    except KeyError:
-        galaxy_url = galaxy
-    config = get_galaxy_config(context.galaxy_instance(galaxy_url))
+    # Get a Galaxy instance
+    gi = context.galaxy_instance(galaxy)
+    if gi is None:
+        logger.critical("Failed to connect to Galaxy instance")
+        sys.exit(1)
+    # Fetch and report configuration
+    config = get_galaxy_config(gi)
     items = sorted(config.keys())
     if name:
         name = name.lower()
