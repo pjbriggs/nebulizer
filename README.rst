@@ -181,14 +181,19 @@ Update FastQC tool to latest installable revision::
    option. Note however that this can impose a significant
    overhead which can make the commands much slower.
 
-----------------------------------
-Checking status of a Galaxy server
-----------------------------------
+----------------------------------------------------
+Checking status and configuration of a Galaxy server
+----------------------------------------------------
 
 'Ping' a Galaxy instance to check it's alive and responding to
 requests::
 
     nebulizer ping localhost
+
+Get information about an instance's configuration using
+
+::
+   nebulizer config localhost
 
 Commands
 --------
