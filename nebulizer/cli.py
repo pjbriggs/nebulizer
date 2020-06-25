@@ -182,18 +182,32 @@ def nebulizer(context,api_key,username,galaxy_password,
     handle_ssl_warnings(verify=(not context.no_verify))
 
 @nebulizer.command()
+@click.option("--name",
+              help="list only aliases matching name. Can "
+              "include glob-style wild-cards.")
+@click.option("-s","--show-api-keys",is_flag=True,
+              help="show the API key string associated with "
+              "each alias")
 @pass_context
-def list_keys(context):
+def list_keys(context,name,show_api_keys=False):
     """
-    List stored Galaxy API keys.
+    List stored Galaxy API key aliases.
 
     Prints a list of stored aliases with the associated
-    Galaxy URLs and API keys.
+    Galaxy URLs; optionally also show the API key string.
     """
     instances = Credentials()
-    for alias in instances.list_keys():
+    aliases = instances.list_keys()
+    if name:
+        name = name.lower()
+        aliases = [alias for alias in aliases
+                   if fnmatch.fnmatch(alias.lower(),name)]
+    for alias in aliases:
         galaxy_url,api_key = instances.fetch_key(alias)
-        click.echo("%s\t%s\t%s" % (alias,galaxy_url,api_key))
+        display_items = [alias,galaxy_url]
+        if show_api_keys:
+            display_items.append(api_key)
+        click.echo("%s" % '\t'.join(display_items))
 
 @nebulizer.command()
 @click.argument("alias")
@@ -220,7 +234,7 @@ def add_key(context,alias,galaxy_url,api_key=None):
         # to Galaxy and fetch directly
         gi = context.galaxy_instance(galaxy_url)
         if gi is None:
-            logger.critical("%s: failed to connect" % galaxy_url)
+            logger.fatal("%s: failed to connect" % galaxy_url)
             sys.exit(1)
         api_key = gi.key
     # Store the entry

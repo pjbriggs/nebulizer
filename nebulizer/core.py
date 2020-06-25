@@ -73,6 +73,9 @@ class Credentials(object):
         Returns:
           Boolean: True if key was updated, False on error.
         """
+        if not api_key:
+            logger.warning("Empty API key")
+            return False
         with open(self._key_file,'a') as fp:
             fp.write("%s\t%s\t%s\n" % (name,url,api_key))
         return True
