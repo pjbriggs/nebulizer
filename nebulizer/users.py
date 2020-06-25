@@ -6,7 +6,9 @@ import re
 import getpass
 import fnmatch
 from bioblend import galaxy
+from bioblend import ConnectionError
 from mako.template import Template
+from .core import get_galaxy_config
 
 # Logging
 logger = logging.getLogger(__name__)
@@ -33,13 +35,39 @@ class User(object):
         >>>    print(User(user_data).name)
 
         """
+        # Initialise
         self.email = user_data['email']
         self.username = user_data['username']
         self.id = user_data['id']
+        self.quota = None
         self.quota_percent = None
         self.total_disk_usage = None
         self.nice_total_disk_usage = None
         self.is_admin = None
+        self.active = None
+        self.deleted = None
+        self.purged = None
+        self.preferences = None
+        # Populate with additional data items
+        self.update(user_data)
+
+    def update(self,user_data):
+        """
+        Update the data items associated with the user
+
+        ``user_data`` is a dictionary returned by a
+        call to bioblend, for example:
+
+        >>> user.update(galaxy.users.UserClient(gi).show_user(user.id))
+
+        """
+        # Check this is the same user ID
+        if user_data['id'] != self.id:
+            raise Exception("Tried to update data for user ID '%s' "
+                            "with data for user ID '%s'" %
+                            (self.id,
+                             user_data['id']))
+        # Update the attributes
         for attr in user_data.keys():
             try:
                 setattr(self,attr,user_data[attr])
@@ -65,7 +93,7 @@ def get_users(gi):
         users.append(User(user_data))
     return users
 
-def list_users(gi,name=None,long_listing_format=False):
+def list_users(gi,name=None,long_listing_format=False,show_id=False):
     """
     List users in Galaxy instance
 
@@ -76,28 +104,52 @@ def list_users(gi,name=None,long_listing_format=False):
         long listing format when reporting items
 
     """
-    users = get_users(gi)
+    # Get user data
+    try:
+        users = get_users(gi)
+    except ConnectionError as ex:
+        logger.fatal("Failed to get user list: %s (%s)" % (ex.body,
+                                                           ex.status_code))
+        return 1
+    # Get Galaxy config data to determine if quotas are enabled
+    # (if not then don't report quota percentage in long format)
+    if long_listing_format:
+        config = get_galaxy_config(gi)
+        enable_quotas = config['enable_quotas']
+    else:
+        enable_quotas = False
+    # Filter user list on supplied name
     if name:
         name = name.lower()
         users = [u for u in users if
                  (fnmatch.fnmatch(u.username.lower(),name) or
                   fnmatch.fnmatch(u.email.lower(),name))]
-    users.sort(key=lambda u: u.email)
+    # Report users
+    users.sort(key=lambda u: u.email.lower())
     for user in users:
+        # Get additional user data
+        user.update(galaxy.users.UserClient(gi).show_user(user.id))
+        # Collect data items to report
+        display_items = [user.email,user.username]
         if long_listing_format:
-            user = User(galaxy.users.UserClient(gi).show_user(user.id))
-            print('\t'.join([str(x) for x in (user.email,
-                                              user.username,
-                                              user.nice_total_disk_usage,
-                                              ("%s%%" % user.quota_percent
-                                               if user.quota_percent
-                                               else "0%"),
-                                              ('admin' if user.is_admin
-                                               else ''),
-                                              user.id,)]))
-        else:
-            print("%s\t%s" % (user.email,
-                              user.username))
+            # Long listing format includes:
+            # - disk usage
+            # - quota size (if quotas enabled)
+            # - % quota used (if quotas enabled)
+            # - if account is active
+            # - if user is an admin
+            display_items.append(user.nice_total_disk_usage)
+            if enable_quotas:
+                display_items.extend([user.quota,
+                                      "%s%%" % user.quota_percent
+                                      if user.quota_percent
+                                      else "0%"])
+            display_items.append('active' if user.active else '')
+            display_items.append('admin' if user.is_admin else '')
+        if show_id:
+            # Also report the internal user ID
+            display_items.append(user.id)
+        print('\t'.join([str(x) for x in display_items]))
     print("total %s" % len(users))
 
 def create_user(gi,email,username=None,passwd=None,only_check=False,
