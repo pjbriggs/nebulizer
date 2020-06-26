@@ -53,8 +53,43 @@ def search_toolshed(tool_shed,query_string,gi=None,
     # Deal with the results
     nhits = len(hits)
     if nhits == 0:
-        print("No repositories found")
+        print("No matching repositories found")
         return 0
+    # Get additional details for each repo
+    repositories = list()
+    for hit in hits:
+        # Get the repository details
+        repo = hit['repository']
+        name = repo['name']
+        owner = repo['repo_owner_username']
+        description = to_ascii(repo['description']).strip()
+        # Get installable revisions
+        installable_revisions = list()
+        for revision in \
+                repo_client.get_ordered_installable_revisions(name,owner):
+            # Get details for each revision
+            revision_info = \
+                repo_client.get_repository_revision_install_info(
+                    name,
+                    owner,
+                    revision)
+            # Returns a 3 element list, only want details
+            # from the last one
+            # See https://bioblend.readthedocs.io/en/latest/api_docs/toolshed/all.html#bioblend.toolshed.repositories.ToolShedRepositoryClient.get_repository_revision_install_info
+            revision_info = revision_info[2]
+            version = revision_info[name][3]
+            installable_revisions.append(dict(revision=revision,
+                                              version=version,
+                                              info=revision_info))
+        # Sort the installable revisions on version number
+        installable_revisions = sorted(installable_revisions,
+                                       key=lambda r: int(r['version']),
+                                       reverse=True)
+        # Sort repo details
+        repositories.append(dict(name=name,
+                                 owner=owner,
+                                 description=description,
+                                 revisions=installable_revisions))
     # Get list of installed tool repositories
     if gi is not None:
         # Strip protocol from tool shed URL
@@ -71,24 +106,41 @@ def search_toolshed(tool_shed,query_string,gi=None,
         installed_repos = []
     # Print the results
     print("")
-    for hit in hits:
+    for repository in repositories:
         # Get the repository details
-        repo = hit['repository']
-        name = repo['name']
-        owner = repo['repo_owner_username']
-        description = to_ascii(repo['description']).strip()
-        # Look to see it's installed
-        installed = bool([r for r in installed_repos
-                          if (r.name == name and r.owner == owner)])
-        if installed:
-            status = "*"
-        else:
-            status = " "
-        # Print details
-        items = [owner,"%s %s" % (status,name)]
-        if long_listing_format:
-            items.append(description)
-        print("  %s" % '\t'.join(items))
+        name = repository['name']
+        owner = repository['owner']
+        description = repository['description']
+        # Iterate over revisions
+        for revision in repository['revisions']:
+            changeset = revision['revision']
+            version = revision['version']
+            # Look to see it's installed
+            installed = bool([r for r in installed_repos
+                              if (r.name == name and
+                                  r.owner == owner and
+                                  changeset in [rv.changeset_revision
+                                                for rv in r.revisions()])])
+            if installed:
+                status = "*"
+            else:
+                status = " "
+            # Print details
+            if not long_listing_format:
+                display_items = [owner,name,"%s:%s" % (version,
+                                                       changeset)]
+                print(" %s %s" % ('\t'.join(display_items),status))
+            else:
+                print("Name: %s" % name)
+                print("Owner: %s" % owner)
+                print("Revision: %s:%s" % (version,changeset))
+                print("Description: %s" % description)
+                if gi is not None:
+                    if installed:
+                        print("Installed: yes")
+                    else:
+                        print("Installed: no")
+                print("")
     print("\n%d repositor%s found" % (nhits,('y' if nhits == 1 else 'ies')))
     # Finished
     return 0
