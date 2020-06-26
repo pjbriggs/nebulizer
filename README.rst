@@ -158,15 +158,29 @@ List all the tool repositories that have available updates or upgrades::
 
   nebulizer list_installed_tools localhost --updateable
 
-Install the most recent FastQC from the main toolshed::
+Search the main Galaxy toolshed for available tools::
+
+  nebulizer search_toolshed fastqc
+
+(see the section below for more information on the ``search_toolshed``
+command).
+
+Install the most recent FastQC from the main Galaxy toolshed, under the
+``NGS: QC and manipulation`` section of the tool panel::
+
+  nebulizer install_tool localhost devteam/fastqc \
+    --tool-panel-section="NGS: QC and manipulation"
+
+Install a specific revision of a tool from the test toolshed::
 
   nebulizer install_tool localhost \
-    --tool-panel-section="NGS: QC and manipulation" \
-    toolshed.g2.bx.psu.edu devteam fastqc
+    https://testtoolshed.g2.bx.psu.edu/view/devteam/trimmer/dec27ea206c3 \
+    --tool-panel-section="Test tools"
 
-Update FastQC tool to latest installable revision::
+Update FastQC tool by installing the latest revision, if a new version
+is available::
 
-  nebulizer update_tool localhost toolshed.g2.bx.psu.edu devteam fastqc
+  nebulizer update_tool localhost devteam/fastqc
 
 .. warning::
 
@@ -180,6 +194,27 @@ Update FastQC tool to latest installable revision::
    against those in the toolshed, add the ``--check-toolshed``
    option. Note however that this can impose a significant
    overhead which can make the commands much slower.
+
+---------------------------------------------
+Searching for tool repositories on a Toolshed
+---------------------------------------------
+
+Search the main toolshed with the query ``deeptools``::
+
+    nebulizer search_toolshed toolshed.g2.bx.psu.edu deeptools
+
+The search query can include glob-style wildcards, and defaults
+to searching the main Galaxy toolshed if no toolshed is
+specified.
+
+For example::
+
+    nebulizer search_toolshed "deeptools*"
+
+Perform the same search checking which tool repositories are
+already installed on a local Galaxy instance::
+
+    nebulizer search_toolshed "deeptools*" --galaxy localhost
 
 ----------------------------------------------------
 Checking status and configuration of a Galaxy server

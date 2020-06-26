@@ -18,6 +18,7 @@ from . import options
 from . import users
 from . import libraries
 from . import tools
+from . import search
 
 # Initialise logging
 logger = logging.getLogger(__name__)
@@ -847,6 +848,52 @@ def update_tool(context,galaxy,repository,
                                (install_repository_dependencies== 'yes'),
                                install_resolver_dependencies=
                                (install_resolver_dependencies== 'yes')))
+
+@nebulizer.command()
+@click.option("--toolshed",metavar='TOOLSHED',
+              help="specify a toolshed URL to search, or 'main' "
+              "(the main Galaxy toolshed, the default) or 'test' "
+              "(the test Galaxy toolshed)")
+@click.option('--galaxy',metavar='GALAXY',
+              help="check if tool repositories are installed in "
+              "GALAXY instance")
+@click.option('-l','long_listing',is_flag=True,
+              help="use a long listing format that includes "
+              "tool descriptions")
+@click.argument("query_string")
+@pass_context
+def search_toolshed(context,toolshed,query_string,galaxy,long_listing):
+    """
+    Search for repositories on a Galaxy toolshed.
+
+    Searches for repositories on the main Galaxy toolshed
+    using the specified QUERY_STRING.
+
+    Specify other toolsheds by an alias (either 'main' or
+    'test') or by supplying the shed URL.
+
+    If a GALAXY instance is supplied then also check
+    whether the tool repositories are already installed.
+    """
+    # Determine the toolshed
+    if toolshed is None:
+        # Default to the main Galaxy toolshed
+        toolshed = "main"
+    if toolshed == "main":
+        toolshed = "https://toolshed.g2.bx.psu.edu/"
+    elif toolshed == "test":
+        toolshed = "https://testtoolshed.g2.bx.psu.edu/"
+    # Get a Galaxy instance, if specified
+    if galaxy is not None:
+        gi = context.galaxy_instance(galaxy)
+        if gi is None:
+            logger.critical("Failed to connect to Galaxy instance")
+            sys.exit(1)
+    else:
+        gi = None
+    # Search the toolshed
+    sys.exit(search.search_toolshed(toolshed,query_string,gi=gi,
+                                    long_listing_format=long_listing))
 
 @nebulizer.command()
 @click.option('-l','long_listing',is_flag=True,
