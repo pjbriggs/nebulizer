@@ -1255,12 +1255,9 @@ def update_tool(gi,tool_shed,name,owner,
             update_repo = repo
             break
     if update_repo is None:
-        logger.critical("%s: unable to find repository for update" %
+        logger.critical("%s: unable to find repository to update" %
                         name)
         return TOOL_UPDATE_FAIL
-    print("Toolshed:\t%s" % tool_shed)
-    print("Repository:\t%s" % name)
-    print("Owner:\t%s" % owner)
     # Update the toolshed status
     if check_tool_shed:
         repo.update_tool_shed_revision_status()
