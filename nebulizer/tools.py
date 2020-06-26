@@ -676,7 +676,6 @@ def handle_repository_spec(repo_spec):
             repo0 = "https://toolshed.g2.bx.psu.edu/view/" + repo0
     repository[0] = repo0
     tool_url = '/'.join(repository)
-    print(tool_url)
     # Decompose the URL into toolshed, owner, repository
     # and changeset components
     toolshed = list()
