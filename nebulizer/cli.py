@@ -591,13 +591,9 @@ def list_tool_panel(context,galaxy,name,list_tools):
               help="don't wait for lengthy tool installations to "
               "complete.")
 @click.argument("galaxy")
-@click.argument("toolshed")
-@click.argument("owner")
-@click.argument("repository")
-@click.argument("revision",required=False)
+@click.argument("repository",nargs=-1)
 @pass_context
-def install_tool(context,galaxy,toolshed,owner,repository,
-                 revision,tool_panel_section,
+def install_tool(context,galaxy,repository,tool_panel_section,
                  install_tool_dependencies,
                  install_repository_dependencies,
                  install_resolver_dependencies,
@@ -605,17 +601,35 @@ def install_tool(context,galaxy,toolshed,owner,repository,
     """
     Install tool from toolshed.
 
-    Installs the specified tool from REPOSITORY owned by
-    OWNER in TOOLSHED, into GALAXY.
+    Installs the specified tool from REPOSITORY into GALAXY,
+    where REPOSITORY can be as one of:
 
-    Optionally also specify a changeset REVISION; if no
-    revision is specified and no version of the tool is
-    already installed then will attempt to install the
-    latest revision (otherwise will skip installation).
+    - full URL including the revision e.g.
+    https://toolshed.g2.bx.psu.edu/view/devteam/fastqc/e7b2202befea
+
+    - full URL without revision e.g.
+    https://toolshed.g2.bx.psu.edu/view/devteam/fastqc
+
+    - OWNER/TOOLNAME combination e.g. devteam/fastqc
+    (toolshed is assumed to be main Galaxy toolshed)
+
+    - [ TOOLSHED ] OWNER TOOLNAME [ REVISION ] e.g.
+    https://toolshed.g2.bx.psu.edu devteam fastqc
+
+    If a changeset REVISION isn't specified then the
+    latest revision will be assumed.
+
     Installation will fail if the specified revision is
     not installable, or if no installable revisions are
     found.
     """
+    # Get the tool repository details
+    toolshed,owner,repository,revision = \
+        tools.handle_repository_spec(repository)
+    click.echo("Toolshed   %s" % toolshed)
+    click.echo("Owner      %s" % owner)
+    click.echo("Repository %s" % repository)
+    click.echo("Revision   %s" % revision)
     # Get a Galaxy instance
     gi = context.galaxy_instance(galaxy)
     if gi is None:
@@ -782,11 +796,9 @@ def install_repositories(context,galaxy,file,
               help="check installed revisions directly against those "
               "available in the toolshed")
 @click.argument("galaxy")
-@click.argument("toolshed")
-@click.argument("owner")
-@click.argument("repository")
+@click.argument("repository",nargs=-1)
 @pass_context
-def update_tool(context,galaxy,toolshed,owner,repository,
+def update_tool(context,galaxy,repository,
                 install_tool_dependencies,
                 install_repository_dependencies,
                 install_resolver_dependencies,
@@ -794,14 +806,32 @@ def update_tool(context,galaxy,toolshed,owner,repository,
     """
     Update tool installed from toolshed.
 
-    Updates the specified tool from REPOSITORY owned by
-    OWNER in TOOLSHED, to the latest revision in GALAXY.
+    Updates the specified tool from REPOSITORY into GALAXY,
+    where REPOSITORY can be as one of:
+
+    - full URL including the revision e.g.
+    https://toolshed.g2.bx.psu.edu/view/devteam/fastqc/e7b2202befea
+
+    - full URL without revision e.g.
+    https://toolshed.g2.bx.psu.edu/view/devteam/fastqc
+
+    - OWNER/TOOLNAME combination e.g. devteam/fastqc
+    (toolshed is assumed to be main Galaxy toolshed)
+
+    - [ TOOLSHED ] OWNER TOOLNAME [ REVISION ] e.g.
+    https://toolshed.g2.bx.psu.edu devteam fastqc
+
+    If a changeset REVISION isn't specified then the
+    latest revision will be assumed.
 
     The tool must already be present in GALAXY and a newer
     changeset revision must be available. The update will
     be installed into the same tool panel section as the
     original tool.
     """
+    # Get the tool repository details
+    toolshed,owner,repository,revision = \
+        tools.handle_repository_spec(repository)
     # Get a Galaxy instance
     gi = context.galaxy_instance(galaxy)
     if gi is None:
