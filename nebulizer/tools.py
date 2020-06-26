@@ -1164,12 +1164,17 @@ def install_tool(gi,tool_shed,name,owner,revision=None,
             tool_panel_section_id=tool_panel_section_id,
             new_tool_panel_section_label=new_tool_panel_section)
     except ConnectionError as connection_error:
-        # Handle error
+        # Handle API error
         logger.warning("Got error from Galaxy API on attempted install "
                        "(ignored)")
         logger.warning("Status code: %s" % connection_error.status_code)
         logger.warning("Message    : \"%s\"" %
                        json.loads(connection_error.body)["err_msg"])
+    except Exception as ex:
+        # Handle general error
+        logger.warning("Error while requesting tool installation "
+                       "(ignored)")
+        logger.warning("Exception: %s" % ex)
     # Check installation status
     ntries = 0
     while (ntries*poll_interval) < timeout:
