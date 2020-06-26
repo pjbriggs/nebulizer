@@ -4,6 +4,7 @@ import unittest
 from nebulizer.tools import Tool
 from nebulizer.tools import Repository
 from nebulizer.tools import ToolPanelSection
+from nebulizer.tools import handle_repository_spec
 from nebulizer.tools import normalise_toolshed_url
 
 class TestTool(unittest.TestCase):
@@ -329,6 +330,77 @@ class TestToolPanelSection(unittest.TestCase):
         self.assertFalse(section.is_tool)
         self.assertTrue(section.is_label)
         self.assertEqual(len(section.elems),0)
+
+class TestHandleRepositorySpec(unittest.TestCase):
+    """
+    Tests for the 'handle_repository_spec' function
+    """
+    def test_handle_repository_spec_full_url(self):
+        self.assertEqual(
+            handle_repository_spec(("https://toolshed.g2.bx.psu.edu/view/devteam/fastqc/e7b2202befea",)),
+            ("toolshed.g2.bx.psu.edu",
+             "devteam",
+             "fastqc",
+             "e7b2202befea"
+            ))
+        self.assertEqual(
+            handle_repository_spec(("https://toolshed.g2.bx.psu.edu/view/devteam/fastqc",)),
+            ("toolshed.g2.bx.psu.edu",
+             "devteam",
+             "fastqc",
+             None
+            ))
+    def test_handle_repository_spec_full_url(self):
+        self.assertEqual(
+            handle_repository_spec(("https://local.org/toolshed/view/devteam/fastqc/e7b2202befea",)),
+            ("local.org/toolshed",
+             "devteam",
+             "fastqc",
+             "e7b2202befea"
+            ))
+    def test_handle_repository_spec_owner_slash_tool(self):
+        self.assertEqual(
+            handle_repository_spec(("devteam/fastqc",)),
+            ("toolshed.g2.bx.psu.edu",
+             "devteam",
+             "fastqc",
+             None
+            ))
+    def test_handle_repository_spec_owner_space_tool(self):
+        self.assertEqual(
+            handle_repository_spec(("devteam","fastqc",)),
+            ("toolshed.g2.bx.psu.edu",
+             "devteam",
+             "fastqc",
+             None
+            ))
+    def test_handle_repository_spec_space_separated(self):
+        self.assertEqual(
+            handle_repository_spec(("toolshed.g2.bx.psu.edu",
+                                    "devteam","fastqc",)),
+            ("toolshed.g2.bx.psu.edu",
+             "devteam",
+             "fastqc",
+             None
+            ))
+        self.assertEqual(
+            handle_repository_spec(("toolshed.g2.bx.psu.edu",
+                                    "devteam","fastqc",
+                                    "e7b2202befea",)),
+            ("toolshed.g2.bx.psu.edu",
+             "devteam",
+             "fastqc",
+             "e7b2202befea"
+            ))
+        self.assertEqual(
+            handle_repository_spec(("toolshed.g2.bx.psu.edu",
+                                    "devteam","fastqc",
+                                    "3:e7b2202befea",)),
+            ("toolshed.g2.bx.psu.edu",
+             "devteam",
+             "fastqc",
+             "e7b2202befea"
+            ))
 
 class TestNormaliseToolshedUrl(unittest.TestCase):
     """

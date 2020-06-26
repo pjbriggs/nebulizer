@@ -627,6 +627,84 @@ def get_revisions_from_toolshed(tool_shed,name,owner):
                         (tool_shed,connection_error.status_code))
         return []
 
+def handle_repository_spec(repo_spec):
+    """
+    Process an arbitrary repository specification
+
+    Given a repository specification as list of one of
+    more components, returns the toolshed URL, repository
+    owner, repository name and revision.
+
+    The specification can be any of the forms:
+
+    - ('https://toolshed.g2.bx.psu.edu/view/devteam/fastqc/e7b2202befea',)
+    - (https://toolshed.g2.bx.psu.edu/view/devteam/fastqc',)
+    - ('devteam/fastqc/e7b2202befea',)
+    - ('devteam/fastqc',)
+    - ('toolshed.g2.bx.psu.edu','devteam','fastqc','e7b2202befea')
+    - ('toolshed.g2.bx.psu.edu','devteam','fastqc')
+    - ('devteam','fastqc')
+    - ('devteam','fastqc','e7b2202befea')
+    - ('devteam','fastqc','3:e7b2202befea')
+
+    Revision is set to None if not found; toolshed is set
+    to the main Galaxy toolshed if not found.
+
+    The leading protocol (https://, http://) is removed
+    from the toolshed URL.
+
+    Returns the tuple of (TOOLSHED,OWNER,REPOSITORY,REVISION)
+    """
+    repository = list(repo_spec)
+    repo0 = repository[0].strip('/')
+    if not (repo0.startswith('https://') or repo0.startswith('http://')):
+        # No protocol specified
+        if repo0.split('/')[0].count('.') > 0:
+            # First element contains dots so must be a URL
+            # Assume toolshed URL with no leading protocol
+            repo0 = 'https://' + repo0
+            if len(repository) > 1:
+                # More than one element so assume that
+                # first element is URL without trailing
+                # tool definition
+                # Check it ends with 'view' or 'repo'
+                if not repo0.split('/')[-1] in ('view','repo'):
+                    # Append 'view' element
+                    repo0 += '/view'
+        else:
+            # No toolshed: assume main Galaxy toolshed
+            repo0 = "https://toolshed.g2.bx.psu.edu/view/" + repo0
+    repository[0] = repo0
+    tool_url = '/'.join(repository)
+    # Decompose the URL into toolshed, owner, repository
+    # and changeset components
+    toolshed = list()
+    owner = None
+    repository = None
+    revision = None
+    for ix,ele in enumerate(tool_url.split('/')):
+        if ele not in ('view','repo'):
+            toolshed.append(ele)
+        else:
+            toolshed = '/'.join(toolshed)
+            owner = tool_url.split('/')[ix+1]
+            repository = tool_url.split('/')[ix+2]
+            try:
+                revision = tool_url.split('/')[ix+3]
+            except IndexError:
+                revision = None
+            break
+    # Strip off the protocol
+    for protocol in ('http://','https://'):
+        if toolshed.startswith(protocol):
+            toolshed = toolshed[len(protocol):]
+            break
+    # Handle revision of the form "version:changeset"
+    # e.g. 3:f19e18ab01b1
+    if revision and ':' in revision:
+        revision = revision.split(':')[1]
+    return (toolshed,owner,repository,revision)
+
 def normalise_toolshed_url(tool_shed):
     """
     Return complete URL for a tool shed
@@ -1086,12 +1164,17 @@ def install_tool(gi,tool_shed,name,owner,revision=None,
             tool_panel_section_id=tool_panel_section_id,
             new_tool_panel_section_label=new_tool_panel_section)
     except ConnectionError as connection_error:
-        # Handle error
+        # Handle API error
         logger.warning("Got error from Galaxy API on attempted install "
                        "(ignored)")
         logger.warning("Status code: %s" % connection_error.status_code)
         logger.warning("Message    : \"%s\"" %
                        json.loads(connection_error.body)["err_msg"])
+    except Exception as ex:
+        # Handle general error
+        logger.warning("Error while requesting tool installation "
+                       "(ignored)")
+        logger.warning("Exception: %s" % ex)
     # Check installation status
     ntries = 0
     while (ntries*poll_interval) < timeout:
@@ -1172,12 +1255,9 @@ def update_tool(gi,tool_shed,name,owner,
             update_repo = repo
             break
     if update_repo is None:
-        logger.critical("%s: unable to find repository for update" %
+        logger.critical("%s: unable to find repository to update" %
                         name)
         return TOOL_UPDATE_FAIL
-    print("Toolshed:\t%s" % tool_shed)
-    print("Repository:\t%s" % name)
-    print("Owner:\t%s" % owner)
     # Update the toolshed status
     if check_tool_shed:
         repo.update_tool_shed_revision_status()
