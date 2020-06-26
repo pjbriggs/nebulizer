@@ -4,7 +4,7 @@ Description
 Setup script to install nebulizer: command line utilities for managing
 users, tools and data libraries in Galaxy instances via the API
 
-Copyright (C) University of Manchester 2015-2016 Peter Briggs
+Copyright (C) University of Manchester 2015-2020 Peter Briggs
 
 """
 
@@ -23,10 +23,7 @@ setup(
     maintainer_email = 'peter.briggs@manchester.ac.uk',
     packages = ['nebulizer',],
     entry_points = { 'console_scripts': [
-        'nebulizer = nebulizer.cli:nebulizer',
-        'manage_users = nebulizer.deprecated_cli:manage_users',
-        'manage_libraries = nebulizer.deprecated_cli:manage_libraries',
-        'manage_tools = nebulizer.deprecated_cli:manage_tools',]
+        'nebulizer = nebulizer.cli:nebulizer',]
     },
     license = 'AFL',
     install_requires = ['bioblend',

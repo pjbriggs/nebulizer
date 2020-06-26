@@ -352,19 +352,6 @@ instance::
   nebulizer list_repositories https://palfinder.ls.manchester.ac.uk > palfinder.tsv
   nebulizer install_repositories http://127.0.0.1 palfinder.tsv
 
-Deprecated Utilities
---------------------
-
-The following additional utilities are included for backwards
-compatibility but are deprecated and likely to be removed in a
-future version:
-
- * ``manage_users``: list and create user accounts
- * ``manage_libraries``: list, create and populate data libraries
- * ``manage_tools``: list and install tools from toolsheds
-
-They are not documented further here.
-
 License
 -------
 
