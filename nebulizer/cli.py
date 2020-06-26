@@ -809,20 +809,14 @@ def update_tool(context,galaxy,repository,
     Updates the specified tool from REPOSITORY into GALAXY,
     where REPOSITORY can be as one of:
 
-    - full URL including the revision e.g.
-    https://toolshed.g2.bx.psu.edu/view/devteam/fastqc/e7b2202befea
-
-    - full URL without revision e.g.
+    - full URL (without revision) e.g.
     https://toolshed.g2.bx.psu.edu/view/devteam/fastqc
 
     - OWNER/TOOLNAME combination e.g. devteam/fastqc
     (toolshed is assumed to be main Galaxy toolshed)
 
-    - [ TOOLSHED ] OWNER TOOLNAME [ REVISION ] e.g.
+    - [ TOOLSHED ] OWNER TOOLNAME e.g.
     https://toolshed.g2.bx.psu.edu devteam fastqc
-
-    If a changeset REVISION isn't specified then the
-    latest revision will be assumed.
 
     The tool must already be present in GALAXY and a newer
     changeset revision must be available. The update will
@@ -832,6 +826,12 @@ def update_tool(context,galaxy,repository,
     # Get the tool repository details
     toolshed,owner,repository,revision = \
         tools.handle_repository_spec(repository)
+    print("Updating %s/%s from %s" % (repository,owner,toolshed))
+    if revision is not None:
+        logger.fatal("A revision ('%s') was also supplied "
+                     "but this is not valid for tool update "
+                     % revision)
+        sys.exit(1)
     # Get a Galaxy instance
     gi = context.galaxy_instance(galaxy)
     if gi is None:
