@@ -2,6 +2,7 @@
 #
 # users: functions for managing users
 import logging
+import sys
 import re
 import getpass
 import fnmatch
@@ -92,6 +93,27 @@ def get_users(gi):
     for user_data in user_client.get_users():
         users.append(User(user_data))
     return users
+
+def get_user_id(gi,email):
+    """
+    Get the user ID corresponding to a username email
+
+    Arguments:
+      gi (bioblend.galaxy.GalaxyInstance): Galaxy instance
+      email : email address for the user
+
+    Returns:
+      String: user ID, or None if no match.
+    """
+    user_id = None
+    try:
+        for u in get_users(gi):
+            if fnmatch.fnmatch(u.email,email):
+                return u.id
+    except ConnectionError as ex:
+        logger.warning("Failed to get user list: %s (%s)" % (ex.body,
+                                                             ex.status_code))
+    return None
 
 def list_users(gi,name=None,long_listing_format=False,show_id=False):
     """
@@ -353,6 +375,44 @@ def create_batch_of_users(gi,tsv,only_check=False,mako_template=None):
             print(render_mako_template(mako_template,email,passwd))
     return 0
 
+def delete_user(gi,email,purge=False,no_confirm=False):
+    """
+    Delete a user account from a Galaxy instance
+
+    Arguments:
+      gi         : Galaxy instance
+      email      : email address of user to delete
+      purge      : if True then also purge the user
+      no_confirm : if True then don't prompt to confirm the
+        deletion operation
+
+    Returns:
+      0 on success, 1 on failure.
+
+    """
+    # Get the ID for the supplied user
+    user_id = get_user_id(gi,email)
+    if user_id is None:
+        logger.fatal("No user '%s'" % email)
+        return 1
+    # Prompt user for confirmation
+    if no_confirm or prompt_for_confirmation(
+            "Delete user %s'%s'?" % (email,
+                                     " & purge" if purge else ''),
+            default="n"):
+        try:
+            galaxy.users.UserClient(gi).delete_user(user_id,purge=purge)
+            print("Deleted %suser '%s'" % (" & purged" if purge else '',
+                                           email))
+            return 0
+        except ConnectionError as ex:
+            logger.fatal("Failed to delete user: %s (%s)" % (ex.body,
+                                                             ex.status_code))
+            return 1
+    else:
+        print("User '%s' not deleted" % email)
+        return 0
+
 def check_new_user_info(gi,email,username):
     """
     Check if username or login are already in use
@@ -469,3 +529,44 @@ def render_mako_template(filename,email,password=None):
     return Template(filename=filename).render(first_name=first_name,
                                               email=email,
                                               password=password)
+
+def prompt_for_confirmation(question,default=None):
+    """
+    Prompt the user to confirm an action
+
+    Arguments:
+      question: text to display next to the prompt
+      default: default to use if user doesn't supply
+        an explicit response (one of 'y','yes','n'
+        or 'no')
+
+    Returns:
+      True if user confirms, False if not.
+
+    """
+    responses = {
+        'yes': True,
+        'ye' : True,
+        'y'  : True,
+        'no' : False,
+        'n'  : False,
+    }
+    if default is None:
+        prompt = " [y/n] "
+    elif default.lower().startswith('y'):
+        prompt = " [Y/n] "
+    elif default.lower().startswith('n'):
+        prompt = " [y/N] "
+    else:
+        raise Exception("Invalid default for prompt: %s" %
+                        default)
+    while True:
+        sys.stdout.write(question + prompt)
+        choice = input().lower()
+        if default is not None and choice == '':
+            return responses[default.lower()]
+        elif choice in responses:
+            return responses[choice]
+        else:
+            sys.stdout.write("Please respond with 'yes' or 'no' "
+                             "(or 'y' or 'n').\n")
