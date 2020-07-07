@@ -652,10 +652,6 @@ def install_tool(context,galaxy,repository,tool_panel_section,
     except Exception as ex:
         logger.fatal(ex)
         sys.exit(1)
-    click.echo("Toolshed   %s" % toolshed)
-    click.echo("Owner      %s" % owner)
-    click.echo("Repository %s" % repository)
-    click.echo("Revision   %s" % revision)
     # Get a Galaxy instance
     gi = context.galaxy_instance(galaxy)
     if gi is None:
