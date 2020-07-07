@@ -109,6 +109,10 @@ Add a new user::
 
   nebulizer create_user galaxy -p pa55w0rd a.non@galaxy.org
 
+Delete and purge an existing user::
+
+  nebulizer delete_user galaxy a.non@galaxy.org --purge
+
 -----------------------
 Managing Data Libraries
 -----------------------
@@ -244,6 +248,7 @@ User Management
  * ``create_user``: Create new Galaxy user.
  * ``create_batch_users``: Create multiple Galaxy users from a template.
  * ``create_users_from_file``: Create multiple Galaxy users from a file.
+ * ``delete_user``: Delete a Galaxy user.
 
 -----------------------
 Data Library Management
