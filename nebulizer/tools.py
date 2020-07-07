@@ -1267,6 +1267,12 @@ def update_tool(gi,tool_shed,name,owner,
         logger.critical("%s: unable to find repository to update" %
                         name)
         return TOOL_UPDATE_FAIL
+    # Check there is at least one installed revision
+    installed_revisions = [r for r in update_repo.revisions()
+                           if not r.deleted]
+    if not installed_revisions:
+        logger.fatal("%s: no revisions currently installed" % name)
+        return TOOL_UPDATE_FAIL
     # Update the toolshed status
     if check_tool_shed:
         repo.update_tool_shed_revision_status()
