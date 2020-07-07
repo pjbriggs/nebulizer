@@ -871,6 +871,61 @@ def update_tool(context,galaxy,repository,
                                (install_resolver_dependencies== 'yes')))
 
 @nebulizer.command()
+@click.option('--remove-from-disk',is_flag=True,
+              help="remove the uninstalled tool from disk (otherwise "
+              "tool is just deactivated).")
+@click.option('-y','--yes',is_flag=True,
+              help="don't ask for confirmation of uninstallation.")
+@click.argument("galaxy")
+@click.argument("repository",nargs=-1)
+@pass_context
+def uninstall_tool(context,galaxy,repository,remove_from_disk,
+                   yes):
+    """
+    Uninstall previously installed tool.
+
+    Uninstalls the specified tool which was previously
+    installed from REPOSITORY into GALAXY, where
+    REPOSITORY can be as one of:
+
+    - full URL (without revision) e.g.
+    https://toolshed.g2.bx.psu.edu/view/devteam/fastqc
+
+    - OWNER/TOOLNAME combination e.g. devteam/fastqc
+    (toolshed is assumed to be main Galaxy toolshed)
+
+    - [ TOOLSHED ] OWNER TOOLNAME e.g.
+    https://toolshed.g2.bx.psu.edu devteam fastqc
+
+    The tool must already be present in GALAXY; a
+    revision must be specified if more than one
+    revision is installed (use '*' to match all
+    revisions).
+    """
+    # Get the tool repository details
+    try:
+        toolshed,owner,repository,revision = \
+            tools.handle_repository_spec(repository)
+    except Exception as ex:
+        logger.fatal(ex)
+        sys.exit(1)
+    print("Uninstalling %s/%s%s from %s" % (repository,
+                                            owner,
+                                            '/%s' % revision
+                                            if revision is not None
+                                            else '',
+                                            toolshed))
+    # Get a Galaxy instance
+    gi = context.galaxy_instance(galaxy)
+    if gi is None:
+        logger.critical("Failed to connect to Galaxy instance")
+        sys.exit(1)
+    # Uninstall tool
+    sys.exit(tools.uninstall_tool(gi,toolshed,repository,owner,revision,
+                                  remove_from_disk=remove_from_disk,
+                                  no_confirm=yes))
+
+@nebulizer.command()
 @click.option("--toolshed",metavar='TOOLSHED',
               help="specify a toolshed URL to search, or 'main' "
               "(the main Galaxy toolshed, the default) or 'test' "
