@@ -2,6 +2,7 @@
 #
 # core: core nebulizer classes and functions
 
+import sys
 import os
 import re
 import fnmatch
@@ -272,6 +273,50 @@ def ping_galaxy_instance(gi):
         retcode = ex.status_code
     end = time.time()
     return (retcode,end-start)
+
+def prompt_for_confirmation(question,default=None):
+    """
+    Prompt the user to confirm an action
+
+    Arguments:
+      question: text to display next to the prompt
+      default: default to use if user doesn't supply
+        an explicit response (one of 'y','yes','n'
+        or 'no')
+
+    Returns:
+      True if user confirms, False if not.
+
+    """
+    responses = {
+        'yes': True,
+        'ye' : True,
+        'y'  : True,
+        'no' : False,
+        'n'  : False,
+    }
+    if default is None:
+        prompt = " [y/n] "
+    elif default.lower().startswith('y'):
+        prompt = " [Y/n] "
+    elif default.lower().startswith('n'):
+        prompt = " [y/N] "
+    else:
+        raise Exception("Invalid default for prompt: %s" %
+                        default)
+    while True:
+        sys.stdout.write(question + prompt)
+        try:
+            choice = input().lower()
+        except NameError:
+            choice = raw_input().lower()
+        if default is not None and choice == '':
+            return responses[default.lower()]
+        elif choice in responses:
+            return responses[choice]
+        else:
+            sys.stdout.write("Please respond with 'yes' or 'no' "
+                             "(or 'y' or 'n').\n")
 
 def turn_off_urllib3_warnings():
     """

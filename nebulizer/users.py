@@ -2,7 +2,6 @@
 #
 # users: functions for managing users
 import logging
-import sys
 import re
 import getpass
 import fnmatch
@@ -10,6 +9,7 @@ from bioblend import galaxy
 from bioblend import ConnectionError
 from mako.template import Template
 from .core import get_galaxy_config
+from .core import prompt_for_confirmation
 
 # Logging
 logger = logging.getLogger(__name__)
@@ -529,47 +529,3 @@ def render_mako_template(filename,email,password=None):
     return Template(filename=filename).render(first_name=first_name,
                                               email=email,
                                               password=password)
-
-def prompt_for_confirmation(question,default=None):
-    """
-    Prompt the user to confirm an action
-
-    Arguments:
-      question: text to display next to the prompt
-      default: default to use if user doesn't supply
-        an explicit response (one of 'y','yes','n'
-        or 'no')
-
-    Returns:
-      True if user confirms, False if not.
-
-    """
-    responses = {
-        'yes': True,
-        'ye' : True,
-        'y'  : True,
-        'no' : False,
-        'n'  : False,
-    }
-    if default is None:
-        prompt = " [y/n] "
-    elif default.lower().startswith('y'):
-        prompt = " [Y/n] "
-    elif default.lower().startswith('n'):
-        prompt = " [y/N] "
-    else:
-        raise Exception("Invalid default for prompt: %s" %
-                        default)
-    while True:
-        sys.stdout.write(question + prompt)
-        try:
-            choice = input().lower()
-        except NameError:
-            choice = raw_input().lower()
-        if default is not None and choice == '':
-            return responses[default.lower()]
-        elif choice in responses:
-            return responses[choice]
-        else:
-            sys.stdout.write("Please respond with 'yes' or 'no' "
-                             "(or 'y' or 'n').\n")
