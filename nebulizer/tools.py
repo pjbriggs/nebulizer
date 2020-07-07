@@ -1275,14 +1275,14 @@ def update_tool(gi,tool_shed,name,owner,
         return TOOL_UPDATE_FAIL
     # Update the toolshed status
     if check_tool_shed:
-        repo.update_tool_shed_revision_status()
+        update_repo.update_tool_shed_revision_status()
     # Find latest installable revision
-    if not repo.tool_shed_revisions():
+    if not update_repo.tool_shed_revisions():
         logger.critical("%s: no installable revisions found" % name)
         return TOOL_UPDATE_FAIL
-    revision = repo.tool_shed_revisions()[-1]
+    revision = update_repo.tool_shed_revisions()[-1]
     # Check that there is an update available
-    for r in repo.revisions():
+    for r in update_repo.revisions():
         if not r.deleted and (r.latest_revision and
                               not r.tool_shed_has_newer_revision()):
             print("%s: version %s already the latest version" %
