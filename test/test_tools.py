@@ -401,6 +401,11 @@ class TestHandleRepositorySpec(unittest.TestCase):
              "fastqc",
              "e7b2202befea"
             ))
+    def test_handle_repository_spec_invalid_spec_raises_exception(self):
+        self.assertRaises(
+            Exception,
+            handle_repository_spec,
+            ("fastqc",))
 
 class TestNormaliseToolshedUrl(unittest.TestCase):
     """

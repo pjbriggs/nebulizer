@@ -690,8 +690,14 @@ def handle_repository_spec(repo_spec):
             toolshed.append(ele)
         else:
             toolshed = '/'.join(toolshed)
-            owner = tool_url.split('/')[ix+1]
-            repository = tool_url.split('/')[ix+2]
+            try:
+                owner = tool_url.split('/')[ix+1]
+                repository = tool_url.split('/')[ix+2]
+            except IndexError:
+                # Invalid specification
+                raise Exception("Invalid repository "
+                                "specification: '%s'" %
+                                repo_spec)
             try:
                 revision = tool_url.split('/')[ix+3]
             except IndexError:
