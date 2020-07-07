@@ -461,7 +461,7 @@ def create_users_from_file(context,galaxy,file,message_template,
 @nebulizer.command()
 @click.argument("galaxy")
 @click.argument("email")
-@click.option('-p','--purge',
+@click.option('-p','--purge',is_flag=True,
               help="also purge (permanently delete) the user.")
 @click.option('-y','--yes',is_flag=True,
               help="don't ask for confirmation of deletions.")
