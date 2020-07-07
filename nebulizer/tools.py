@@ -9,6 +9,7 @@ from bioblend import galaxy
 from bioblend import toolshed
 from bioblend.galaxy.client import ConnectionError
 from bioblend import ConnectionError as BioblendConnectionError
+from .core import prompt_for_confirmation
 
 # Logging
 logger = logging.getLogger(__name__)
@@ -20,6 +21,8 @@ TOOL_INSTALL_TIMEOUT = 2
 TOOL_INSTALL_PENDING = 3
 TOOL_UPDATE_OK = 0
 TOOL_UPDATE_FAIL = 1
+TOOL_UNINSTALL_OK = 0
+TOOL_UNINSTALL_FAIL = 1
 
 # Classes
 
@@ -687,8 +690,14 @@ def handle_repository_spec(repo_spec):
             toolshed.append(ele)
         else:
             toolshed = '/'.join(toolshed)
-            owner = tool_url.split('/')[ix+1]
-            repository = tool_url.split('/')[ix+2]
+            try:
+                owner = tool_url.split('/')[ix+1]
+                repository = tool_url.split('/')[ix+2]
+            except IndexError:
+                # Invalid specification
+                raise Exception("Invalid repository "
+                                "specification: '%s'" %
+                                repo_spec)
             try:
                 revision = tool_url.split('/')[ix+3]
             except IndexError:
@@ -1258,6 +1267,12 @@ def update_tool(gi,tool_shed,name,owner,
         logger.critical("%s: unable to find repository to update" %
                         name)
         return TOOL_UPDATE_FAIL
+    # Check there is at least one installed revision
+    installed_revisions = [r for r in update_repo.revisions()
+                           if not r.deleted]
+    if not installed_revisions:
+        logger.fatal("%s: no revisions currently installed" % name)
+        return TOOL_UPDATE_FAIL
     # Update the toolshed status
     if check_tool_shed:
         repo.update_tool_shed_revision_status()
@@ -1290,3 +1305,93 @@ def update_tool(gi,tool_shed,name,owner,
         tool_panel_section=tool_panel_section,
         timeout=timeout,poll_interval=poll_interval,
         no_wait=no_wait)
+
+def uninstall_tool(gi,tool_shed,name,owner,revision,
+                   remove_from_disk=False,no_confirm=False):
+    """
+    Uninstall a tool repository from a Galaxy instance
+
+    Arguments:
+      gi (bioblend.galaxy.GalaxyInstance): Galaxy instance
+      tool_shed (str): URL for the toolshed to install the
+        tool from
+      name (str): name of the tool repository
+      owner (str): name of the tool repository owner
+      revision (str): revision changeset to uninstall;
+        if set to '*' then matches all installed
+        revisions.
+      remove_from_disk (bool): optional, if True then also
+        remove the repository from disk (otherwise it is
+        only deactivated).
+      no_confirm : if True then don't prompt to confirm the
+        uninstall operation.
+
+    """
+    # Locate existing tool to remove
+    uninstall_repos = [r for r in get_repositories(gi)
+                       if r.tool_shed == tool_shed
+                       and r.name == name
+                       and r.owner == owner]
+    if not uninstall_repos:
+        logger.fatal("%s/%s: no matching tool installed?" % (owner,name))
+        return TOOL_UNINSTALL_FAIL
+    elif len(uninstall_repos) > 1:
+        logger.fatal("%s/%s: matches multiple installed tools?" %
+                     (owner,name))
+        return TOOL_UNINSTALL_FAIL
+    else:
+        uninstall_repo = uninstall_repos[0]
+    # Identify revisions
+    if revision is not None:
+        remove_revisions = [r for r in uninstall_repo.revisions()
+                            if revision == '*'
+                            or revision == r.changeset_revision]
+    else:
+        remove_revisions = uninstall_repo.revisions()
+        if len(remove_revisions) > 1:
+            logger.fatal("%s/%s: no revision specified but multiple "
+                         "revisions are installed" % (owner,name))
+            return TOOL_UNINSTALL_FAIL
+    if not remove_revisions:
+        logger.fatal("%s/%s%s: no matching installed revision?" %
+                     (owner,name,
+                      '/%s' % revision if revision is not None else ''))
+        return TOOL_UNINSTALL_FAIL
+    # Get toolshed URL
+    tool_shed_url = normalise_toolshed_url(tool_shed)
+    print("Toolshed URL: %s" % tool_shed_url)
+    # Report and confirm uninstall
+    print("\nThe following tools will be uninstalled:\n")
+    for r in remove_revisions:
+        print("\t%s %s/%s %s" % (tool_shed,owner,name,r.revision_id))
+    print("")
+    if (not no_confirm) and \
+       (not prompt_for_confirmation("Proceed?",default="n")):
+        print("Uninstall cancelled")
+        return TOOL_UNINSTALL_OK
+    # Attempt to uninstall each revision
+    uninstall_status = TOOL_UNINSTALL_OK
+    for revision in remove_revisions:
+        try:
+            print("%s/%s: requesting uninstall" % (name,
+                                                   revision.revision_id))
+            tool_shed_client = galaxy.toolshed.ToolShedClient(gi)
+            result = tool_shed_client.uninstall_repository_revision(
+                name,owner,revision.changeset_revision,
+                tool_shed_url,remove_from_disk=remove_from_disk)
+            print("* %s" % result['message'])
+        except ConnectionError as connection_error:
+            # Handle API error
+            logger.warning("Got error from Galaxy API on attempted uninstall "
+                           "(ignored)")
+            logger.warning(connection_error)
+            logger.warning("Status code: %s" % connection_error.status_code)
+            logger.warning("Message    : \"%s\"" %
+                           json.loads(connection_error.body)["err_msg"])
+        except Exception as ex:
+            # Handle general error
+            logger.warning("Error while requesting tool uninstall "
+                           "(ignored)")
+            logger.warning("Exception: %s" % ex)
+            uninstall_status = TOOL_UNINSTALL_FAIL
+    return uninstall_status

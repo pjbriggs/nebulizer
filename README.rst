@@ -199,6 +199,20 @@ is available::
    option. Note however that this can impose a significant
    overhead which can make the commands much slower.
 
+Uninstall and deactivate a previously installed tool::
+
+  nebulizer uninstall_tool localhost devteam/fastqc
+
+Uninstall and deactivate a specific revision of a tool::
+
+  nebulizer uninstall_tool localhost devteam/fastqc/e7b2202befea
+
+Uninstall all installed revisions of a tool and remove from
+disk::
+
+  nebulizer uninstall_tool localhost devteam/fastqc/* \
+    --remove-from-disk
+
 ---------------------------------------------
 Searching for tool repositories on a Toolshed
 ---------------------------------------------
