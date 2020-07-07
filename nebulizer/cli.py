@@ -459,6 +459,27 @@ def create_users_from_file(context,galaxy,file,message_template,
                                          mako_template=message_template))
 
 @nebulizer.command()
+@click.argument("galaxy")
+@click.argument("email")
+@click.option('-p','--purge',is_flag=True,
+              help="also purge (permanently delete) the user.")
+@click.option('-y','--yes',is_flag=True,
+              help="don't ask for confirmation of deletions.")
+@pass_context
+def delete_user(context,galaxy,email,purge,yes):
+    """
+    Delete a user account from a Galaxy instance
+
+    Removes user account with username EMAIL from GALAXY.
+    """
+    # Get a Galaxy instance
+    gi = context.galaxy_instance(galaxy)
+    if gi is None:
+        logger.critical("Failed to connect to Galaxy instance")
+        sys.exit(1)
+    sys.exit(users.delete_user(gi,email,purge=purge,no_confirm=yes))
+
+@nebulizer.command()
 @click.option('--name',metavar='NAME',
               help="list only tools matching NAME. Can include "
               "glob-style wild-cards.")

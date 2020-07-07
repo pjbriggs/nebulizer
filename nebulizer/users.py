@@ -9,6 +9,7 @@ from bioblend import galaxy
 from bioblend import ConnectionError
 from mako.template import Template
 from .core import get_galaxy_config
+from .core import prompt_for_confirmation
 
 # Logging
 logger = logging.getLogger(__name__)
@@ -92,6 +93,27 @@ def get_users(gi):
     for user_data in user_client.get_users():
         users.append(User(user_data))
     return users
+
+def get_user_id(gi,email):
+    """
+    Get the user ID corresponding to a username email
+
+    Arguments:
+      gi (bioblend.galaxy.GalaxyInstance): Galaxy instance
+      email : email address for the user
+
+    Returns:
+      String: user ID, or None if no match.
+    """
+    user_id = None
+    try:
+        for u in get_users(gi):
+            if fnmatch.fnmatch(u.email,email):
+                return u.id
+    except ConnectionError as ex:
+        logger.warning("Failed to get user list: %s (%s)" % (ex.body,
+                                                             ex.status_code))
+    return None
 
 def list_users(gi,name=None,long_listing_format=False,show_id=False):
     """
@@ -352,6 +374,44 @@ def create_batch_of_users(gi,tsv,only_check=False,mako_template=None):
         if mako_template:
             print(render_mako_template(mako_template,email,passwd))
     return 0
+
+def delete_user(gi,email,purge=False,no_confirm=False):
+    """
+    Delete a user account from a Galaxy instance
+
+    Arguments:
+      gi         : Galaxy instance
+      email      : email address of user to delete
+      purge      : if True then also purge the user
+      no_confirm : if True then don't prompt to confirm the
+        deletion operation
+
+    Returns:
+      0 on success, 1 on failure.
+
+    """
+    # Get the ID for the supplied user
+    user_id = get_user_id(gi,email)
+    if user_id is None:
+        logger.fatal("No user '%s'" % email)
+        return 1
+    # Prompt user for confirmation
+    if no_confirm or prompt_for_confirmation(
+            "Delete %suser '%s'?" % (" & purge" if purge else '',
+                                     email),
+            default="n"):
+        try:
+            galaxy.users.UserClient(gi).delete_user(user_id,purge=purge)
+            print("Deleted %suser '%s'" % (" & purged" if purge else '',
+                                           email))
+            return 0
+        except ConnectionError as ex:
+            logger.fatal("Failed to delete user: %s (%s)" % (ex.body,
+                                                             ex.status_code))
+            return 1
+    else:
+        print("User '%s' not deleted" % email)
+        return 0
 
 def check_new_user_info(gi,email,username):
     """
