@@ -1058,9 +1058,12 @@ def config(context,galaxy,name=None):
 @click.option('-i','--interval',metavar='INTERVAL',default=5,
               help="set the interval between sending requests in "
               "seconds (default is 5 seconds).")
+@click.option('-t','--timeout',metavar='LIMIT',default=0,
+              help="specify timeout limit in seconds when no "
+              "connection can be made.")
 @click.argument("galaxy")
 @pass_context
-def ping(context,galaxy,count,interval=5):
+def ping(context,galaxy,count,interval=5,timeout=None):
     """
     'Ping' a Galaxy instance.
 
@@ -1073,13 +1076,14 @@ def ping(context,galaxy,count,interval=5):
         galaxy_url = galaxy
     click.echo("PING %s" % galaxy_url)
     nrequests = 0
+    timeout_timer = 0
     while True:
         try:
             # Get a Galaxy instance
             gi = context.galaxy_instance(galaxy_url)
             if gi is None:
                 click.echo("%s: failed to connect" % galaxy_url)
-                sys.exit(1)
+                status_code = 1
             else:
                 status_code,response_time = ping_galaxy_instance(gi)
                 if status_code != 0:
@@ -1093,9 +1097,23 @@ def ping(context,galaxy,count,interval=5):
                 nrequests += 1
                 if nrequests >= count:
                     break
+            # Check for timeout
+            if timeout and timeout_timer > timeout:
+                click.echo("Timeout limit reached without "
+                           "connecting")
+                break
             # Wait before sending next request
             time.sleep(interval)
+            # Update timer for failed connection
+            if status_code != 0:
+                timeout_timer += interval
+            else:
+                timeout_timer = 0
         except KeyboardInterrupt:
+            break
+        except Exception as ex:
+            click.echo("Uncaught exception: %s" % ex)
+            status_code = 1
             break
     sys.exit(status_code)
 
