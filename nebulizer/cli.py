@@ -646,8 +646,12 @@ def install_tool(context,galaxy,repository,tool_panel_section,
     found.
     """
     # Get the tool repository details
-    toolshed,owner,repository,revision = \
-        tools.handle_repository_spec(repository)
+    try:
+        toolshed,owner,repository,revision = \
+            tools.handle_repository_spec(repository)
+    except Exception as ex:
+        logger.fatal(ex)
+        sys.exit(1)
     click.echo("Toolshed   %s" % toolshed)
     click.echo("Owner      %s" % owner)
     click.echo("Repository %s" % repository)
@@ -846,8 +850,12 @@ def update_tool(context,galaxy,repository,
     original tool.
     """
     # Get the tool repository details
-    toolshed,owner,repository,revision = \
-        tools.handle_repository_spec(repository)
+    try:
+        toolshed,owner,repository,revision = \
+            tools.handle_repository_spec(repository)
+    except Exception as ex:
+        logger.fatal(ex)
+        sys.exit(1)
     print("Updating %s/%s from %s" % (repository,owner,toolshed))
     if revision is not None:
         logger.fatal("A revision ('%s') was also supplied "
