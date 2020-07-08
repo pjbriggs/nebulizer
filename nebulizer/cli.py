@@ -19,6 +19,7 @@ from .core import Reporter
 from . import options
 from . import users
 from . import libraries
+from . import quotas
 from . import tools
 from . import search
 
@@ -1148,6 +1149,30 @@ def add_library_datasets(context,galaxy,dest,file,file_type,
                                    link_only=link,
                                    file_type=file_type,
                                    dbkey=dbkey)
+
+@nebulizer.command()
+@click.option("--name",
+              help="list only quotas with matching name. Can "
+              "include glob-style wild-cards.")
+@click.option("--long","-l","long_listing",is_flag=True,
+              help="use a long listing format that includes lists "
+              "of associated users and groups.")
+@click.argument("galaxy")
+@pass_context
+def list_quotas(context,galaxy,name,long_listing):
+    """
+    List quotas in Galaxy instance.
+
+    Prints details of quotas in GALAXY instance.
+    """
+    # Get a Galaxy instance
+    gi = context.galaxy_instance(galaxy)
+    if gi is None:
+        logger.critical("Failed to connect to Galaxy instance")
+        sys.exit(1)
+    # List users
+    sys.exit(quotas.list_quotas(gi,name=name,
+                                long_listing_format=long_listing))
 
 @nebulizer.command()
 @click.argument("galaxy")
