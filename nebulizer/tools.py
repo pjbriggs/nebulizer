@@ -10,6 +10,7 @@ from bioblend import toolshed
 from bioblend.galaxy.client import ConnectionError
 from bioblend import ConnectionError as BioblendConnectionError
 from .core import prompt_for_confirmation
+from .core import Reporter
 
 # Logging
 logger = logging.getLogger(__name__)
@@ -893,16 +894,15 @@ def list_tools(gi,name=None,installed_only=False):
     # Sort into name order
     tools.sort(key=lambda x: x.name.lower())
     # Print info
+    output = Reporter()
     for tool in tools:
-        print("%-16s\t%-8s\t%-16s\t%s\t%s" % (tool.name,
-                                              tool.version,
-                                              (tool.panel_section
-                                               if tool.panel_section
-                                               else ''),
-                                              tool.tool_repo,
-                                              (tool.tool_changeset
-                                               if tool.tool_changeset
-                                               else '')))
+        output.append((
+            tool.name,tool.version,
+            (tool.panel_section if tool.panel_section else ''),
+            tool.tool_repo,
+            (tool.tool_changeset if tool.tool_changeset else ''))
+        )
+    output.report()
     print("total %s" % len(tools))
 
 def list_installed_repositories(gi,name=None,
