@@ -1033,17 +1033,19 @@ def list_tool_panel(gi,name=None,list_tools=False):
     if list_tools:
         tools = get_tools(gi)
     # Report
+    output = Reporter()
     for section in sections:
-        print("'%s' (%s)" % (section.name,
-                             section.id))
+        output.append(("'%s'" % section.name,
+                       section.id))
         if list_tools:
             for tool in sorted([t for t in tools
                                 if t.panel_section == section.name],
                                key=lambda t: tool_panel.tool_index(t)):
-                print("- %s" % '\t'.join((str(tool_panel.tool_index(tool)),
-                                          tool.name,
-                                          tool.version,
-                                          tool.description)))
+                output.append(("#%d" % tool_panel.tool_index(tool),
+                               tool.name,
+                               tool.version,
+                               tool.description))
+    output.report(rstrip=True)
     print("total %s" % len(sections))
 
 def install_tool(gi,tool_shed,name,owner,revision=None,
