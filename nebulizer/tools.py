@@ -968,38 +968,44 @@ def list_installed_repositories(gi,name=None,
                   r[0].name.startswith("data_manager_") or
                   (r[2] and tool_panel.tool_index(r[2][0]) > -1))]
         # Print details
+        output = Reporter()
         for r in repos:
             repo,revision,tools = r
             if tools:
                 tool_panel_section = tools[0].panel_section
             else:
                 tool_panel_section = None
-            print("%s" % '\t'.join((repo.tool_shed,
-                                    repo.owner,
-                                    repo.name,
-                                    revision.changeset_revision,
-                                    (tool_panel_section
-                                     if tool_panel_section else ''))))
+            output.append((repo.tool_shed,
+                           repo.owner,
+                           repo.name,
+                           revision.changeset_revision,
+                           (tool_panel_section
+                            if tool_panel_section else '')))
+        # Write out in TSV format
+        output.report(delimiter='\t')
     else:
         # Denser more verbose format
+        output = Reporter()
         nrevisions = 0
         for r in repos:
             # Print details
             repo,revision,tools = r
-            print("%s" % '\t'.join(('%s %s' %
-                                    (revision.status_indicator,
-                                     repo.name),
-                                    repo.tool_shed,
-                                    repo.owner,
-                                    revision.revision_id,
-                                    revision.status)))
+            output.append(('%s %s' % (revision.status_indicator,
+                                      repo.name),
+                           repo.tool_shed,
+                           repo.owner,
+                           revision.revision_id,
+                           revision.status))
             nrevisions += 1
             # List tools associated with revision
             if list_tools:
                 for tool in tools:
-                    print("- %s" % '\t'.join((tool.name,
-                                              tool.version,
-                                              tool.description)))
+                    output.append(("-",
+                                   tool.name,
+                                   tool.version,
+                                   tool.description))
+        # Write to stdout
+        output.report()
         print("total %s" % nrevisions)
 
 def list_tool_panel(gi,name=None,list_tools=False):
