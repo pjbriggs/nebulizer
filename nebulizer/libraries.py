@@ -158,8 +158,7 @@ def list_library_contents(gi,path,long_listing_format=False,
                     show_id=show_id))
         # Report
         output.report()
-        if long_listing_format:
-            print("total %s" % len(contents))
+        print("total %s" % len(contents))
     else:
         output = Reporter()
         # Number of levels to match
@@ -185,24 +184,15 @@ def list_library_contents(gi,path,long_listing_format=False,
             if item['type'] == 'folder':
                 continue
             else:
-                parent = os.path.split(item['name'])[0]+'/'
+                parent = os.path.split(item['name'])[0]
                 for folder in folders:
-                    if folder['name'].startswith(parent):
+                    if folder['name'] == parent:
                         #print("Parent = %s" % parent)
                         implicit_dataset = True
                         break
             # Item outside of folders
             if not implicit_dataset:
                 datasets.append(item)
-        # List the datasets
-        for dataset in datasets:
-            output.append(report_dataset(
-                item['id'],
-                dataset_client.show_dataset(item['id'],
-                                            hda_ldda='ldda'),
-                long_listing=long_listing_format,
-                show_id=show_id))
-        output.report()
         # List the contents of each folder
         for folder in folders:
             output = Reporter()
@@ -227,6 +217,19 @@ def list_library_contents(gi,path,long_listing_format=False,
             output.report()
             if long_listing_format:
                 print("total %s" % len(folder_contents))
+        # List the datasets
+        if datasets:
+            print("\n.:")
+            output = Reporter()
+            for dataset in datasets:
+                output.append(report_dataset(
+                    item['id'],
+                    dataset_client.show_dataset(item['id'],
+                                                hda_ldda='ldda'),
+                    long_listing=long_listing_format,
+                    show_id=show_id))
+            output.report()
+            print("total %s" % len(datasets))
 
 def create_library(gi,name,description=None,synopsis=None):
     """
