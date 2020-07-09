@@ -167,6 +167,68 @@ class Credentials(object):
                         return (url,api_key)
         raise KeyError("'%s': not found" % name)
 
+class Reporter(object):
+    """
+    Class for reporting column data
+
+    Given multiple "lines" of column data (supplied
+    as lists), pretty print the data in columns.
+
+    Example usage:
+
+    >>> output = Reporter()
+    >>> output.append(['Some data',1.0,3])
+    >>> output.append(['More stuff',21.9,19])
+    >>> output.report()
+    Some data   1.0   3
+    More stuff  21.9  19
+    """
+    def __init__(self):
+        """
+        New Reporter instance
+        """
+        self._content = list()
+        self._field_widths = list()
+    def append(self,line):
+        """
+        Add a line of data
+
+        Arguments:
+          line (list): list of data items to
+            append
+        """
+        self._content.append(line)
+        for ix,item in enumerate(line):
+            try:
+                self._field_widths[ix] = max(self._field_widths[ix],
+                                            len(str(item)))
+            except IndexError:
+                self._field_widths.append(len(str(item)))
+    @property
+    def nlines(self):
+        """
+        Number of lines stored
+        """
+        return len(self._content)
+    def report(self,delimiter='  ',padding=True):
+        """
+        Pretty-print the data
+
+        Arguments:
+          delimiter (str): delimiter to use (defaults
+            to two space characters i.e. '  ')
+          padding (bool): if True then line up columns
+            of data by padding with spaces
+        """
+        if padding:
+            for line in self._content:
+                print(delimiter.join(["%-*s" % (width,str(item))
+                                      for width,item in zip(self._field_widths,
+                                                            line)]))
+        else:
+            for line in self._content:
+                print(delimiter.join([str(item) for item in line]))
+
 def get_galaxy_instance(galaxy_url,api_key=None,email=None,password=None,
                         verify_ssl=True):
     """

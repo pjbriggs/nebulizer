@@ -5,22 +5,40 @@ import logging
 import os
 import fnmatch
 from .core import get_current_user
+from .core import Reporter
 from bioblend import galaxy
 import logging
 
 logger = logging.getLogger(__name__)
 
-def list_data_libraries(gi):
+def list_data_libraries(gi,long_listing_format=False,show_id=False):
     """
     Return list of data libraries
 
     Arguments:
       gi (bioblend.galaxy.GalaxyInstance): Galaxy instance
+      long_listing_format (boolean): if True then use a
+        long listing format when reporting items
+      show_id (boolean): if True then also report the
+        internal Galaxy IDs for data library items
 
     """
-    for lib in galaxy.libraries.LibraryClient(gi).get_libraries():
-        print("%s\t%s\t%s" % (lib['name'],lib['description'],lib['id']))
-        ##print("%s" % lib)
+    output = Reporter()
+    libraries = sorted(galaxy.libraries.LibraryClient(gi).get_libraries(),
+                       key=lambda lib: lib['name'])
+    for lib in libraries:
+        display_items = [lib['name']]
+        if long_listing_format:
+            if lib['description']:
+                description = "'%s'" % lib['description']
+            else:
+                description = "[No description]"
+            display_items.append(description)
+        if show_id:
+            display_items.append(lib['id'])
+        output.append(display_items)
+    output.report()
+    print("total %d" % output.nlines)
 
 def library_id_from_name(gi,library_name):
     """
@@ -63,7 +81,8 @@ def folder_id_from_name(gi,library_id,folder_name):
             return folder['id']
     return None
 
-def list_library_contents(gi,path,long_listing_format=False):
+def list_library_contents(gi,path,long_listing_format=False,
+                          show_id=False):
     """
     Print contents of folder in data library
 
@@ -78,6 +97,8 @@ def list_library_contents(gi,path,long_listing_format=False):
         a folder in a library
       long_listing_format (boolean): if True then use a
         long listing format when reporting items
+      show_id (boolean): if True then also report the
+        internal Galaxy IDs for data library items
 
     """
     # Get name and id for parent data library
@@ -106,6 +127,7 @@ def list_library_contents(gi,path,long_listing_format=False):
             pass
     # Output mode depends on whether we have wildcards
     if not wildcard_pattern:
+        output = Reporter()
         # Exact matches only
         matches = [x for x in library_contents if x['name'] == pattern]
         if not matches:
@@ -120,19 +142,25 @@ def list_library_contents(gi,path,long_listing_format=False):
                 contents = matches
         # Remove 'root' folder
         contents = [x for x in contents if x['name'] != '/']
-        # Report
-        if long_listing_format:
-            print("total %s" % len(contents))
         for item in contents:
             if item['type'] == 'folder':
-                report_folder(lib_client.show_folder(library_id,
-                                                     item['id']),
-                                    long_listing=long_listing_format)
+                output.append(report_folder(
+                    lib_client.show_folder(library_id,
+                                           item['id']),
+                    long_listing=long_listing_format,
+                    show_id=show_id))
             else:
-                report_dataset(dataset_client.show_dataset(item['id'],
-                                                           hda_ldda='ldda'),
-                               long_listing=long_listing_format)
+                output.append(report_dataset(
+                    item['id'],
+                    dataset_client.show_dataset(item['id'],
+                                                hda_ldda='ldda'),
+                    long_listing=long_listing_format,
+                    show_id=show_id))
+        # Report
+        output.report()
+        print("total %s" % len(contents))
     else:
+        output = Reporter()
         # Number of levels to match
         nlevels = pattern.count('/')
         # Mixture of matches possible
@@ -156,36 +184,52 @@ def list_library_contents(gi,path,long_listing_format=False):
             if item['type'] == 'folder':
                 continue
             else:
-                parent = os.path.split(item['name'])[0]+'/'
+                parent = os.path.split(item['name'])[0]
                 for folder in folders:
-                    if folder['name'].startswith(parent):
-                        print("Parent = %s" % parent)
+                    if folder['name'] == parent:
+                        #print("Parent = %s" % parent)
                         implicit_dataset = True
                         break
             # Item outside of folders
             if not implicit_dataset:
                 datasets.append(item)
-        # List the datasets
-        for dataset in datasets:
-            report_dataset(dataset_client.show_dataset(item['id'],
-                                                       hda_ldda='ldda'),
-                           long_listing=long_listing_format)
         # List the contents of each folder
         for folder in folders:
+            output = Reporter()
             print("\n%s:" % folder['name'])
             folder_contents = [x for x in library_contents if
                                os.path.split(x['name'])[0] == folder['name']]
-            if long_listing_format:
-                print("total %s" % len(folder_contents))
             for item in folder_contents:
                 if item['type'] == 'folder':
-                    report_folder(lib_client.show_folder(library_id,
-                                                         item['id']),
-                    long_listing=long_listing_format)
+                    output.append(report_folder(
+                        lib_client.show_folder(library_id,
+                                               item['id']),
+                        long_listing=long_listing_format,
+                        show_id=show_id))
                 else:
-                    report_dataset(dataset_client.show_dataset(item['id'],
-                                                               hda_ldda='ldda'),
-                                   long_listing=long_listing_format)
+                    output.append(report_dataset(
+                        item['id'],
+                        dataset_client.show_dataset(item['id'],
+                                                    hda_ldda='ldda'),
+                        long_listing=long_listing_format,
+                        show_id=show_id))
+            # Output to stdout
+            output.report()
+            if long_listing_format:
+                print("total %s" % len(folder_contents))
+        # List the datasets
+        if datasets:
+            print("\n.:")
+            output = Reporter()
+            for dataset in datasets:
+                output.append(report_dataset(
+                    item['id'],
+                    dataset_client.show_dataset(item['id'],
+                                                hda_ldda='ldda'),
+                    long_listing=long_listing_format,
+                    show_id=show_id))
+            output.report()
+            print("total %s" % len(datasets))
 
 def create_library(gi,name,description=None,synopsis=None):
     """
@@ -366,7 +410,7 @@ def normalise_folder_path(path):
     """
     return  '/'+'/'.join([x for x in path.split('/') if x != ''])
 
-def report_folder(folder_data,long_listing=False):
+def report_folder(folder_data,long_listing=False,show_id=False):
     """
     Report details of a library folder
 
@@ -375,17 +419,28 @@ def report_folder(folder_data,long_listing=False):
         appropriate call to bioblend
       long_listing_format (boolean): if True then use a
         long listing format when reporting items
+      show_id (boolean): if True then include the ID
 
     """
     logger.debug("%s" % folder_data)
+    display_items = ["%s/" % folder_data['name'],
+                     "folder"]
     if long_listing:
-        print("%s/\t%s\t%s" % (folder_data['name'],
-                               folder_data['description'],
-                               folder_data['id']))
-    else:
-        print("%s/" % os.path.split(folder_data['name'])[1])
+        if folder_data['description']:
+            description = "'%s'" % folder_data['description']
+        else:
+            description = "[No description]"
+        item_count = folder_data['item_count']
+        display_items.extend([description,
+                              "%d item%s" % (item_count,
+                                             's' if item_count != 1
+                                             else '')])
+    if show_id:
+        display_items.append(folder_data['id'])
+    return display_items
 
-def report_dataset(dataset_data,long_listing=False):
+def report_dataset(dataset_id,dataset_data,long_listing=False,
+                   show_id=False):
     """
     Report details of a library dataset
 
@@ -394,14 +449,30 @@ def report_dataset(dataset_data,long_listing=False):
         appropriate call to bioblend
       long_listing_format (boolean): if True then use a
         long listing format when reporting items
+      show_id (boolean): if True then include the ID
 
     """
     logger.debug("%s" % dataset_data)
+    display_items = [dataset_data['name'],
+                     dataset_data['file_ext']]
     if long_listing:
-        print('\t'.join([str(x) for x in (dataset_data['name'],
-                                          dataset_data['file_ext'],
-                                          dataset_data['genome_build'],
-                                          dataset_data['file_size'],
-                                          dataset_data['file_name'],)]))
-    else:
-        print("%s" % os.path.split(dataset_data['name'])[1])
+        file_size = display_file_size(dataset_data['file_size'])
+        display_items.extend([dataset_data['genome_build'],
+                              file_size,
+                              dataset_data['file_name']])
+    if show_id:
+        display_items.append("LLDA:%s" % dataset_id)
+    return display_items
+
+def display_file_size(file_size):
+    """
+    Convert a file size in bytes to a human-readable format e.g '5.6K'
+    """
+    units = ('K','M','G','T')
+    if file_size < 1024:
+        return "%d" % file_size
+    for unit in units:
+        file_size = float(file_size)/1024.0
+        if file_size < 1024:
+            break
+    return "%.1f%s" % (file_size,unit)
