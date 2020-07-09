@@ -148,6 +148,7 @@ def list_users(gi,name=None,long_listing_format=False,show_id=False):
                   fnmatch.fnmatch(u.email.lower(),name))]
     # Report users
     users.sort(key=lambda u: u.email.lower())
+    output = []
     for user in users:
         # Get additional user data
         user.update(galaxy.users.UserClient(gi).show_user(user.id))
@@ -171,7 +172,19 @@ def list_users(gi,name=None,long_listing_format=False,show_id=False):
         if show_id:
             # Also report the internal user ID
             display_items.append(user.id)
-        print('\t'.join([str(x) for x in display_items]))
+        output.append(display_items)
+    # Report user data
+    field_widths = []
+    for line in output:
+        for ix,item in enumerate(line):
+            item_width = len(str(item))
+            try:
+                field_widths[ix] = max(item_width,field_widths[ix])
+            except IndexError:
+                field_widths.append(item_width)
+    for line in output:
+        print('  '.join(["%-*s" % (width,str(item))
+                        for width,item in zip(field_widths,line)]))
     print("total %s" % len(users))
 
 def create_user(gi,email,username=None,passwd=None,only_check=False,
