@@ -1175,6 +1175,58 @@ def list_quotas(context,galaxy,name,long_listing):
                                 long_listing_format=long_listing))
 
 @nebulizer.command()
+@click.option('-d','--description',
+              help="description of the new quota (will be "
+              "the same as the NAME if not supplied).")
+@click.option('--default_for',
+              help="set the quota as the default for either "
+              "'registered' or 'unregistered' users.")
+@click.argument("galaxy")
+@click.argument("name")
+@click.argument("quota")
+@pass_context
+def create_quota(context,galaxy,name,quota,description=None,
+                 default_for=None):
+    """
+    Create new quota.
+
+    Makes a new quota called NAME in GALAXY. A quota with
+    the same name must not already exist.
+
+    QUOTA specifies the type of quota, and must be of the
+    form
+
+    [OPERATION][AMOUNT]
+
+    where OPERATION is any valid operation ('=','+','-';
+    defaults to '=' if not specified) and AMOUNT is any
+    valid amount (e.g. '10000MB', '99 gb', '0.2T',
+    'unlimited').
+
+    If DESCRIPTION is not supplied then it will be the
+    same as the NAME.
+
+    If supplied then DEFAULT_FOR must be one of
+    'registered' or 'unregistered', in which case the new
+    quota will become the default for that class of user
+    (overriding any default which was previously defined).
+    """
+    # Get a Galaxy instance
+    gi = context.galaxy_instance(galaxy)
+    if gi is None:
+        logger.critical("Failed to connect to Galaxy instance")
+        sys.exit(1)
+    # Deal with quota specification
+    operation,amount = quotas.handle_quota_spec(quota)
+    # Deal with description
+    if description is None:
+        description = name
+    # Create new quota
+    sys.exit(quotas.create_quota(gi,name,description,
+                                 amount,operation,
+                                 default=default_for))
+
+@nebulizer.command()
 @click.argument("galaxy")
 @click.option('--name',
               help="only show configuration items that match "

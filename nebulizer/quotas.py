@@ -101,6 +101,31 @@ class Quota(object):
 
 # Functions
 
+def handle_quota_spec(quota):
+    """
+    Process an arbitrary quota specification
+
+    Given a quota specification as a string,
+    returns the operation and amount.
+
+    The specification must be of the form:
+
+    [OPERATION]AMOUNT
+
+    where OPERATION is one of '=','+' or '-'
+    and defaults to '=' if not present.
+    """
+    # Valid operations
+    valid_operations = ('=','+','-')
+    # Get operation
+    if quota[0] in valid_operations:
+        operation = quota[0]
+        amount = quota[1:]
+    else:
+        operation = '='
+        amount = quota
+    return (operation,amount)
+
 def get_quotas(gi):
     """
     Return list of quotas from a Galaxy instance
@@ -176,3 +201,51 @@ def list_quotas(gi,name=None,long_listing_format=False):
                 print("\t%s" % group.name)
             print("")
     print("total %s" % len(quotas))
+
+def create_quota(gi,name,description,amount,operation,default=None):
+    """
+    Create a new quota in a Galaxy instance
+
+    Attempts to create a new quota with the supplied details.
+
+    Arguments:
+      gi: Galaxy instance
+      name: name for the new quota
+      description: description for the new quota
+      amount: string specifying the size of the new quota
+      operation: operation to use when applying the new
+        quota (i.e. '=','+' or '-')
+      default: optionally specify if the new quota will
+        be the default for 'registered' or 'unregistered'
+        users
+    """
+    valid_defaults = ('registered',
+                      'unregistered',
+                      'no')
+    if default:
+        if default not in valid_defaults:
+            logger.fatal("'%s': not a valid default (must be one of "
+                         "%s)" % (default,
+                                  ','.join(["'%s'" % d
+                                            for d in valid_defaults])))
+            return 1
+    else:
+        default = 'no'
+    print("Quota name : %s" % name)
+    print("Description: %s" % description)
+    print("Operation  : %s" % operation)
+    print("Amount     : %s" % amount)
+    print("Default    : %s" % default)
+    try:
+        quota_client = galaxy.quotas.QuotaClient(gi)
+        result = quota_client.create_quota(name,
+                                           description,
+                                           amount,
+                                           operation,
+                                           default=default)
+        print("%s" % result['message'])
+        return 0
+    except galaxy.client.ConnectionError as ex:
+        logger.fatal("Failed to create quota:")
+        logger.fatal(ex)
+        return 1
