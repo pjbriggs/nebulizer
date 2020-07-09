@@ -978,11 +978,14 @@ def search_toolshed(context,toolshed,query_string,galaxy,long_listing):
 @nebulizer.command()
 @click.option('-l','long_listing',is_flag=True,
               help="use a long listing format that includes "
-              "ids, descriptions, file sizes, dbkeys and paths)")
+              "descriptions, file sizes, dbkeys and paths)")
+@click.option('--show_id',is_flag=True,
+              help="include internal Galaxy IDs for data "
+              "libraries, folders and datasets.")
 @click.argument("galaxy")
 @click.argument("path",required=False)
 @pass_context
-def list_libraries(context,galaxy,path,long_listing):
+def list_libraries(context,galaxy,path,long_listing,show_id):
     """
     List data libraries and contents.
 
@@ -1001,9 +1004,13 @@ def list_libraries(context,galaxy,path,long_listing):
     if path:
         sys.exit(libraries.list_library_contents(
             gi,path,
-            long_listing_format=long_listing))
+            long_listing_format=long_listing,
+            show_id=show_id))
     else:
-        sys.exit(libraries.list_data_libraries(gi))
+        sys.exit(libraries.list_data_libraries(
+            gi,
+            long_listing_format=long_listing,
+            show_id=show_id))
 
 @nebulizer.command()
 @click.option('-d','--description',
