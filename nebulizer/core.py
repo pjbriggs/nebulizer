@@ -167,6 +167,16 @@ class Credentials(object):
                         return (url,api_key)
         raise KeyError("'%s': not found" % name)
 
+    def has_key(self,name):
+        """
+        Check if alias exists
+        """
+        try:
+            self.fetch_key(name)
+            return True
+        except KeyError:
+            return False
+
 class Reporter(object):
     """
     Class for reporting column data
