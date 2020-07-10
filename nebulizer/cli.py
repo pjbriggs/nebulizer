@@ -12,6 +12,7 @@ from .core import get_galaxy_instance
 from .core import get_current_user
 from .core import get_galaxy_config
 from .core import ping_galaxy_instance
+from .core import prompt_for_confirmation
 from .core import turn_off_urllib3_warnings
 from .core import Credentials
 from .core import Reporter
@@ -294,8 +295,13 @@ def remove_key(context,alias):
     ALIAS from the list of stored keys.
     """
     instances = Credentials()
-    if not instances.remove_key(alias):
+    if not instances.has_key(alias):
+        logger.fatal("No alias '%s' to remove" % alias)
         sys.exit(1)
+    print("Removing key for alias '%s'" % alias)
+    if prompt_for_confirmation("Proceed?"):
+        if not instances.remove_key(alias):
+            sys.exit(1)
 
 @nebulizer.command()
 @click.option("--name",
