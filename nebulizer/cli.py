@@ -301,9 +301,11 @@ def remove_key(context,alias):
 @click.option("--long","-l","long_listing",is_flag=True,
               help="use a long listing format that includes ids,"
               " disk usage and admin status.")
+@click.option("--show_id",is_flag=True,
+              help="include internal Galaxy user ID.")
 @click.argument("galaxy")
 @pass_context
-def list_users(context,galaxy,name,long_listing):
+def list_users(context,galaxy,name,long_listing,show_id):
     """
     List users in Galaxy instance.
 
@@ -316,7 +318,8 @@ def list_users(context,galaxy,name,long_listing):
         sys.exit(1)
     # List users
     sys.exit(users.list_users(gi,name=name,
-                              long_listing_format=long_listing))
+                              long_listing_format=long_listing,
+                              show_id=show_id))
 
 @nebulizer.command()
 @click.option('--password','-p',

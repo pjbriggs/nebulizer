@@ -10,6 +10,7 @@ from bioblend import ConnectionError
 from mako.template import Template
 from .core import get_galaxy_config
 from .core import prompt_for_confirmation
+from .core import Reporter
 
 # Logging
 logger = logging.getLogger(__name__)
@@ -148,6 +149,7 @@ def list_users(gi,name=None,long_listing_format=False,show_id=False):
                   fnmatch.fnmatch(u.email.lower(),name))]
     # Report users
     users.sort(key=lambda u: u.email.lower())
+    output = Reporter()
     for user in users:
         # Get additional user data
         user.update(galaxy.users.UserClient(gi).show_user(user.id))
@@ -171,7 +173,9 @@ def list_users(gi,name=None,long_listing_format=False,show_id=False):
         if show_id:
             # Also report the internal user ID
             display_items.append(user.id)
-        print('\t'.join([str(x) for x in display_items]))
+        output.append(display_items)
+    # Report user data
+    output.report()
     print("total %s" % len(users))
 
 def create_user(gi,email,username=None,passwd=None,only_check=False,
