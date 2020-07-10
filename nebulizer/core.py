@@ -210,7 +210,8 @@ class Reporter(object):
         Number of lines stored
         """
         return len(self._content)
-    def report(self,delimiter='  ',padding=True):
+    def report(self,delimiter='  ',padding=True,prefix=None,
+               rstrip=False):
         """
         Pretty-print the data
 
@@ -219,15 +220,26 @@ class Reporter(object):
             to two space characters i.e. '  ')
           padding (bool): if True then line up columns
             of data by padding with spaces
+          prefix (str): string to prepend to each line
+          rstrip (bool): if True then strip trailing
+            whitespace from lines
         """
+        output = []
         if padding:
             for line in self._content:
-                print(delimiter.join(["%-*s" % (width,str(item))
-                                      for width,item in zip(self._field_widths,
-                                                            line)]))
+                output.append(["%-*s" % (width,str(item))
+                               for width,item
+                               in zip(self._field_widths,line)])
         else:
             for line in self._content:
-                print(delimiter.join([str(item) for item in line]))
+                output.append([str(item) for item in line])
+        if not prefix:
+            prefix = ''
+        for line in output:
+            out_line = "%s%s" % (prefix,delimiter.join(line))
+            if rstrip:
+                out_line = out_line.rstrip()
+            print(out_line)
 
 def get_galaxy_instance(galaxy_url,api_key=None,email=None,password=None,
                         verify_ssl=True):

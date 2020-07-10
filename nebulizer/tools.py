@@ -10,6 +10,7 @@ from bioblend import toolshed
 from bioblend.galaxy.client import ConnectionError
 from bioblend import ConnectionError as BioblendConnectionError
 from .core import prompt_for_confirmation
+from .core import Reporter
 
 # Logging
 logger = logging.getLogger(__name__)
@@ -893,16 +894,15 @@ def list_tools(gi,name=None,installed_only=False):
     # Sort into name order
     tools.sort(key=lambda x: x.name.lower())
     # Print info
+    output = Reporter()
     for tool in tools:
-        print("%-16s\t%-8s\t%-16s\t%s\t%s" % (tool.name,
-                                              tool.version,
-                                              (tool.panel_section
-                                               if tool.panel_section
-                                               else ''),
-                                              tool.tool_repo,
-                                              (tool.tool_changeset
-                                               if tool.tool_changeset
-                                               else '')))
+        output.append((
+            tool.name,tool.version,
+            (tool.panel_section if tool.panel_section else ''),
+            tool.tool_repo,
+            (tool.tool_changeset if tool.tool_changeset else ''))
+        )
+    output.report()
     print("total %s" % len(tools))
 
 def list_installed_repositories(gi,name=None,
@@ -968,38 +968,44 @@ def list_installed_repositories(gi,name=None,
                   r[0].name.startswith("data_manager_") or
                   (r[2] and tool_panel.tool_index(r[2][0]) > -1))]
         # Print details
+        output = Reporter()
         for r in repos:
             repo,revision,tools = r
             if tools:
                 tool_panel_section = tools[0].panel_section
             else:
                 tool_panel_section = None
-            print("%s" % '\t'.join((repo.tool_shed,
-                                    repo.owner,
-                                    repo.name,
-                                    revision.changeset_revision,
-                                    (tool_panel_section
-                                     if tool_panel_section else ''))))
+            output.append((repo.tool_shed,
+                           repo.owner,
+                           repo.name,
+                           revision.changeset_revision,
+                           (tool_panel_section
+                            if tool_panel_section else '')))
+        # Write out in TSV format
+        output.report(delimiter='\t')
     else:
         # Denser more verbose format
+        output = Reporter()
         nrevisions = 0
         for r in repos:
             # Print details
             repo,revision,tools = r
-            print("%s" % '\t'.join(('%s %s' %
-                                    (revision.status_indicator,
-                                     repo.name),
-                                    repo.tool_shed,
-                                    repo.owner,
-                                    revision.revision_id,
-                                    revision.status)))
+            output.append(('%s %s' % (revision.status_indicator,
+                                      repo.name),
+                           repo.tool_shed,
+                           repo.owner,
+                           revision.revision_id,
+                           revision.status))
             nrevisions += 1
             # List tools associated with revision
             if list_tools:
                 for tool in tools:
-                    print("- %s" % '\t'.join((tool.name,
-                                              tool.version,
-                                              tool.description)))
+                    output.append(("-",
+                                   tool.name,
+                                   tool.version,
+                                   tool.description))
+        # Write to stdout
+        output.report()
         print("total %s" % nrevisions)
 
 def list_tool_panel(gi,name=None,list_tools=False):
@@ -1027,17 +1033,19 @@ def list_tool_panel(gi,name=None,list_tools=False):
     if list_tools:
         tools = get_tools(gi)
     # Report
+    output = Reporter()
     for section in sections:
-        print("'%s' (%s)" % (section.name,
-                             section.id))
+        output.append(("'%s'" % section.name,
+                       section.id))
         if list_tools:
             for tool in sorted([t for t in tools
                                 if t.panel_section == section.name],
                                key=lambda t: tool_panel.tool_index(t)):
-                print("- %s" % '\t'.join((str(tool_panel.tool_index(tool)),
-                                          tool.name,
-                                          tool.version,
-                                          tool.description)))
+                output.append(("#%d" % tool_panel.tool_index(tool),
+                               tool.name,
+                               tool.version,
+                               tool.description))
+    output.report(rstrip=True)
     print("total %s" % len(sections))
 
 def install_tool(gi,tool_shed,name,owner,revision=None,

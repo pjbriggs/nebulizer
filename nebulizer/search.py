@@ -5,6 +5,7 @@ import logging
 import string
 from fnmatch import fnmatch
 from .core import get_galaxy_instance
+from .core import Reporter
 from .tools import normalise_toolshed_url
 from .tools import get_repositories
 from bioblend import toolshed
@@ -106,6 +107,7 @@ def search_toolshed(tool_shed,query_string,gi=None,
         installed_repos = []
     # Print the results
     print("")
+    output = Reporter()
     for repository in repositories:
         # Get the repository details
         name = repository['name']
@@ -127,20 +129,25 @@ def search_toolshed(tool_shed,query_string,gi=None,
                 status = " "
             # Print details
             if not long_listing_format:
-                display_items = [owner,name,"%s:%s" % (version,
-                                                       changeset)]
-                print(" %s %s" % ('\t'.join(display_items),status))
+                display_items = [owner,name,
+                                 "%s:%s" % (version,changeset),
+                                 status]
+                output.append(display_items)
             else:
-                print("Name: %s" % name)
-                print("Owner: %s" % owner)
-                print("Revision: %s:%s" % (version,changeset))
-                print("Description: %s" % description)
+                output.append(("Name",name))
+                output.append(("Owner",owner))
+                output.append(("Revision","%s:%s" % (version,changeset)))
+                output.append(("Description",description))
                 if gi is not None:
                     if installed:
-                        print("Installed: yes")
+                        output.append(("Installed","yes"))
                     else:
-                        print("Installed: no")
-                print("")
+                        output.append(("Installed","no"))
+                output.append(("",))
+    if not long_listing_format:
+        output.report(prefix=" ")
+    else:
+        output.report(delimiter=": ")
     print("\n%d repositor%s found" % (nhits,('y' if nhits == 1 else 'ies')))
     # Finished
     return 0
