@@ -1216,9 +1216,13 @@ def whoami(context,galaxy,):
     """
     logger.debug("Debugging mode")
     # Get a Galaxy instance
-    gi = context.galaxy_instance(galaxy)
+    try:
+        gi = context.galaxy_instance(galaxy)
+    except Exception as ex:
+        logger.warning(ex)
+        gi = None
     if gi is None:
-        logger.critical("Failed to connect to Galaxy instance")
+        logger.fatal("Failed to connect to Galaxy instance")
         sys.exit(1)
     user = get_current_user(gi)
     if user is None:
