@@ -211,7 +211,7 @@ Uninstall all installed revisions of a tool and remove from
 disk::
 
   nebulizer uninstall_tool localhost devteam/fastqc/* \
-    --remove-from-disk
+    --remove_from_disk
 
 ---------------------------------------------
 Searching for tool repositories on a Toolshed
