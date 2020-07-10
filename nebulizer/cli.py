@@ -887,7 +887,7 @@ def update_tool(context,galaxy,repository,
                                (install_resolver_dependencies== 'yes')))
 
 @nebulizer.command()
-@click.option('--remove-from-disk',is_flag=True,
+@click.option('--remove_from_disk',is_flag=True,
               help="remove the uninstalled tool from disk (otherwise "
               "tool is just deactivated).")
 @click.option('-y','--yes',is_flag=True,
