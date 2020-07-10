@@ -14,6 +14,7 @@ from .core import get_galaxy_config
 from .core import ping_galaxy_instance
 from .core import turn_off_urllib3_warnings
 from .core import Credentials
+from .core import Reporter
 from . import options
 from . import users
 from . import libraries
@@ -203,12 +204,14 @@ def list_keys(context,name,show_api_keys=False):
         name = name.lower()
         aliases = [alias for alias in aliases
                    if fnmatch.fnmatch(alias.lower(),name)]
+    output = Reporter()
     for alias in aliases:
         galaxy_url,api_key = instances.fetch_key(alias)
         display_items = [alias,galaxy_url]
         if show_api_keys:
             display_items.append(api_key)
-        click.echo("%s" % '\t'.join(display_items))
+        output.append(display_items)
+    output.report()
 
 @nebulizer.command()
 @click.argument("alias")
@@ -1138,8 +1141,10 @@ def config(context,galaxy,name=None):
         name = name.lower()
         items = [item for item in items if fnmatch.fnmatch(item.lower(),
                                                            name)]
+    output = Reporter()
     for item in items:
-        click.echo("%s: %s" % (item,config[item]))
+        output.append((item,config[item]))
+    output.report(rstrip=True)
 
 @nebulizer.command()
 @click.option('-c','--count',metavar='COUNT',default=0,
