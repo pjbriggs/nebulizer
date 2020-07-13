@@ -7,8 +7,8 @@ Galaxy servers.**
 
 Nebulizer was developed as a tool to help "part-time" Galaxy
 admins perform day-to-day administrative tasks across
-multiple Galaxy instances. It enables admin operations to be
-executed via the command line as an alternative to using
+multiple Galaxy instances, enabling various admin operations
+to be executed via the command line as an alternative to using
 the Galaxy web interface.
 
 Nebulizer is built on top of the
