@@ -1054,7 +1054,7 @@ def install_tool(gi,tool_shed,name,owner,revision=None,
                  install_repository_dependencies=True,
                  install_resolver_dependencies=True,
                  timeout=600,
-                 poll_interval=30,no_wait=False):
+                 poll_interval=10,no_wait=False):
     """
     Install a tool repository into a Galaxy instance
 
@@ -1089,7 +1089,7 @@ def install_tool(gi,tool_shed,name,owner,revision=None,
         'no_wait' is True.
       poll_interval (int): optional, sets the time interval
         for polling Galaxy to check if a tool has completed
-        installing (default is to check every 30s). Ignored
+        installing (default is to check every 10s). Ignored
         if 'no_wait' is True.
       no_wait (boolean): optional, if True then don't wait
         for tool installation to complete (default is False
@@ -1234,7 +1234,7 @@ def update_tool(gi,tool_shed,name,owner,
                 install_tool_dependencies=True,
                 install_repository_dependencies=True,
                 install_resolver_dependencies=True,
-                timeout=600,poll_interval=30,
+                timeout=600,poll_interval=10,
                 no_wait=False,check_tool_shed=False):
     """
     Update a tool repository in a Galaxy instance
@@ -1260,7 +1260,7 @@ def update_tool(gi,tool_shed,name,owner,
         'no_wait' is True.
       poll_interval (int): optional, sets the time interval
         for polling Galaxy to check if a tool has completed
-        installing (default is to check every 30s). Ignored
+        installing (default is to check every 10s). Ignored
         if 'no_wait' is True.
       no_wait (boolean): optional, if True then don't wait
         for tool installation to complete (default is False
