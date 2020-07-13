@@ -1,8 +1,9 @@
-Nebulizer tutorial/demo
-=======================
+==================
+Nebulizer Tutorial
+==================
 
-The following is a quick walkthrough/tutorial/demo of
-Nebulizer's main functions.
+This tutorial offers a short hands-on introduction to the
+main functionality offered by Nebulizer.
 
 
 0. Preparation: making a temporary local Galaxy instance
@@ -209,6 +210,10 @@ your email or password. For example:
 
 Now we're ready to do some basic administration of our local
 Galaxy using Nebulizer.
+
+.. note::
+
+   See :doc:`managing_keys` for more details.
    
 3. Listing, adding and deleting users
 -------------------------------------
@@ -276,6 +281,10 @@ The user will no longer be listed by ``list_users``.
    configuration has ``allow_user_deletion`` set
    to ``true``.
 
+.. note::
+
+   See :doc:`users` for more details.
+
 4. Creating and populating data libraries
 -----------------------------------------
 
@@ -341,6 +350,10 @@ option:
 ::
 
    nebulizer list_libraries local "Example data/Fastqs" -l
+
+.. note::
+
+   See :doc:`libraries` for more details.
 
 5. Installing and managing tools
 --------------------------------
@@ -443,4 +456,8 @@ tool version:
 
 Running ``list_installed_tools`` shows that the older
 tool repository is no longer present.
+
+.. note::
+
+   See :doc:`tools` for more details.
 
