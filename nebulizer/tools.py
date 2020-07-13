@@ -1192,8 +1192,11 @@ def install_tool(gi,tool_shed,name,owner,revision=None,
         logger.warning("Error while requesting tool installation "
                        "(ignored)")
         logger.warning("Exception: %s" % ex)
-    # Check installation status
+    # Monitor installation status
+    if not no_wait:
+        print("Galaxy connection closed: monitoring installation")
     ntries = 0
+    prev_status_msg = None
     while (ntries*poll_interval) < timeout:
         install_status = tool_install_status(gi,tool_shed,owner,
                                              name,revision)
@@ -1212,9 +1215,13 @@ def install_tool(gi,tool_shed,name,owner,revision=None,
                       (name,install_status))
                 print("Not waiting for install to complete")
                 return TOOL_INSTALL_PENDING
+            # Monitor the tool installation status
             ntries += 1
-            print("- %s: %s (waiting for install to complete) [#%s]" %
-                  (name,install_status,ntries))
+            status_msg = "%s: installing (status is \"%s\")" % (name,
+                                                                install_status)
+            if status_msg != prev_status_msg:
+                print(status_msg)
+                prev_status_msg = status_msg
             time.sleep(poll_interval)
         else:
             logger.critical("%s: failed (%s)" % (name,install_status))
