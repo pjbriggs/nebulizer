@@ -237,9 +237,14 @@ class Reporter(object):
         output = []
         if padding:
             for line in self._content:
-                output.append(["%-*s" % (width,str(item))
+                # Apply padding to all but the last field
+                out_line = ["%-*s" % (width,str(item))
                                for width,item
-                               in zip(self._field_widths,line)])
+                               in zip(self._field_widths[:-1],
+                                      line[:-1])]
+                # Add the final field with no padding
+                out_line.append(line[-1])
+                output.append(out_line)
         else:
             for line in self._content:
                 output.append([str(item) for item in line])
