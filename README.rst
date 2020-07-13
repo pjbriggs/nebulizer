@@ -22,12 +22,13 @@ library.
 * Documentation: https://nebulizer.readthedocs.io
 * Code: https://github.com/pjbriggs/nebulizer
 
-.. warning::
+.. note::
 
-   ``nebulizer`` is still a work in progress; please exercise
-   caution when attempting irreversible operations especially against
-   production Galaxy instances (for example when creating users or data
-   libraries).
+   **Nebulizer is still a work in progress.**
+
+   Please exercise caution when attempting irreversible operations,
+   especially against production Galaxy instances (for example when
+   creating users or data libraries).
 
 Quick Start
 -----------
