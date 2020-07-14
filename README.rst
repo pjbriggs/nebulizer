@@ -58,6 +58,12 @@ instances.
 Nebulizer Basics
 ----------------
 
+Generally Nebulizer commands take the form:
+
+::
+
+   nebulizer COMMAND GALAXY [OPTIONS]
+
 To interact remotely with a Galaxy instance using Nebulizer requires
 at minimum the URL of the instance and then either an API key or a
 user login name.
