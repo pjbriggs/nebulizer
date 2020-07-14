@@ -22,12 +22,13 @@ library.
 * Documentation: https://nebulizer.readthedocs.io
 * Code: https://github.com/pjbriggs/nebulizer
 
-.. warning::
+.. note::
 
-   **CAVEAT** ``nebulizer`` is still a work in progress; please exercise
-   caution when attempting irreversible operations especially against
-   production Galaxy instances (for example when creating users or data
-   libraries).
+   **Nebulizer is still a work in progress.**
+
+   Please exercise caution when attempting irreversible operations,
+   especially against production Galaxy instances (for example when
+   creating users or data libraries).
 
 Quick Start
 -----------
@@ -41,9 +42,12 @@ Getting Nebulizer
 -----------------
 
 It is recommended to install Nebulizer via ``pip`` in a virtualenv,
-for example::
+for example:
 
-  % virtualenv .venv; . .venv/bin/activate
+::
+
+  % virtualenv .venv
+  % sourc .venv/bin/activate
   % pip install nebulizer
 
 This will provide an executable called ``nebulizer`` with a number
@@ -58,355 +62,80 @@ To interact remotely with a Galaxy instance using Nebulizer requires
 at minimum the URL of the instance and then either an API key or a
 user login name.
 
-For example to list data libraries available on Galaxy Main::
+For example to list the data libraries available on Galaxy Main:
 
-  % nebulizer -k 9b376af2250818d14949b3c list_libraries https://usegalaxy.org
+::
 
-or::
+  nebulizer -k 9b376af2250818d14949b3c list_libraries https://usegalaxy.org
 
-  % nebulizer -u peter.briggs@manchester.ac.uk list_libraries https://usegalaxy.org
+or
 
-(in this second case ``nebulizer`` will prompt for the Galaxy
-password to authenticate the user login.)
+::
 
-Specifying full API keys and Galaxy URLs each time a command is run
-is tedious, so Nebulizer can store URL-key pairs locally to make this
-easier.
+  nebulizer -u USER@DOMAIN list_libraries https://usegalaxy.org
 
-For example to store the API key for Galaxy main::
+In this second case Nebulizer will prompt for the Galaxy
+password to authenticate the user login, unless it's supplied via
+the ``-P`` option.
 
-  % nebulizer add_key main https://usegalaxy.org 9b376af2250818d14949b3c
+To store the Galaxy URL-API key pair against an alias ``main``, to
+avoid needing full authentication details each time:
 
-stores the API key and URL pair and associates it with the alias ``main``.
+::
 
-Alternatively Nebulizer can fetch the API key itself if the user
-login is provided instead, for example::
+  nebulizer add_key main https://usegalaxy.org 9b376af2250818d14949b3c
 
-  % nebulizer -u peter.briggs@manchester.ac.uk add_key main https://usegalaxy.org
+or alternatively get Nebulizer to fetch the API key itself by
+supplying the user login:
 
-The stored alias can then be used as a substitute for the URL with the
-the stored API key being fetched behind the scenes. Then to list the
-data libraries again it is sufficient to do just::
+::
 
-  % nebulizer list_libraries main
+  nebulizer -u USER@DOMAIN add_key main https://usegalaxy.org
 
-To find out which user is associated with an alias do::
+More information on managing API keys in Nebulizer can found
+`here <http://nebulizer.readthedocs.io/en/latest/managing_keys.html>`_.
 
-  % nebulizer whoami main
+The stored alias is then used in subsequent commands, for example
+to list the data libraries again it is now sufficient to do just:
+
+::
+
+  nebulizer list_libraries main
 
 The following sections contain examples of how Nebulizer might be
 used to perform various administrive tasks.
 
---------------
-Managing Users
---------------
+Nebulizer provides subcommands to perform various administrive tasks:
 
-List users matching specific name::
+`Managing users <http://nebulizer.readthedocs.io/en/latest/users.html>`_:
 
-  nebulizer list_users galaxy --name="*briggs*"
+ * ``list_users``
+ * ``create_user``
+ * ``create_batch_users``
+ * ``create_users_from_file``
+ * ``delete_user``
 
-Add a new user::
+`Managing data libraries <http://nebulizer.readthedocs.io/en/latest/libraries.html>`_:
 
-  nebulizer create_user galaxy -p pa55w0rd a.non@galaxy.org
+ * ``list_libraries``
+ * ``create_library``
+ * ``create_library_folder``
+ * ``add_library_datasets``
 
-Delete and purge an existing user::
+`Managing tools <http://nebulizer.readthedocs.io/en/latest/tools.html>`_:
 
-  nebulizer delete_user galaxy a.non@galaxy.org --purge
+ * ``list_tools``
+ * ``list_tool_panel``
+ * ``list_installed_tools``
+ * ``install_tool``
+ * ``update_tool``
+ * ``uninstall_tool``
+ * ``search_toolshed``
 
------------------------
-Managing Data Libraries
------------------------
+`Querying Galaxy instances <http://nebulizer.readthedocs.io/en/latest/querying_galaxy.html>`_:
 
-List data libraries::
+ * ``ping`` (check if a Galaxy instance is alive)
+ * ``config`` (fetch configuration for a Galaxy instance)
 
-  nebulizer list_libraries galaxy
-
-Create a data library called ``NGS data`` and a subfolder ``Run 21``::
-
-  nebulizer create_library galaxy \
-    --description="Sequencing data analysed in 2015" "NGS data"
-  nebulizer create_library_folder localhost "NGS data/Run 21"
-
-List contents of this folder::
-
-  nebulizer list_libraries galaxy "NGS data/Run 21"
-
-Upload files to it from the local system::
-
-  nebulizer add_library_datasets galaxy "NGS data/Run 21" ~/Sample1_R*.fq
-
-Add a file which is on the Galaxy server filesystem to a library as a
-link::
-
-  nebulizer add_library_datasets galaxy --server --link "NGS data/fastqs" \
-    /galaxy/hosted_data/example.fq
-
---------------
-Managing Tools
---------------
-
-List all tools that are available in a Galaxy instance::
-
-  nebulizer list_tools galaxy
-
-List all the ``cuff...`` tools that were installed from a toolshed::
-
-  nebulizer list_tools galaxy --name="cuff*" --installed
-
-List all the tool repositories that are installed along with the tools
-that they provide::
-
-  nebulizer list_installed_tools localhost --list-tools
-
-List all the tool repositories that have available updates or upgrades::
-
-  nebulizer list_installed_tools localhost --updateable
-
-Search the main Galaxy toolshed for available tools::
-
-  nebulizer search_toolshed fastqc
-
-(see the section below for more information on the ``search_toolshed``
-command).
-
-Install the most recent FastQC from the main Galaxy toolshed, under the
-``NGS: QC and manipulation`` section of the tool panel::
-
-  nebulizer install_tool localhost devteam/fastqc \
-    --tool-panel-section="NGS: QC and manipulation"
-
-Install a specific revision of a tool from the test toolshed::
-
-  nebulizer install_tool localhost \
-    https://testtoolshed.g2.bx.psu.edu/view/devteam/trimmer/dec27ea206c3 \
-    --tool-panel-section="Test tools"
-
-Update FastQC tool by installing the latest revision, if a new version
-is available::
-
-  nebulizer update_tool localhost devteam/fastqc
-
-.. warning::
-
-   By default checks on the availability of updates for tools
-   performed by the ``list_installed_tools`` and ``update_tool``
-   commands are done using information cached by the Galaxy
-   instance in question. As a result these commands may not
-   always indicate when updates are available.
-
-   To force these commands to check the installed revisions
-   against those in the toolshed, add the ``--check-toolshed``
-   option. Note however that this can impose a significant
-   overhead which can make the commands much slower.
-
-Uninstall and deactivate a previously installed tool::
-
-  nebulizer uninstall_tool localhost devteam/fastqc
-
-Uninstall and deactivate a specific revision of a tool::
-
-  nebulizer uninstall_tool localhost devteam/fastqc/e7b2202befea
-
-Uninstall all installed revisions of a tool and remove from
-disk::
-
-  nebulizer uninstall_tool localhost devteam/fastqc/* \
-    --remove_from_disk
-
----------------------------------------------
-Searching for tool repositories on a Toolshed
----------------------------------------------
-
-Search the main toolshed with the query ``deeptools``::
-
-    nebulizer search_toolshed toolshed.g2.bx.psu.edu deeptools
-
-The search query can include glob-style wildcards, and defaults
-to searching the main Galaxy toolshed if no toolshed is
-specified.
-
-For example::
-
-    nebulizer search_toolshed "deeptools*"
-
-Perform the same search checking which tool repositories are
-already installed on a local Galaxy instance::
-
-    nebulizer search_toolshed "deeptools*" --galaxy localhost
-
-----------------------------------------------------
-Checking status and configuration of a Galaxy server
-----------------------------------------------------
-
-'Ping' a Galaxy instance to check it's alive and responding to
-requests::
-
-    nebulizer ping localhost
-
-Get information about an instance's configuration using
-
-::
-   nebulizer config localhost
-
-Commands
---------
-
-All functionality is available as subcommands of the ``nebulizer``
-utility.
-
----------------
-User Management
----------------
-
- * ``list_users``: List users in Galaxy instance.
- * ``create_user``: Create new Galaxy user.
- * ``create_batch_users``: Create multiple Galaxy users from a template.
- * ``create_users_from_file``: Create multiple Galaxy users from a file.
- * ``delete_user``: Delete a Galaxy user.
-
------------------------
-Data Library Management
------------------------
-
- * ``list_libraries``:  List data libraries and contents.
- * ``create_library``: Create new data library.
- * ``create_library_folder``: Create new folder in a data library.
- * ``add_library_datasets``: Add datasets to a data library.
-
----------------
-Tool Management
----------------
-
- * ``list_tools``: List tools in Galaxy instance.
- * ``list_tool_panel``: List tool panel contents.
- * ``list_installed_tools``: List installed tool repositories.
- * ``install_tool``: Install tool from toolshed.
-
--------------------------------
-Bulk Tool Repository Management
--------------------------------
-
- * ``list_repositories``: List installed tool repos for (re)install.
- * ``install_repositories``: Install tool repositories listed in a file.
-
-------------------------
-Local API Key Management
-------------------------
-
- * ``add_key``: Store new Galaxy URL and API key.
- * ``list_keys``: List stored Galaxy API keys.
- * ``remove_key``: Remove stored Galaxy API key.
- * ``update_key``: Update stored Galaxy API key.
-
---------------
-Other commands
---------------
-
- * ``ping``: 'Ping' a Galaxy instance.
- * ``whoami``: Print user details associated with API key.
- * ``config``: Report configuration for a Galaxy instance.
-
-Hints and Tips
---------------
-
-------------------------
-Managing Galaxy API keys
-------------------------
-
-Nebulizer stores the URL-key pairs in the file ``.nebulizer``
-located in the user's home directory. This file consists of
-tab-delimited lines with the following columns::
-
-  alias|Galaxy_URL|API_key
-
-This file can be edited by hand using a text editor such as
-``vi``; however Nebulizer provides a set of commands for
-querying and modifying the file contents.
-
-To list the stored aliases with associated Galaxy URLs and
-API keys::
-
-  % nebulizer list_keys
-
-To add a new alias called 'production' for a Galaxy instance::
-
-  nebulizer add_key production http:://galaxy.org/ 5e7a1264905c8f0beb80002f7de13a40
-
-Update the API key for 'production'::
-
-  nebulizer update_key production --new-api-key=37b6430624255b8c61a137abd69ae3bb
-
-Remove the entry for 'production'::
-
-  nebulizer remove_key production
-
-Multiple URL-key pairs can be stored; only the associated
-aliases need to be unique. For example::
-
-  % nebulizer -u admin@galaxy.org add_key palfinder https://palfinder.ls.manchester.ac.uk
-  ...prompt for password...
-  % nebulizer list_libraries palfinder
-
-----------------------------------------------
-Handling SSL Certificate Verification Failures
-----------------------------------------------
-
-Nebulizer commands will fail for Galaxy instances which are served over
-``https`` protocol without a valid SSL certificate, reporting an error like::
-
-  [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed (_ssl.c:590), 0 attempts left: None
-
-In this case adding the ``--no-verify`` (``-n``) option turns off the
-certificate verification and should enable a connection to be made.
-
----------------------------------------------------------
-Accessing Galaxy with Email & Password instead of API key
----------------------------------------------------------
-
-It is possible to use your normal Galaxy login credentials (i.e. your email
-and password) to access the API on a Galaxy instance without using the
-API key, using the ``-u``/``--username`` option, e.g.::
-
-  nebulizer -u joe.bloggs@example.com list_libraries "NGS data/Run 21"
-
-You will be prompted to enter the password; however you can also use the
-``-P``/``--galaxy_password`` option to specify it explicitly on the command
-line.
-
--------------------------------------------------
-Installing Multiple Tool Repositories from a List
--------------------------------------------------
-
-It is possible to install a list of tool repositories into a
-Galaxy instance by using the ``install_repositories`` command::
-
-  nebulizer install_repositories galaxy tools.tsv
-
-The ``tools.tsv`` file must be a tab-delimited list of repositories,
-one repository per line in the format::
-
-  TOOLSHED|OWNER|REPOSITORY|REVISON|SECTION
-
-For example::
-
-  toolshed.g2.bx.psu.edu	devteam	bowtie_wrappers	9ca609a2a421	NGS: Mapping
-
-A list of tool repositories already installed in a Galaxy instance
-can be generated in this format using the ``list_repositories``
-command::
-
-  nebulizer list_repositories galaxy > tools.tsv
-
-In principle the combination of these two commands can be used to
-'clone' the installed tools from one Galaxy instance into another.
-
-For example to replicate the tools installed on the 'Palfinder'
-instance::
-
-  nebulizer list_repositories https://palfinder.ls.manchester.ac.uk > palfinder.tsv
-  nebulizer install_repositories http://127.0.0.1 palfinder.tsv
-
-License
--------
-
-Nebulizer is licensed under the `Academic Free License (AFL) <https://opensource.org/licenses/AFL-3.0>`_.
+See the `tutorial <http://nebulizer.readthedocs.io/en/latest/users.html>`_
+for a walkthrough some of these commands.

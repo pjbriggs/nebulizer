@@ -5,17 +5,18 @@ Welcome to nebulizer's documentation!
 interactive command-line interface to remotely administer
 Galaxy servers.**
 
-It enables admin operations to be performed via the command
-line, as an alternative to using a Galaxy instance's web
-interface.
+Nebulizer was developed as a tool to help "part-time" Galaxy
+admins perform day-to-day administrative tasks across
+multiple Galaxy instances, enabling various admin operations
+to be executed via the command line as an alternative to using
+the Galaxy web interface.
 
-It was developed as a tool to help "part-time" Galaxy admins
-perform day-to-day administrative tasks across multiple
-Galaxy instances.
-
-Nebulizer is built on top of Bioblend and complements the
-more powerful but lower-level interfaces offered by Ephemeris
-and Parsec.
+Nebulizer is built on top of the
+`Bioblend <https://bioblend.readthedocs.io/en/stable/index.html>`_
+library and offers an interface and range of functionality that
+complements the lower-level interfaces offered by
+`Ephemeris <https://ephemeris.readthedocs.io/en/latest/index.html>`_
+and `Parsec <https://parsec.readthedocs.io/en/latest/index.html>`_.
 
 Contents:
 
@@ -23,12 +24,13 @@ Contents:
    :maxdepth: 2
 
    readme
+   installation
+   configuration
+   users
+   libraries
+   tools
+   querying_galaxy
+   managing_keys
+   general_options
    tutorial
    history
-
-Indices and tables
-==================
-
-* :ref:`genindex`
-* :ref:`modindex`
-* :ref:`search`
