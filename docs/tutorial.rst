@@ -76,7 +76,7 @@ web browser to http://127.0.0.1:8080/
 
 Finally you will need to register an account in Galaxy
 with the same email address as the one used for
-``admin_users`` (for example ``admin@localhost.org``),
+``admin_users`` (``admin@localhost.org`` in this example),
 using the web browser.
 
 Now you're ready to run through the tutorial.
@@ -90,9 +90,8 @@ Now you're ready to run through the tutorial.
 1. Install Nebulizer
 --------------------
 
-First you need to install a copy of Nebulizer, which
-is best done in a Python virtual environment - for
-example:
+Installing Nebulizer is best done in a Python virtual
+environment - for example:
 
 ::
 
@@ -109,7 +108,7 @@ example:
 Once this is done you should have access to the
 ``nebulizer`` utility.
 
-To list the available commands do:
+To list the available commands:
 
 ::
 
@@ -165,9 +164,9 @@ or Galaxy API key on the command line. For example:
 
 .. warning::
 
-   This won't work if you didn't make register an
-   account ``admin@localhost.org`` when preparing the
-   local Galaxy!
+   This won't work if you didn't make an account
+   for ``admin@localhost.org`` when preparing the
+   local Galaxy in the previous step!
 
 This is quite laborious when executing several commands,
 so Nebulizer allows you to associate Galaxy instances and
@@ -433,14 +432,15 @@ repository is also installed:
    * fastqc       toolshed.g2.bx.psu.edu  devteam   21:e7b2202befea  Installed
    U trimmomatic  toolshed.g2.bx.psu.edu  pjbriggs  12:51b771646466  Installed
 
-Here ``U`` indicates there is a major newer version
-available.
+Here ``U`` indicates there is a newer revision available
+with a new version of the tool (``u`` indicates a newer
+revision without a tool version update).
 
 Rerunning the ``list_installed_tools`` command with the
 ``--updateable`` option filters the list of tool
 repositories to just those with available updates.
 
-We can update Trimmomatic to the newer version automatically
+We can update Trimmomatic to the newest version automatically
 by running the ``update_tool`` command:
 
 ::
