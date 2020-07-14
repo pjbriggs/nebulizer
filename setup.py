@@ -26,7 +26,7 @@ setup(
         'nebulizer = nebulizer.cli:nebulizer',]
     },
     license = 'AFL',
-    install_requires = ['bioblend',
+    install_requires = ['bioblend>=0.13.0',
                         'mako',
                         'click<=6.7'],
     test_suite = 'nose.collector',
