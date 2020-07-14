@@ -221,7 +221,7 @@ class Reporter(object):
         """
         return len(self._content)
     def report(self,delimiter='  ',padding=True,prefix=None,
-               rstrip=False):
+               rstrip=True):
         """
         Pretty-print the data
 
@@ -231,15 +231,20 @@ class Reporter(object):
           padding (bool): if True then line up columns
             of data by padding with spaces
           prefix (str): string to prepend to each line
-          rstrip (bool): if True then strip trailing
+          rstrip (bool): if True then strip all trailing
             whitespace from lines
         """
         output = []
         if padding:
             for line in self._content:
-                output.append(["%-*s" % (width,str(item))
+                # Apply padding to all but the last field
+                out_line = ["%-*s" % (width,str(item))
                                for width,item
-                               in zip(self._field_widths,line)])
+                               in zip(self._field_widths[:-1],
+                                      line[:-1])]
+                # Add the final field with no padding
+                out_line.append(str(line[-1]))
+                output.append(out_line)
         else:
             for line in self._content:
                 output.append([str(item) for item in line])
