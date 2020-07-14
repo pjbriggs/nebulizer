@@ -221,7 +221,7 @@ class Reporter(object):
         """
         return len(self._content)
     def report(self,delimiter='  ',padding=True,prefix=None,
-               rstrip=False):
+               rstrip=True):
         """
         Pretty-print the data
 
@@ -231,7 +231,7 @@ class Reporter(object):
           padding (bool): if True then line up columns
             of data by padding with spaces
           prefix (str): string to prepend to each line
-          rstrip (bool): if True then strip trailing
+          rstrip (bool): if True then strip all trailing
             whitespace from lines
         """
         output = []
