@@ -1054,7 +1054,7 @@ def install_tool(gi,tool_shed,name,owner,revision=None,
                  install_repository_dependencies=True,
                  install_resolver_dependencies=True,
                  timeout=600,
-                 poll_interval=30,no_wait=False):
+                 poll_interval=10,no_wait=False):
     """
     Install a tool repository into a Galaxy instance
 
@@ -1089,7 +1089,7 @@ def install_tool(gi,tool_shed,name,owner,revision=None,
         'no_wait' is True.
       poll_interval (int): optional, sets the time interval
         for polling Galaxy to check if a tool has completed
-        installing (default is to check every 30s). Ignored
+        installing (default is to check every 10s). Ignored
         if 'no_wait' is True.
       no_wait (boolean): optional, if True then don't wait
         for tool installation to complete (default is False
@@ -1192,8 +1192,11 @@ def install_tool(gi,tool_shed,name,owner,revision=None,
         logger.warning("Error while requesting tool installation "
                        "(ignored)")
         logger.warning("Exception: %s" % ex)
-    # Check installation status
+    # Monitor installation status
+    if not no_wait:
+        print("Galaxy connection closed: monitoring installation")
     ntries = 0
+    prev_status_msg = None
     while (ntries*poll_interval) < timeout:
         install_status = tool_install_status(gi,tool_shed,owner,
                                              name,revision)
@@ -1212,9 +1215,13 @@ def install_tool(gi,tool_shed,name,owner,revision=None,
                       (name,install_status))
                 print("Not waiting for install to complete")
                 return TOOL_INSTALL_PENDING
+            # Monitor the tool installation status
             ntries += 1
-            print("- %s: %s (waiting for install to complete) [#%s]" %
-                  (name,install_status,ntries))
+            status_msg = "%s: installing (status is \"%s\")" % (name,
+                                                                install_status)
+            if status_msg != prev_status_msg:
+                print(status_msg)
+                prev_status_msg = status_msg
             time.sleep(poll_interval)
         else:
             logger.critical("%s: failed (%s)" % (name,install_status))
@@ -1227,7 +1234,7 @@ def update_tool(gi,tool_shed,name,owner,
                 install_tool_dependencies=True,
                 install_repository_dependencies=True,
                 install_resolver_dependencies=True,
-                timeout=600,poll_interval=30,
+                timeout=600,poll_interval=10,
                 no_wait=False,check_tool_shed=False):
     """
     Update a tool repository in a Galaxy instance
@@ -1253,7 +1260,7 @@ def update_tool(gi,tool_shed,name,owner,
         'no_wait' is True.
       poll_interval (int): optional, sets the time interval
         for polling Galaxy to check if a tool has completed
-        installing (default is to check every 30s). Ignored
+        installing (default is to check every 10s). Ignored
         if 'no_wait' is True.
       no_wait (boolean): optional, if True then don't wait
         for tool installation to complete (default is False
