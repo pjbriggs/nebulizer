@@ -243,7 +243,7 @@ class Reporter(object):
                                in zip(self._field_widths[:-1],
                                       line[:-1])]
                 # Add the final field with no padding
-                out_line.append(line[-1])
+                out_line.append(str(line[-1]))
                 output.append(out_line)
         else:
             for line in self._content:
