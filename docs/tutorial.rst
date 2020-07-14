@@ -434,7 +434,13 @@ repository is also installed:
    U trimmomatic  toolshed.g2.bx.psu.edu  pjbriggs  12:51b771646466  Installed
 
 Here ``U`` indicates there is a major newer version
-available; we can update to this newer version automatically
+available.
+
+Rerunning the ``list_installed_tools`` command with the
+``--updateable`` option filters the list of tool
+repositories to just those with available updates.
+
+We can update Trimmomatic to the newer version automatically
 by running the ``update_tool`` command:
 
 ::
