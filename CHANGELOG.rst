@@ -2,6 +2,57 @@ History
 -------
 
 -------------------
+v0.6.0 (2020-07-14)
+-------------------
+
+**New commands:**
+
+ * New ``search_toolshed`` command
+   (`PR #42 <https://github.com/pjbriggs/nebulizer/pull/42>`_)
+ * New ``config`` command
+   (`PR #57 <https://github.com/pjbriggs/nebulizer/pull/57>`_)
+ * New ``delete_user`` command
+   (`PR #62 <https://github.com/pjbriggs/nebulizer/pull/62>`_)
+ * New ``uninstall_tool`` command
+   (`PR #64 <https://github.com/pjbriggs/nebulizer/pull/64>`_)
+
+**Updates to existing commands:**
+
+ * ``list_keys`` doesn't report API keys unless
+   ``--show-api-keys`` option is specified
+   (`PR #58 <https://github.com/pjbriggs/nebulizer/pull/58>`_)
+ * Additional fields reported by ``--long-listing-format``
+   option of ``list_users`` (disk and quota usage, status);
+   doesn't report ID by default
+   (`PR #59 <https://github.com/pjbriggs/nebulizer/pull/59>`_)
+ * Enable flexible tool repository specification syntax for
+   ``install_tool`` and ``update_tool``
+   (`PR #60 <https://github.com/pjbriggs/nebulizer/pull/60>`_)
+ * ``remove_key`` prompts user to confirm API key deletion
+   (`PR #72 <https://github.com/pjbriggs/nebulizer/pull/72>`_)
+ * Use spaces rather than tabs to line up fields in output
+   from ``list_users``, ``list_installed_tools``,
+   ``list_tools``, ``list_tool_panel``, ``list_keys``, ``config``,
+   ``list_libraries``; use ``--show_id`` to report Galaxy
+   IDs for users and data libraries
+   (`PR #68 <https://github.com/pjbriggs/nebulizer/pull/68>`_,
+   `PR #69 <https://github.com/pjbriggs/nebulizer/pull/69>`_,
+   `PR #70 <https://github.com/pjbriggs/nebulizer/pull/70>`_)
+
+**Documentation:**
+
+ * Add a tutorial/walkthrough
+   (`PR #75 <https://github.com/pjbriggs/nebulizer/pull/75>`_)
+ * Significant overhaul and expansion of documentation
+   (`PR #78 <https://github.com/pjbriggs/nebulizer/pull/78>`_)
+
+**Removed functionality:**
+
+ * Removed deprecated utilities ``manage_users``,
+   ``manage_tools`` and ``manage_libraries``
+   (`PR #61 <https://github.com/pjbriggs/nebulizer/pull/61>`_)
+
+-------------------
 v0.5.0 (2020-04-20)
 -------------------
 
@@ -97,7 +148,7 @@ v0.3.0 (2016-10-26)
  * ``add_key`` and ``update_key``: fix automatic retrieval of API
    key, which only worked previously if connecting user was an
    admin account
-   (`PR #23 <https://github.com/pjbriggs/nebulizer/pull/23`_)
+   (`PR #23 <https://github.com/pjbriggs/nebulizer/pull/23>`_)
  * ``list_tool_panel``: shows tools in order they appear in Galaxy
    when using ``--list-tools`` option.
  * Deprecated utilities (``manage_users``, ``manage_tools`` and
