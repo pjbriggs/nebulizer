@@ -9,6 +9,7 @@ from bioblend import galaxy
 from bioblend import toolshed
 from bioblend.galaxy.client import ConnectionError
 from bioblend import ConnectionError as BioblendConnectionError
+from json.decoder import JSONDecodeError
 from .core import prompt_for_confirmation
 from .core import Reporter
 
@@ -1185,8 +1186,12 @@ def install_tool(gi,tool_shed,name,owner,revision=None,
         logger.warning("Got error from Galaxy API on attempted install "
                        "(ignored)")
         logger.warning("Status code: %s" % connection_error.status_code)
-        logger.warning("Message    : \"%s\"" %
-                       json.loads(connection_error.body)["err_msg"])
+        try:
+            logger.warning("Message    : \"%s\"" %
+                           json.loads(connection_error.body)["err_msg"])
+        except JSONDecodeError:
+            # Unable to decode JSON, ignore
+            pass
     except Exception as ex:
         # Handle general error
         logger.warning("Error while requesting tool installation "
