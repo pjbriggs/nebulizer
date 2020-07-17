@@ -1350,7 +1350,8 @@ def update_tool(gi,tool_shed,name,owner,
                 tool_panel_section = tool.panel_section
                 break
         if tool_panel_section is None:
-            logger.warning("%s: no tool panel section found" % name)
+            logger.warning("%s/%s: no tool panel section found" %
+                           (update_repo.owner,update_repo.name))
         #print("Installing update under %s" % tool_panel_section)
         status = install_tool(
             gi,update_repo.tool_shed,update_repo.name,
