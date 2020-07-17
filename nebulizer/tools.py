@@ -1026,7 +1026,8 @@ def list_tool_panel(gi,name=None,list_tools=False):
     if name:
         name = name.lower()
         sections = [s for s in tool_panel.sections
-                    if fnmatch.fnmatch(s.name.lower(),name)]
+                    if s.name is not None and
+                    fnmatch.fnmatch(s.name.lower(),name)]
     else:
         sections = tool_panel.sections
     # Get list of tools, if required
