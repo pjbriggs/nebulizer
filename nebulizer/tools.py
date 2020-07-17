@@ -1279,7 +1279,7 @@ def update_tool(gi,tool_shed,name,owner,
     repos = []
     for repo in get_repositories(gi):
         if repo.tool_shed == tool_shed and \
-           repo.owner == owner and \
+           fnmatch.fnmatch(repo.owner,owner) and \
            fnmatch.fnmatch(repo.name,name):
             repos.append(repo)
     if not repos:
