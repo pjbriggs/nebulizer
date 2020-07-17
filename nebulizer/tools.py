@@ -1240,7 +1240,8 @@ def update_tool(gi,tool_shed,name,owner,
                 install_repository_dependencies=True,
                 install_resolver_dependencies=True,
                 timeout=600,poll_interval=10,
-                no_wait=False,check_tool_shed=False):
+                no_wait=False,check_tool_shed=False,
+                no_confirm=False):
     """
     Update a tool repository in a Galaxy instance
 
@@ -1274,6 +1275,8 @@ def update_tool(gi,tool_shed,name,owner,
         revisions against the tool shed, to determine if
         updates are available for the tool (default is
         False i.e. do not check status against toolshed)
+      no_confirm : if True then don't prompt to confirm the
+        uninstall operation.
     """
     # Locate the existing installation
     repos = []
@@ -1326,7 +1329,8 @@ def update_tool(gi,tool_shed,name,owner,
     for r in update_repos:
         print("\t%s %s/%s" % (r.tool_shed,r.owner,r.name))
     print("")
-    if not prompt_for_confirmation("Proceed?",default="n"):
+    if (not no_confirm) and \
+       (not prompt_for_confirmation("Proceed?",default="n")):
         print("Update cancelled")
         return TOOL_UPDATE_OK
     # Loop over repositories and try to update

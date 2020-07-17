@@ -828,7 +828,9 @@ def install_repositories(context,galaxy,file,
               "complete.")
 @click.option('--check-toolshed',is_flag=True,
               help="check installed revisions directly against those "
-              "available in the toolshed")
+              "available in the toolshed.")
+@click.option('-y','--yes',is_flag=True,
+              help="don't ask for confirmation of updates.")
 @click.argument("galaxy")
 @click.argument("repository",nargs=-1)
 @pass_context
@@ -836,7 +838,8 @@ def update_tool(context,galaxy,repository,
                 install_tool_dependencies,
                 install_repository_dependencies,
                 install_resolver_dependencies,
-                timeout,no_wait,check_toolshed):
+                timeout,no_wait,check_toolshed,
+                yes):
     """
     Update tool installed from toolshed.
 
@@ -884,7 +887,8 @@ def update_tool(context,galaxy,repository,
                                install_repository_dependencies=
                                (install_repository_dependencies== 'yes'),
                                install_resolver_dependencies=
-                               (install_resolver_dependencies== 'yes')))
+                               (install_resolver_dependencies== 'yes'),
+                               no_confirm=yes))
 
 @nebulizer.command()
 @click.option('--remove_from_disk',is_flag=True,
