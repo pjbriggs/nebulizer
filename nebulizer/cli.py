@@ -864,7 +864,7 @@ def update_tool(context,galaxy,repository,
     except Exception as ex:
         logger.fatal(ex)
         sys.exit(1)
-    print("Updating %s/%s from %s" % (repository,owner,toolshed))
+    print("Updating %s/%s from %s" % (owner,repository,toolshed))
     if revision is not None:
         logger.fatal("A revision ('%s') was also supplied "
                      "but this is not valid for tool update "
