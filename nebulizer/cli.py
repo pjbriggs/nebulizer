@@ -855,6 +855,9 @@ def update_tool(context,galaxy,repository,
     - [ TOOLSHED ] OWNER TOOLNAME e.g.
     https://toolshed.g2.bx.psu.edu devteam fastqc
 
+    OWNER and TOOLNAME can include glob-style wildcards;
+    use '*/*' to update all tools.
+
     The tool must already be present in GALAXY and a newer
     changeset revision must be available. The update will
     be installed into the same tool panel section as the
