@@ -1295,14 +1295,14 @@ def update_tool(gi,tool_shed,name,owner,
                                if not r.deleted]
         if not installed_revisions:
             logger.warning("%s/%s: no revisions currently installed" %
-                           (update_repo.owner,update_repo.name))
+                           (repo.owner,repo.name))
             continue
         # Find the latest installable revision
         if check_tool_shed:
             repo.update_tool_shed_revision_status()
         if not repo.tool_shed_revisions():
             logger.warning("%s/%s: no installable revisions found" %
-                           (update_repo.owner,update_repo.name))
+                           (repo.owner,repo.name))
             continue
         # Check there is an update available
         update_available = True
