@@ -828,7 +828,9 @@ def install_repositories(context,galaxy,file,
               "complete.")
 @click.option('--check-toolshed',is_flag=True,
               help="check installed revisions directly against those "
-              "available in the toolshed")
+              "available in the toolshed.")
+@click.option('-y','--yes',is_flag=True,
+              help="don't ask for confirmation of updates.")
 @click.argument("galaxy")
 @click.argument("repository",nargs=-1)
 @pass_context
@@ -836,7 +838,8 @@ def update_tool(context,galaxy,repository,
                 install_tool_dependencies,
                 install_repository_dependencies,
                 install_resolver_dependencies,
-                timeout,no_wait,check_toolshed):
+                timeout,no_wait,check_toolshed,
+                yes):
     """
     Update tool installed from toolshed.
 
@@ -852,6 +855,9 @@ def update_tool(context,galaxy,repository,
     - [ TOOLSHED ] OWNER TOOLNAME e.g.
     https://toolshed.g2.bx.psu.edu devteam fastqc
 
+    OWNER and TOOLNAME can include glob-style wildcards;
+    use '*/*' to update all tools.
+
     The tool must already be present in GALAXY and a newer
     changeset revision must be available. The update will
     be installed into the same tool panel section as the
@@ -864,7 +870,7 @@ def update_tool(context,galaxy,repository,
     except Exception as ex:
         logger.fatal(ex)
         sys.exit(1)
-    print("Updating %s/%s from %s" % (repository,owner,toolshed))
+    print("Updating %s/%s from %s" % (owner,repository,toolshed))
     if revision is not None:
         logger.fatal("A revision ('%s') was also supplied "
                      "but this is not valid for tool update "
@@ -884,7 +890,8 @@ def update_tool(context,galaxy,repository,
                                install_repository_dependencies=
                                (install_repository_dependencies== 'yes'),
                                install_resolver_dependencies=
-                               (install_resolver_dependencies== 'yes')))
+                               (install_resolver_dependencies== 'yes'),
+                               no_confirm=yes))
 
 @nebulizer.command()
 @click.option('--remove_from_disk',is_flag=True,
