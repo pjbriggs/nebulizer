@@ -187,11 +187,15 @@ def list_users(gi,name=None,long_listing_format=False,status=False,
                  (fnmatch.fnmatch(u.username.lower(),name) or
                   fnmatch.fnmatch(u.email.lower(),name))]
     # Report users
-    users.sort(key=lambda u: u.email.lower())
+    users.sort(key=lambda u: u.email.lower()
+               if not (u.purged and '@' not in u.email) else '')
     output = Reporter()
     for user in users:
         # Collect data items to report
-        display_items = [user.email,user.username]
+        if user.purged and '@' not in user.email:
+            display_items = ['<purged>','<purged>']
+        else:
+            display_items = [user.email,user.username]
         if long_listing_format:
             # Long listing format includes:
             # - disk usage
