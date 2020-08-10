@@ -6,7 +6,7 @@
 
 Command-line utilities to help with managing users, data libraries and
 tools in a `Galaxy <https://galaxyproject.org/>`_ instance, using the
-Galaxy API via the `Bioblend <http://bioblend.readthedocs.org/en/latest/>`_
+Galaxy API via the `Bioblend <https://bioblend.readthedocs.io/en/latest/>`_
 library.
 
 .. image:: https://readthedocs.org/projects/pip/badge/?version=latest
@@ -15,8 +15,8 @@ library.
 .. image:: https://badge.fury.io/py/nebulizer.svg
    :target: https://pypi.python.org/pypi/nebulizer/
 
-.. image:: https://travis-ci.org/pjbriggs/nebulizer.png?branch=master
-   :target: https://travis-ci.org/pjbriggs/nebulizer
+.. image:: https://travis-ci.org/pjbriggs/nebulizer.svg?branch=master
+    :target: https://travis-ci.org/pjbriggs/nebulizer
 
 * Free software: Academic Free License version 3.0
 * Documentation: https://nebulizer.readthedocs.io
@@ -99,7 +99,7 @@ supplying the user login:
   nebulizer -u USER@DOMAIN add_key main https://usegalaxy.org
 
 More information on managing API keys in Nebulizer can found
-`here <http://nebulizer.readthedocs.io/en/latest/managing_keys.html>`_.
+`here <https://nebulizer.readthedocs.io/en/latest/managing_keys.html>`_.
 
 The stored alias is then used in subsequent commands, for example
 to list the data libraries again it is now sufficient to do just:
@@ -113,7 +113,7 @@ used to perform various administrive tasks.
 
 Nebulizer provides subcommands to perform various administrive tasks:
 
-`Managing users <http://nebulizer.readthedocs.io/en/latest/users.html>`_:
+`Managing users <https://nebulizer.readthedocs.io/en/latest/users.html>`_:
 
  * ``list_users``
  * ``create_user``
@@ -121,14 +121,14 @@ Nebulizer provides subcommands to perform various administrive tasks:
  * ``create_users_from_file``
  * ``delete_user``
 
-`Managing data libraries <http://nebulizer.readthedocs.io/en/latest/libraries.html>`_:
+`Managing data libraries <https://nebulizer.readthedocs.io/en/latest/libraries.html>`_:
 
  * ``list_libraries``
  * ``create_library``
  * ``create_library_folder``
  * ``add_library_datasets``
 
-`Managing tools <http://nebulizer.readthedocs.io/en/latest/tools.html>`_:
+`Managing tools <https://nebulizer.readthedocs.io/en/latest/tools.html>`_:
 
  * ``list_tools``
  * ``list_tool_panel``
@@ -138,10 +138,10 @@ Nebulizer provides subcommands to perform various administrive tasks:
  * ``uninstall_tool``
  * ``search_toolshed``
 
-`Querying Galaxy instances <http://nebulizer.readthedocs.io/en/latest/querying_galaxy.html>`_:
+`Querying Galaxy instances <https://nebulizer.readthedocs.io/en/latest/querying_galaxy.html>`_:
 
  * ``ping`` (check if a Galaxy instance is alive)
  * ``config`` (fetch configuration for a Galaxy instance)
 
-See the `tutorial <http://nebulizer.readthedocs.io/en/latest/users.html>`_
+See the `tutorial <https://nebulizer.readthedocs.io/en/latest/users.html>`_
 for a walkthrough some of these commands.
