@@ -73,7 +73,7 @@ def folder_id_from_name(gi,library_id,folder_name):
     """
     lib_client = galaxy.libraries.LibraryClient(gi)
     folder_name = normalise_folder_path(folder_name)
-    logger.debug("Looking for '%s' in library %s" % (folder_name,
+    logger.debug("Looking for '{}' in library {}".format(folder_name,
                                                       library_id))
     for folder in lib_client.get_folders(library_id):
         logger.debug("Checking '%s'" % folder['name'])
@@ -340,10 +340,10 @@ def add_library_datasets(gi,path,files,
     # Get name and id for parent data library
     lib_client = galaxy.libraries.LibraryClient(gi)
     library_id = library_id_from_name(gi,library_name)
-    print("Library name '%s' id '%s'" % (library_name,library_id))
+    print(f"Library name '{library_name}' id '{library_id}'")
     # Get id for parent folder
     folder_id = folder_id_from_name(gi,library_id,folder_path)
-    print("Folder name '%s' id '%s'" % (folder_path,folder_id))
+    print(f"Folder name '{folder_path}' id '{folder_id}'")
     if from_server:
         # Assume that files are on Galaxy fileserver not localhost
         filesystem_paths = '\n'.join(files)
@@ -475,4 +475,4 @@ def display_file_size(file_size):
         file_size = float(file_size)/1024.0
         if file_size < 1024:
             break
-    return "%.1f%s" % (file_size,unit)
+    return f"{file_size:.1f}{unit}"

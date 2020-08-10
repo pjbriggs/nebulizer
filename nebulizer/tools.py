@@ -27,7 +27,7 @@ TOOL_UNINSTALL_FAIL = 1
 
 # Classes
 
-class Tool(object):
+class Tool:
     """
     Class wrapping extraction of tool data
 
@@ -118,14 +118,14 @@ class Tool(object):
             tool_shed = '/'.join(ele[:-2])
             owner = ele[-2]
             repo = ele[-1]
-            search_string = "/repos/%s/%s/" % (owner,repo)
+            search_string = f"/repos/{owner}/{repo}/"
             i = self.config_file.index(search_string) + len(search_string)
             revision = self.config_file[i:].split('/')[0]
             return revision
         except (AttributeError,ValueError):
             return None
 
-class RepositoryRevision(object):
+class RepositoryRevision:
     """
     Class wrapping extraction of toolshed repository version data
 
@@ -264,7 +264,7 @@ class RepositoryRevision(object):
         return ':'.join((self.revision_number,
                          self.changeset_revision))
 
-class Repository(object):
+class Repository:
     """
     Class wrapping extraction of toolshed repository data
 
@@ -403,7 +403,7 @@ class Repository(object):
                          self.owner,
                          self.name))
 
-class ToolPanelSection(object):
+class ToolPanelSection:
     """
     Class wrapping extraction of tool panel sections
 
@@ -459,7 +459,7 @@ class ToolPanelSection(object):
         """
         return (self.model_class == "ToolSectionLabel")
 
-class ToolPanel(object):
+class ToolPanel:
     """
     Class wrapping extraction of tool panel
 
@@ -990,7 +990,7 @@ def list_installed_repositories(gi,name=None,
         for r in repos:
             # Print details
             repo,revision,tools = r
-            output.append(('%s %s' % (revision.status_indicator,
+            output.append(('{} {}'.format(revision.status_indicator,
                                       repo.name),
                            repo.tool_shed,
                            repo.owner,
@@ -1118,7 +1118,7 @@ def install_tool(gi,tool_shed,name,owner,revision=None,
     install_status = tool_install_status(gi,tool_shed,owner,name,
                                          revision)
     if install_status.startswith("Installed"):
-        print("%s: already installed (status is \"%s\")" % (name,
+        print("{}: already installed (status is \"{}\")".format(name,
                                                             install_status))
         return TOOL_INSTALL_OK
     # Get available revisions
@@ -1141,7 +1141,7 @@ def install_tool(gi,tool_shed,name,owner,revision=None,
     install_status = tool_install_status(gi,tool_shed,owner,name,
                                          revision)
     if install_status.startswith("Installed"):
-        print("%s: already installed (status is \"%s\")" % (name,
+        print("{}: already installed (status is \"{}\")".format(name,
                                                             install_status))
         return TOOL_INSTALL_OK
     # Look up tool panel section
@@ -1201,7 +1201,7 @@ def install_tool(gi,tool_shed,name,owner,revision=None,
         install_status = tool_install_status(gi,tool_shed,owner,
                                              name,revision)
         if install_status.startswith("Installed"):
-            print("%s: installed (status is \"%s\")" % (name,
+            print("{}: installed (status is \"{}\")".format(name,
                                                         install_status))
             return TOOL_INSTALL_OK
         elif install_status.startswith("Installing") or \
@@ -1217,14 +1217,14 @@ def install_tool(gi,tool_shed,name,owner,revision=None,
                 return TOOL_INSTALL_PENDING
             # Monitor the tool installation status
             ntries += 1
-            status_msg = "%s: installing (status is \"%s\")" % (name,
+            status_msg = "{}: installing (status is \"{}\")".format(name,
                                                                 install_status)
             if status_msg != prev_status_msg:
                 print(status_msg)
                 prev_status_msg = status_msg
             time.sleep(poll_interval)
         else:
-            logger.critical("%s: failed (%s)" % (name,install_status))
+            logger.critical(f"{name}: failed ({install_status})")
             return TOOL_INSTALL_FAIL
     # Reaching here means timed out
     logger.critical("%s: timed out waiting for install" % name)
@@ -1348,7 +1348,7 @@ def uninstall_tool(gi,tool_shed,name,owner,revision,
                        and r.name == name
                        and r.owner == owner]
     if not uninstall_repos:
-        logger.fatal("%s/%s: no matching tool installed?" % (owner,name))
+        logger.fatal(f"{owner}/{name}: no matching tool installed?")
         return TOOL_UNINSTALL_FAIL
     elif len(uninstall_repos) > 1:
         logger.fatal("%s/%s: matches multiple installed tools?" %
@@ -1378,7 +1378,7 @@ def uninstall_tool(gi,tool_shed,name,owner,revision,
     # Report and confirm uninstall
     print("\nThe following tools will be uninstalled:\n")
     for r in remove_revisions:
-        print("\t%s %s/%s %s" % (tool_shed,owner,name,r.revision_id))
+        print(f"\t{tool_shed} {owner}/{name} {r.revision_id}")
     print("")
     if (not no_confirm) and \
        (not prompt_for_confirmation("Proceed?",default="n")):
@@ -1388,7 +1388,7 @@ def uninstall_tool(gi,tool_shed,name,owner,revision,
     uninstall_status = TOOL_UNINSTALL_OK
     for revision in remove_revisions:
         try:
-            print("%s/%s: requesting uninstall" % (name,
+            print("{}/{}: requesting uninstall".format(name,
                                                    revision.revision_id))
             tool_shed_client = galaxy.toolshed.ToolShedClient(gi)
             result = tool_shed_client.uninstall_repository_revision(
