@@ -114,6 +114,26 @@ def get_users(gi,status='active'):
             users.append(user)
     return users
 
+def get_user(gi,email):
+    """
+    Get the user data corresponding to a username email
+
+    Arguments:
+      gi (bioblend.galaxy.GalaxyInstance): Galaxy instance
+      email : email address for the user
+
+    Returns:
+      User: 'User' instance, or None if no match.
+    """
+    try:
+        for u in get_users(gi,status='all'):
+            if fnmatch.fnmatch(u.email,email):
+                return u
+    except ConnectionError as ex:
+        logger.warning("Failed to get user list: %s (%s)" % (ex.body,
+                                                             ex.status_code))
+    return None
+
 def get_user_id(gi,email):
     """
     Get the user ID corresponding to a username email
@@ -125,15 +145,10 @@ def get_user_id(gi,email):
     Returns:
       String: user ID, or None if no match.
     """
-    user_id = None
     try:
-        for u in get_users(gi):
-            if fnmatch.fnmatch(u.email,email):
-                return u.id
-    except ConnectionError as ex:
-        logger.warning("Failed to get user list: %s (%s)" % (ex.body,
-                                                             ex.status_code))
-    return None
+        return get_user(gi,email).id
+    except AttributeError:
+        return None
 
 def list_users(gi,name=None,long_listing_format=False,status=False,
                show_id=False):
