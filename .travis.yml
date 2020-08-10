@@ -1,9 +1,8 @@
 # Configuration file to run tests on Travis-CI via GitHub notifications
-# See http://travis-ci.org/
+# See https://travis-ci.org/
 
 language: python
 python:
-  - "2.7"
   - "3.6"
   - "3.7"
   - "3.8"
