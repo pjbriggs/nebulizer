@@ -1150,7 +1150,7 @@ def config(context,galaxy,name=None):
     GALAXY. Use --name to filter which items are reported.
     """
     # Get a Galaxy instance
-    gi = context.galaxy_instance(galaxy)
+    gi = context.galaxy_instance(galaxy,validate_key=False)
     if gi is None:
         logger.critical("Failed to connect to Galaxy instance")
         sys.exit(1)
