@@ -439,19 +439,34 @@ def delete_user(gi,email,purge=False,no_confirm=False):
       0 on success, 1 on failure.
 
     """
-    # Get the ID for the supplied user
-    user_id = get_user_id(gi,email)
-    if user_id is None:
+    # Get the data for the supplied user
+    user = get_user(gi,email)
+    if user is None:
         logger.fatal("No user '%s'" % email)
         return 1
+    # Is user already deleted or purged?
+    if user.purged:
+        logger.fatal("'%s': already deleted and purged" % email)
+        return 0
+    elif user.deleted and not purge:
+        logger.fatal("'%s': already deleted (but you can rerun with "
+                     "--purge)" % email)
+        return 0
     # Prompt user for confirmation
-    if no_confirm or prompt_for_confirmation(
-            "Delete %suser '%s'?" % (" & purge" if purge else '',
-                                     email),
-            default="n"):
+    if not user.deleted:
+        prompt = "Delete %suser '%s'?" % ("& purge " if purge else '',
+                                          email)
+    else:
+        prompt = "Purge deleted user '%s'?" % email
+    if no_confirm or prompt_for_confirmation(prompt,default="n"):
         try:
-            galaxy.users.UserClient(gi).delete_user(user_id,purge=purge)
-            print("Deleted %suser '%s'" % (" & purged" if purge else '',
+            if not user.deleted:
+                # Need to delete first
+                galaxy.users.UserClient(gi).delete_user(user.id)
+            if purge:
+                # Can only purge a deleted user
+                galaxy.users.UserClient(gi).delete_user(user.id,purge=True)
+            print("Deleted %suser '%s'" % ("& purged " if purge else '',
                                            email))
             return 0
         except ConnectionError as ex:
@@ -459,7 +474,7 @@ def delete_user(gi,email,purge=False,no_confirm=False):
                                                              ex.status_code))
             return 1
     else:
-        print("User '%s' not deleted" % email)
+        print("User '%s' not deleted and/or purged" % email)
         return 0
 
 def check_new_user_info(gi,email,username):
