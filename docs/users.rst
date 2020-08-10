@@ -15,6 +15,10 @@ instance:
 * ``-l``: returns extended information for each user (status,
   whether they are an admin user, disk usage and quota size
   and usage).
+* ``--status``: filter list on user status, which can be one of
+  ``active`` (the default), ``deleted`` (only list deleted
+  users which haven't been purged) or ``all`` (list all active,
+  deleted, and purged users).
 * ``--name``: filter list on user email (can include glob-style
   wildcards e.g. ``--name="*bloggs*"``).
 

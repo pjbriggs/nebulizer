@@ -307,6 +307,11 @@ def remove_key(context,alias):
 @click.option("--name",
               help="list only users with matching email or user "
               "name. Can include glob-style wild-cards.")
+@click.option("--status",
+              type=click.Choice(['active','deleted','purged','all']),
+              default='active',
+              help="list users with the specified status (default: "
+              "'active')")
 @click.option("--long","-l","long_listing",is_flag=True,
               help="use a long listing format that includes ids,"
               " disk usage and admin status.")
@@ -314,7 +319,7 @@ def remove_key(context,alias):
               help="include internal Galaxy user ID.")
 @click.argument("galaxy")
 @pass_context
-def list_users(context,galaxy,name,long_listing,show_id):
+def list_users(context,galaxy,name,status,long_listing,show_id):
     """
     List users in Galaxy instance.
 
@@ -328,6 +333,7 @@ def list_users(context,galaxy,name,long_listing,show_id):
     # List users
     sys.exit(users.list_users(gi,name=name,
                               long_listing_format=long_listing,
+                              status=status,
                               show_id=show_id))
 
 @nebulizer.command()
