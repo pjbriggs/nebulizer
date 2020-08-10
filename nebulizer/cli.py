@@ -1194,7 +1194,7 @@ def ping(context,galaxy,count,interval=5,timeout=None):
     while True:
         try:
             # Get a Galaxy instance
-            gi = context.galaxy_instance(galaxy_url)
+            gi = context.galaxy_instance(galaxy_url,validate_key=False)
             if gi is None:
                 click.echo("%s: failed to connect" % galaxy_url)
                 status_code = 1
