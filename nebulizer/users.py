@@ -78,12 +78,14 @@ class User(object):
 
 # Functions
 
-def get_users(gi):
+def get_users(gi,status='active'):
     """
     Return list of users in a Galaxy instance
 
     Arguments:
       gi (bioblend.galaxy.GalaxyInstance): Galaxy instance
+      status (bool): only return users with the matching
+        status ('active', 'deleted', 'purged' or 'all')
 
     Returns:
       list: list of User objects.
@@ -91,8 +93,25 @@ def get_users(gi):
     """
     users = []
     user_client = galaxy.users.UserClient(gi)
-    for user_data in user_client.get_users():
-        users.append(User(user_data))
+    # Get active users
+    if status in ('active','all'):
+        for user_data in user_client.get_users():
+            user = User(user_data)
+            user.update(galaxy.users.UserClient(gi).show_user(user.id))
+            users.append(user)
+    # Get deleted and purged users
+    if status in ('deleted','purged','all'):
+        keep_deleted = status in ('deleted','all')
+        keep_purged = status in ('purged','all')
+        for user_data in user_client.get_users(deleted=True):
+            user = User(user_data)
+            user.update(galaxy.users.UserClient(gi).show_user(
+                user.id,
+                deleted=True))
+            if (user.deleted and not keep_deleted) or \
+               (user.purged and not keep_purged):
+                continue
+            users.append(user)
     return users
 
 def get_user_id(gi,email):
@@ -116,7 +135,8 @@ def get_user_id(gi,email):
                                                              ex.status_code))
     return None
 
-def list_users(gi,name=None,long_listing_format=False,show_id=False):
+def list_users(gi,name=None,long_listing_format=False,status=False,
+               show_id=False):
     """
     List users in Galaxy instance
 
@@ -125,11 +145,15 @@ def list_users(gi,name=None,long_listing_format=False,show_id=False):
       name  : optionally, only list matching emails/usernames
       long_listing_format (boolean): if True then use a
         long listing format when reporting items
+      status (str): list users with matching status: 'active'
+        (default), 'deleted', or 'purged'. Use 'all' to list
+        all accounts regardless of status
+      show_id (bool): if True then report user's Galaxy ID
 
     """
     # Get user data
     try:
-        users = get_users(gi)
+        users = get_users(gi,status=status)
     except ConnectionError as ex:
         logger.fatal("Failed to get user list: %s (%s)" % (ex.body,
                                                            ex.status_code))
@@ -151,8 +175,6 @@ def list_users(gi,name=None,long_listing_format=False,show_id=False):
     users.sort(key=lambda u: u.email.lower())
     output = Reporter()
     for user in users:
-        # Get additional user data
-        user.update(galaxy.users.UserClient(gi).show_user(user.id))
         # Collect data items to report
         display_items = [user.email,user.username]
         if long_listing_format:
@@ -168,7 +190,15 @@ def list_users(gi,name=None,long_listing_format=False,show_id=False):
                                       "%s%%" % user.quota_percent
                                       if user.quota_percent
                                       else "0%"])
-            display_items.append('active' if user.active else '')
+            if user.purged:
+                status = 'purged'
+            elif user.deleted:
+                status = 'deleted'
+            elif user.active:
+                status = 'active'
+            else:
+                status = ''
+            display_items.append(status)
             display_items.append('admin' if user.is_admin else '')
         if show_id:
             # Also report the internal user ID
