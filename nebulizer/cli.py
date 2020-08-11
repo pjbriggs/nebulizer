@@ -124,7 +124,7 @@ class Context(object):
         self.no_verify = False
         self.debug = False
 
-    def galaxy_instance(self,alias):
+    def galaxy_instance(self,alias,validate_key=True):
         """
         Return Galaxy instance based on context
 
@@ -137,6 +137,7 @@ class Context(object):
             prompt="Password for %s: " % alias)
         gi = get_galaxy_instance(alias,api_key=self.api_key,
                                  email=email,password=password,
+                                 validate_key=validate_key,
                                  verify_ssl=(not self.no_verify))
         return gi
 
@@ -1149,7 +1150,7 @@ def config(context,galaxy,name=None):
     GALAXY. Use --name to filter which items are reported.
     """
     # Get a Galaxy instance
-    gi = context.galaxy_instance(galaxy)
+    gi = context.galaxy_instance(galaxy,validate_key=False)
     if gi is None:
         logger.critical("Failed to connect to Galaxy instance")
         sys.exit(1)
@@ -1194,7 +1195,7 @@ def ping(context,galaxy,count,interval=5,timeout=None):
     while True:
         try:
             # Get a Galaxy instance
-            gi = context.galaxy_instance(galaxy_url)
+            gi = context.galaxy_instance(galaxy_url,validate_key=False)
             if gi is None:
                 click.echo("%s: failed to connect" % galaxy_url)
                 status_code = 1
