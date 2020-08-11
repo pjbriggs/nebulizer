@@ -108,10 +108,9 @@ def get_users(gi,status='active'):
             user.update(galaxy.users.UserClient(gi).show_user(
                 user.id,
                 deleted=True))
-            if (user.deleted and not keep_deleted) or \
-               (user.purged and not keep_purged):
-                continue
-            users.append(user)
+            if (user.purged and keep_purged) or \
+               (not user.purged and keep_deleted):
+                users.append(user)
     return users
 
 def get_user(gi,email):
