@@ -47,7 +47,7 @@ for example:
 ::
 
   % virtualenv .venv
-  % sourc .venv/bin/activate
+  % source .venv/bin/activate
   % pip install nebulizer
 
 This will provide an executable called ``nebulizer`` with a number

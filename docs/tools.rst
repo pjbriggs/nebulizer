@@ -103,6 +103,14 @@ except that a revision cannot be included. For example:
 
    nebulizer update_tool GALAXY devteam/fastqc
 
+It is also possible to include glob-style wildcards in the
+tool repository name and/or owner e.g. ``devteam/*`` or
+``bgruening/deeptools_*``. To request update of all tools:
+
+::
+
+   nebulizer update_tool GALAXY '*/*'
+
 .. note::
 
    ``update_tool`` doesn't uninstall the older versions of

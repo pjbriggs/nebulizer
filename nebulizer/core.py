@@ -257,7 +257,7 @@ class Reporter:
             print(out_line)
 
 def get_galaxy_instance(galaxy_url,api_key=None,email=None,password=None,
-                        verify_ssl=True):
+                        verify_ssl=True,validate_key=True):
     """
     Return Bioblend GalaxyInstance
 
@@ -289,7 +289,9 @@ def get_galaxy_instance(galaxy_url,api_key=None,email=None,password=None,
     if api_key is None:
         api_key = stored_key
     logger.debug("Connecting to %s" % galaxy_url)
-    if email is not None:
+    if not validate_key:
+        gi = galaxy.GalaxyInstance(url=galaxy_url)
+    elif email is not None:
         gi = galaxy.GalaxyInstance(url=galaxy_url,email=email,
                                    password=password)
     else:

@@ -78,12 +78,14 @@ class User:
 
 # Functions
 
-def get_users(gi):
+def get_users(gi,status='active'):
     """
     Return list of users in a Galaxy instance
 
     Arguments:
       gi (bioblend.galaxy.GalaxyInstance): Galaxy instance
+      status (bool): only return users with the matching
+        status ('active', 'deleted', 'purged' or 'all')
 
     Returns:
       list: list of User objects.
@@ -91,9 +93,45 @@ def get_users(gi):
     """
     users = []
     user_client = galaxy.users.UserClient(gi)
-    for user_data in user_client.get_users():
-        users.append(User(user_data))
+    # Get active users
+    if status in ('active','all'):
+        for user_data in user_client.get_users():
+            user = User(user_data)
+            user.update(galaxy.users.UserClient(gi).show_user(user.id))
+            users.append(user)
+    # Get deleted and purged users
+    if status in ('deleted','purged','all'):
+        keep_deleted = status in ('deleted','all')
+        keep_purged = status in ('purged','all')
+        for user_data in user_client.get_users(deleted=True):
+            user = User(user_data)
+            user.update(galaxy.users.UserClient(gi).show_user(
+                user.id,
+                deleted=True))
+            if (user.purged and keep_purged) or \
+               (not user.purged and keep_deleted):
+                users.append(user)
     return users
+
+def get_user(gi,email):
+    """
+    Get the user data corresponding to a username email
+
+    Arguments:
+      gi (bioblend.galaxy.GalaxyInstance): Galaxy instance
+      email : email address for the user
+
+    Returns:
+      User: 'User' instance, or None if no match.
+    """
+    try:
+        for u in get_users(gi,status='all'):
+            if fnmatch.fnmatch(u.email,email):
+                return u
+    except ConnectionError as ex:
+        logger.warning("Failed to get user list: {} ({})".format(ex.body,
+                                                             ex.status_code))
+    return None
 
 def get_user_id(gi,email):
     """
@@ -106,17 +144,13 @@ def get_user_id(gi,email):
     Returns:
       String: user ID, or None if no match.
     """
-    user_id = None
     try:
-        for u in get_users(gi):
-            if fnmatch.fnmatch(u.email,email):
-                return u.id
-    except ConnectionError as ex:
-        logger.warning("Failed to get user list: {} ({})".format(ex.body,
-                                                             ex.status_code))
-    return None
+        return get_user(gi,email).id
+    except AttributeError:
+        return None
 
-def list_users(gi,name=None,long_listing_format=False,show_id=False):
+def list_users(gi,name=None,long_listing_format=False,status=False,
+               show_id=False):
     """
     List users in Galaxy instance
 
@@ -125,11 +159,15 @@ def list_users(gi,name=None,long_listing_format=False,show_id=False):
       name  : optionally, only list matching emails/usernames
       long_listing_format (boolean): if True then use a
         long listing format when reporting items
+      status (str): list users with matching status: 'active'
+        (default), 'deleted', or 'purged'. Use 'all' to list
+        all accounts regardless of status
+      show_id (bool): if True then report user's Galaxy ID
 
     """
     # Get user data
     try:
-        users = get_users(gi)
+        users = get_users(gi,status=status)
     except ConnectionError as ex:
         logger.fatal("Failed to get user list: {} ({})".format(ex.body,
                                                            ex.status_code))
@@ -148,13 +186,15 @@ def list_users(gi,name=None,long_listing_format=False,show_id=False):
                  (fnmatch.fnmatch(u.username.lower(),name) or
                   fnmatch.fnmatch(u.email.lower(),name))]
     # Report users
-    users.sort(key=lambda u: u.email.lower())
+    users.sort(key=lambda u: u.email.lower()
+               if not (u.purged and '@' not in u.email) else '')
     output = Reporter()
     for user in users:
-        # Get additional user data
-        user.update(galaxy.users.UserClient(gi).show_user(user.id))
         # Collect data items to report
-        display_items = [user.email,user.username]
+        if user.purged and '@' not in user.email:
+            display_items = ['<purged>','<purged>']
+        else:
+            display_items = [user.email,user.username]
         if long_listing_format:
             # Long listing format includes:
             # - disk usage
@@ -168,7 +208,15 @@ def list_users(gi,name=None,long_listing_format=False,show_id=False):
                                       "%s%%" % user.quota_percent
                                       if user.quota_percent
                                       else "0%"])
-            display_items.append('active' if user.active else '')
+            if user.purged:
+                status = 'purged'
+            elif user.deleted:
+                status = 'deleted'
+            elif user.active:
+                status = 'active'
+            else:
+                status = ''
+            display_items.append(status)
             display_items.append('admin' if user.is_admin else '')
         if show_id:
             # Also report the internal user ID
@@ -394,11 +442,19 @@ def delete_user(gi,email,purge=False,no_confirm=False):
       0 on success, 1 on failure.
 
     """
-    # Get the ID for the supplied user
-    user_id = get_user_id(gi,email)
-    if user_id is None:
+    # Get the data for the supplied user
+    user = get_user(gi,email)
+    if user is None:
         logger.fatal("No user '%s'" % email)
         return 1
+    # Is user already deleted or purged?
+    if user.purged:
+        logger.fatal("'%s': already deleted and purged" % email)
+        return 0
+    elif user.deleted and not purge:
+        logger.fatal("'%s': already deleted (but you can rerun with "
+                     "--purge)" % email)
+        return 0
     # Prompt user for confirmation
     if no_confirm or prompt_for_confirmation(
             "Delete {}user '{}'?".format(" & purge" if purge else '',
@@ -407,6 +463,20 @@ def delete_user(gi,email,purge=False,no_confirm=False):
         try:
             galaxy.users.UserClient(gi).delete_user(user_id,purge=purge)
             print("Deleted {}user '{}'".format(" & purged" if purge else '',
+    if not user.deleted:
+        prompt = "Delete {}user '{}'?".format("& purge " if purge else '',
+                                          email)
+    else:
+        prompt = "Purge deleted user '{}'?".format(email)
+    if no_confirm or prompt_for_confirmation(prompt,default="n"):
+        try:
+            if not user.deleted:
+                # Need to delete first
+                galaxy.users.UserClient(gi).delete_user(user.id)
+            if purge:
+                # Can only purge a deleted user
+                galaxy.users.UserClient(gi).delete_user(user.id,purge=True)
+            print("Deleted {}user '{}'".format("& purged " if purge else '',
                                            email))
             return 0
         except ConnectionError as ex:
@@ -414,7 +484,7 @@ def delete_user(gi,email,purge=False,no_confirm=False):
                                                              ex.status_code))
             return 1
     else:
-        print("User '%s' not deleted" % email)
+        print("User '%s' not deleted and/or purged" % email)
         return 0
 
 def check_new_user_info(gi,email,username):

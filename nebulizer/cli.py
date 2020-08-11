@@ -124,7 +124,7 @@ class Context:
         self.no_verify = False
         self.debug = False
 
-    def galaxy_instance(self,alias):
+    def galaxy_instance(self,alias,validate_key=True):
         """
         Return Galaxy instance based on context
 
@@ -137,6 +137,7 @@ class Context:
             prompt="Password for %s: " % alias)
         gi = get_galaxy_instance(alias,api_key=self.api_key,
                                  email=email,password=password,
+                                 validate_key=validate_key,
                                  verify_ssl=(not self.no_verify))
         return gi
 
@@ -307,6 +308,11 @@ def remove_key(context,alias):
 @click.option("--name",
               help="list only users with matching email or user "
               "name. Can include glob-style wild-cards.")
+@click.option("--status",
+              type=click.Choice(['active','deleted','purged','all']),
+              default='active',
+              help="list users with the specified status (default: "
+              "'active')")
 @click.option("--long","-l","long_listing",is_flag=True,
               help="use a long listing format that includes ids,"
               " disk usage and admin status.")
@@ -314,7 +320,7 @@ def remove_key(context,alias):
               help="include internal Galaxy user ID.")
 @click.argument("galaxy")
 @pass_context
-def list_users(context,galaxy,name,long_listing,show_id):
+def list_users(context,galaxy,name,status,long_listing,show_id):
     """
     List users in Galaxy instance.
 
@@ -328,6 +334,7 @@ def list_users(context,galaxy,name,long_listing,show_id):
     # List users
     sys.exit(users.list_users(gi,name=name,
                               long_listing_format=long_listing,
+                              status=status,
                               show_id=show_id))
 
 @nebulizer.command()
@@ -828,7 +835,9 @@ def install_repositories(context,galaxy,file,
               "complete.")
 @click.option('--check-toolshed',is_flag=True,
               help="check installed revisions directly against those "
-              "available in the toolshed")
+              "available in the toolshed.")
+@click.option('-y','--yes',is_flag=True,
+              help="don't ask for confirmation of updates.")
 @click.argument("galaxy")
 @click.argument("repository",nargs=-1)
 @pass_context
@@ -836,7 +845,8 @@ def update_tool(context,galaxy,repository,
                 install_tool_dependencies,
                 install_repository_dependencies,
                 install_resolver_dependencies,
-                timeout,no_wait,check_toolshed):
+                timeout,no_wait,check_toolshed,
+                yes):
     """
     Update tool installed from toolshed.
 
@@ -852,6 +862,9 @@ def update_tool(context,galaxy,repository,
     - [ TOOLSHED ] OWNER TOOLNAME e.g.
     https://toolshed.g2.bx.psu.edu devteam fastqc
 
+    OWNER and TOOLNAME can include glob-style wildcards;
+    use '*/*' to update all tools.
+
     The tool must already be present in GALAXY and a newer
     changeset revision must be available. The update will
     be installed into the same tool panel section as the
@@ -864,7 +877,7 @@ def update_tool(context,galaxy,repository,
     except Exception as ex:
         logger.fatal(ex)
         sys.exit(1)
-    print(f"Updating {repository}/{owner} from {toolshed}")
+    print(f"Updating {owner}/{repository} from {toolshed}")
     if revision is not None:
         logger.fatal("A revision ('%s') was also supplied "
                      "but this is not valid for tool update "
@@ -884,7 +897,8 @@ def update_tool(context,galaxy,repository,
                                install_repository_dependencies=
                                (install_repository_dependencies== 'yes'),
                                install_resolver_dependencies=
-                               (install_resolver_dependencies== 'yes')))
+                               (install_resolver_dependencies== 'yes'),
+                               no_confirm=yes))
 
 @nebulizer.command()
 @click.option('--remove_from_disk',is_flag=True,
@@ -1136,7 +1150,7 @@ def config(context,galaxy,name=None):
     GALAXY. Use --name to filter which items are reported.
     """
     # Get a Galaxy instance
-    gi = context.galaxy_instance(galaxy)
+    gi = context.galaxy_instance(galaxy,validate_key=False)
     if gi is None:
         logger.critical("Failed to connect to Galaxy instance")
         sys.exit(1)
@@ -1181,7 +1195,7 @@ def ping(context,galaxy,count,interval=5,timeout=None):
     while True:
         try:
             # Get a Galaxy instance
-            gi = context.galaxy_instance(galaxy_url)
+            gi = context.galaxy_instance(galaxy_url,validate_key=False)
             if gi is None:
                 click.echo("%s: failed to connect" % galaxy_url)
                 status_code = 1
