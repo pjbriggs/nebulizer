@@ -45,6 +45,20 @@ generated automatically from the email address.
    nebulizer delete_user GALAXY USER@DOMAIN
 
 * ``--purge``: purge the account as well as deleting
+  (or purge an unpurged account which has been previously
+  deleted)
+
+.. note::
+
+   Purging a user account overwrites the email and username
+   for that account with random strings; it also marks the
+   datasets and histories associated with that account as
+   deleted. These data can then be removed from disk by
+   running Galaxy's clean-up scripts.
+
+   For information on the clean-up scripts see the Galaxy
+   documentation at
+   https://galaxyproject.org/admin/config/performance/purge-histories-and-datasets/
 
 Creating batches of users from a template name
 ----------------------------------------------
