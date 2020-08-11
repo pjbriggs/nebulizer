@@ -50,9 +50,11 @@ generated automatically from the email address.
 
 .. note::
 
-   Purging a user account marks the datasets and histories
-   associated with that account as deleted; these data will
-   then be removed when Galaxy's clean-up scripts are run.
+   Purging a user account overwrites the email and username
+   for that account with random strings; it also marks the
+   datasets and histories associated with that account as
+   deleted. These data can then be removed from disk by
+   running Galaxy's clean-up scripts.
 
    For information on the clean-up scripts see the Galaxy
    documentation at
