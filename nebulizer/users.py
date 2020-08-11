@@ -456,13 +456,6 @@ def delete_user(gi,email,purge=False,no_confirm=False):
                      "--purge)" % email)
         return 0
     # Prompt user for confirmation
-    if no_confirm or prompt_for_confirmation(
-            "Delete {}user '{}'?".format(" & purge" if purge else '',
-                                     email),
-            default="n"):
-        try:
-            galaxy.users.UserClient(gi).delete_user(user_id,purge=purge)
-            print("Deleted {}user '{}'".format(" & purged" if purge else '',
     if not user.deleted:
         prompt = "Delete {}user '{}'?".format("& purge " if purge else '',
                                           email)
