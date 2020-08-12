@@ -11,6 +11,7 @@ from mako.template import Template
 from .core import get_galaxy_config
 from .core import prompt_for_confirmation
 from .core import Reporter
+from .utils import size_to_bytes
 
 # Logging
 logger = logging.getLogger(__name__)
@@ -538,6 +539,56 @@ def get_user_api_key(gi,username=None):
         print(ex)
         return
     return api_key
+
+def get_disk_usage(gi):
+    """
+    Return estimated and committed user disk space
+
+    Estimates the disk space consumed by user data
+    based on the disk usage information held by
+    Galaxy.
+
+    This is an estimate because Galaxy's information
+    might not be correct.
+
+    If quotas are enabled the committed disk space
+    is the total quota allocation for all users
+    (i.e. the space that would be needed if all
+    users consumed their quota allowances).
+
+    Arguments:
+      gi: Galaxy instance
+
+    Returns:
+      Tuple consisting of (usage,committed).
+
+    """
+    # Check if quotas are enabled
+    quotas_enabled = get_galaxy_config(gi)['enable_quotas']
+    # Add up user disk usage and quotas
+    usage = 0
+    commited = 0
+    negative_usage = False
+    for user in get_users(gi,status='all'):
+        if user.total_disk_usage < 0.0:
+            # Warn about users with negative usage
+            logger.warning("%s: bad disk usage (%s)" %
+                           (user.email,user.nice_total_disk_usage))
+            negative_usage = True
+        else:
+            # Only include positive disk usage
+            usage += user.total_disk_usage
+        # Commited disk space is usage if all users
+        # fill up all their quota
+        if quotas_enabled:
+            if not user.deleted:
+                # Check for unlimited quota
+                if user.quota == 'unlimited':
+                    logger.warning("%s: has unlimited quota" %
+                                   user.email)
+                else:
+                    commited += size_to_bytes(user.quota)
+    return (int(usage),int(commited))
 
 def check_username_format(username):
     """
