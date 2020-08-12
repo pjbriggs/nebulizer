@@ -311,16 +311,22 @@ def remove_key(context,alias):
 @click.option("--status",
               type=click.Choice(['active','deleted','purged','all']),
               default='active',
-              help="list users with the specified status (default: "
-              "'active')")
+              help="list users with the specified status; can be "
+              "one of 'active', 'deleted', 'purged', 'all' "
+              "(default: 'active')")
 @click.option("--long","-l","long_listing",is_flag=True,
               help="use a long listing format that includes ids,"
               " disk usage and admin status.")
+@click.option("--sort",
+              type=click.Choice(['email','disk_usage',]),
+              default='email',
+              help="property to sort output on; can be one of "
+              "'email', 'disk_usage' (default: 'email').")
 @click.option("--show_id",is_flag=True,
               help="include internal Galaxy user ID.")
 @click.argument("galaxy")
 @pass_context
-def list_users(context,galaxy,name,status,long_listing,show_id):
+def list_users(context,galaxy,name,status,long_listing,sort,show_id):
     """
     List users in Galaxy instance.
 
@@ -334,6 +340,7 @@ def list_users(context,galaxy,name,status,long_listing,show_id):
     # List users
     sys.exit(users.list_users(gi,name=name,
                               long_listing_format=long_listing,
+                              sort_by=sort,
                               status=status,
                               show_id=show_id))
 

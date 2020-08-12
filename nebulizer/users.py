@@ -149,8 +149,8 @@ def get_user_id(gi,email):
     except AttributeError:
         return None
 
-def list_users(gi,name=None,long_listing_format=False,status=False,
-               show_id=False):
+def list_users(gi,name=None,long_listing_format=False,status='active',
+               sort_by='email',show_id=False):
     """
     List users in Galaxy instance
 
@@ -162,6 +162,8 @@ def list_users(gi,name=None,long_listing_format=False,status=False,
       status (str): list users with matching status: 'active'
         (default), 'deleted', or 'purged'. Use 'all' to list
         all accounts regardless of status
+      sort_by (str): sort users into order on this field:
+        'email' (default), 'disk_usage'
       show_id (bool): if True then report user's Galaxy ID
 
     """
@@ -185,9 +187,14 @@ def list_users(gi,name=None,long_listing_format=False,status=False,
         users = [u for u in users if
                  (fnmatch.fnmatch(u.username.lower(),name) or
                   fnmatch.fnmatch(u.email.lower(),name))]
+    # Sort into order
+    if sort_by == 'email':
+        sort_func = lambda u: u.email.lower() \
+                    if not (u.purged and '@' not in u.email) else ''
+    elif sort_by == 'disk_usage':
+        sort_func = lambda u: -u.total_disk_usage
+    users.sort(key=sort_func)
     # Report users
-    users.sort(key=lambda u: u.email.lower()
-               if not (u.purged and '@' not in u.email) else '')
     output = Reporter()
     for user in users:
         # Collect data items to report
