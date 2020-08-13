@@ -5,6 +5,7 @@ import logging
 import fnmatch
 from bioblend import galaxy
 from bioblend import ConnectionError
+from .core import Reporter
 from .users import User
 from .groups import Group
 
@@ -168,12 +169,14 @@ def list_quotas(gi,name=None,long_listing_format=False):
         name = name.lower()
         quotas = [q for q in quotas
                   if fnmatch.fnmatch(q.name.lower(),name)]
-    # Report quotas
+    # Sort into order
     quotas.sort(key=lambda q: q.name.lower())
-    for quota in quotas:
-        n_users = len(quota.list_users)
-        n_groups = len(quota.list_groups)
-        if not long_listing_format:
+    # Report quotas
+    if not long_listing_format:
+        output = Reporter()
+        for quota in quotas:
+            n_users = len(quota.list_users)
+            n_groups = len(quota.list_groups)
             # Collect data items to report on a single line
             display_items = [quota.name,
                              "%s%s" % (quota.operation,
@@ -184,21 +187,27 @@ def list_quotas(gi,name=None,long_listing_format=False):
                              (n_users,'' if n_users == 1 else 's'),
                              "%s group%s" %
                              (n_groups,'' if n_groups == 1 else 's')]
-            print('\t'.join([str(x) for x in display_items]))
-        else:
-            # Long listing format reports each quota in
-            # a block
+            output.append(display_items)
+        output.report()
+    else:
+        # Long listing format reports each quota in
+        # a block
+        for quota in quotas:
+            n_users = len(quota.list_users)
+            n_groups = len(quota.list_groups)
             print("Quota name : %s" % quota.name)
             print("Description: %s" % quota.description)
             print("Operation  : %s" % quota.operation)
             print("Amount     : %s" % quota.display_amount)
             print("Default    : %s" % quota.default_for)
-            print("%s user%s" % (n_users,'' if n_users == 1 else 's'))
+            print("%s associated user%s" % (n_users,
+                                            '' if n_users == 1 else 's'))
             for user in quota.list_users:
-                print("\t%s" % user.email)
-            print("%s group%s" % (n_groups,'' if n_groups == 1 else 's'))
+                print("- %s" % user.email)
+            print("%s associated group%s" % (n_groups,
+                                             '' if n_groups == 1 else 's'))
             for group in quota.list_groups:
-                print("\t%s" % group.name)
+                print("- %s" % group.name)
             print("")
     print("total %s" % len(quotas))
 
