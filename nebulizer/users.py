@@ -76,6 +76,29 @@ class User(object):
             except AttributeError:
                 pass
 
+    @property
+    def display_status(self):
+        """
+        Return status based on the user data
+
+        Status will be returned as one of:
+
+        - active
+        - deleted
+        - purged
+
+        or an empty string, depending on the `purged`,
+        `deleted` and `active` flag.
+        """
+        if self.purged:
+            return 'purged'
+        elif self.deleted:
+            return 'deleted'
+        elif self.active:
+            return 'active'
+        else:
+            return ''
+
 # Functions
 
 def get_users(gi,status='active'):
@@ -207,7 +230,7 @@ def list_users(gi,name=None,long_listing_format=False,status='active',
             # - disk usage
             # - quota size (if quotas enabled)
             # - % quota used (if quotas enabled)
-            # - if account is active
+            # - if account status ('active','deleted' etc)
             # - if user is an admin
             display_items.append(user.nice_total_disk_usage)
             if enable_quotas:
@@ -215,16 +238,8 @@ def list_users(gi,name=None,long_listing_format=False,status='active',
                                       "%s%%" % user.quota_percent
                                       if user.quota_percent
                                       else "0%"])
-            if user.purged:
-                status = 'purged'
-            elif user.deleted:
-                status = 'deleted'
-            elif user.active:
-                status = 'active'
-            else:
-                status = ''
-            display_items.append(status)
-            display_items.append('admin' if user.is_admin else '')
+            display_items.extend([user.display_status,
+                                  'admin' if user.is_admin else ''])
         if show_id:
             # Also report the internal user ID
             display_items.append(user.id)
