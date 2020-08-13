@@ -320,8 +320,8 @@ def remove_key(context,alias):
 @click.option("--sort",
               default='email',
               help="comma-separated list of fields to output on; "
-              "valid fields are 'email', 'disk_usage' (default: "
-              "'email').")
+              "valid fields are 'email', 'disk_usage', 'quota', "
+              "'quota_usage' (default: 'email').")
 @click.option("--show_id",is_flag=True,
               help="include internal Galaxy user ID.")
 @click.argument("galaxy")
@@ -340,7 +340,7 @@ def list_users(context,galaxy,name,status,long_listing,sort,show_id):
     # Turn sort keys into a list
     sort_keys = sort.split(',')
     for key in sort_keys:
-        if key not in ('email','disk_usage'):
+        if key not in ('email','disk_usage','quota','quota_usage'):
             logger.fatal("'%s': invalid sort key" % key)
             sys.exit(1)
     # List users

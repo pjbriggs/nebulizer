@@ -111,8 +111,10 @@ class User(object):
 
         Valid keys are:
 
-        - email
-        - disk_usage
+        - email (normalised email address)
+        - disk_usage (amount of disk space used)
+        - quota (total quota allowance)
+        - quota_usage (percentage of quota used)
 
         """
         keys = list(keys)
@@ -121,11 +123,51 @@ class User(object):
         sort_key = []
         for key in keys:
             if key == 'email':
+                # Normalised email address
                 sort_key.append(
                     self.email.lower()
                     if not (self.purged and '@' not in self.email) else '')
             elif key == 'disk_usage':
+                # Disk usage (high to low)
                 sort_key.append(-self.total_disk_usage)
+            elif key == 'quota':
+                # Quota allowance (high to low)
+                if self.quota:
+                    # Quota is defined, convert from 'nice'
+                    # format to a float
+                    if self.quota.endswith('KB'):
+                        quota = float(self.quota[:-2])*1024
+                    elif self.quota.endswith('GB'):
+                        quota = float(self.quota[:-2])*(1024**2)
+                    elif self.quota.endswith('TB'):
+                        quota = float(self.quota[:-2])*(1024**3)
+                    elif self.quota == 'unlimited':
+                        # Special case: try and make 'unlimited'
+                        # bigger than any other value
+                        quota = 1024.0**6
+                    else:
+                        # Assume it's bytes
+                        quota = float(self.quota)
+                else:
+                    # No quota defined so set to zero
+                    quota = 0.0
+                sort_key.append(-quota)
+            elif key == 'quota_usage':
+                # Percentage of quota used (high to low)
+                if self.quota_percent:
+                    # Quota percentage is defined
+                    if self.quota == 'unlimited':
+                        # Special case: set 'unlimited' to
+                        # zero
+                        quota_usage = 0.0
+                    else:
+                        # Use as-is
+                        quota_usage = -self.quota_percent
+                else:
+                    # No quota percentage defined, so
+                    # set to zero
+                    quota_usage = 0.0
+                sort_key.append(quota_usage)
             else:
                 raise KeyError("Unknown sort key: '%s'" % key)
         return tuple(sort_key)
@@ -262,10 +304,14 @@ def list_users(gi,name=None,long_listing_format=False,status='active',
             # - if user is an admin
             display_items.append(user.nice_total_disk_usage)
             if enable_quotas:
+                if user.quota == 'unlimited':
+                    quota_percent = 'n/a'
+                elif user.quota_percent:
+                    quota_percent = "%s%%" % user.quota_percent
+                else:
+                    quota_percent = "0%"
                 display_items.extend([user.quota,
-                                      "%s%%" % user.quota_percent
-                                      if user.quota_percent
-                                      else "0%"])
+                                      quota_percent])
             display_items.extend([user.display_status,
                                   'admin' if user.is_admin else ''])
         if show_id:
