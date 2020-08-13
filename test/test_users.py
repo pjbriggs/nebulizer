@@ -21,6 +21,7 @@ class TestUser(unittest.TestCase):
         self.assertEqual(user.username,'bloggs')
         self.assertEqual(user.email,'joe.bloggs@galaxy.org')
         self.assertEqual(user.id,'d6fbfd317568bb93')
+        self.assertEqual(user.display_status,'')
     def test_load_user_data_full(self):
         # Data returned from galaxy.users.UserClient(gi).show_user()
         user_data = { u'username': u'bloggs',
@@ -31,7 +32,10 @@ class TestUser(unittest.TestCase):
                       u'is_admin': True,
                       u'tags_used': [],
                       u'model_class': u'User',
-                      u'email': u'joe.bloggs@galaxy.org' }
+                      u'email': u'joe.bloggs@galaxy.org',
+                      u'active': True,
+                      u'deleted': False,
+                      u'purged': False, }
         user = User(user_data)
         self.assertEqual(user.username,'bloggs')
         self.assertEqual(user.email,'joe.bloggs@galaxy.org')
@@ -40,6 +44,7 @@ class TestUser(unittest.TestCase):
         self.assertEqual(user.total_disk_usage,13181590307.0)
         self.assertTrue(user.is_admin)
         self.assertEqual(user.nice_total_disk_usage,'12.3 GB')
+        self.assertEqual(user.display_status,'active')
 
 class TestCheckUsernameFormat(unittest.TestCase):
     def test_valid_username(self):

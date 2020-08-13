@@ -311,16 +311,22 @@ def remove_key(context,alias):
 @click.option("--status",
               type=click.Choice(['active','deleted','purged','all']),
               default='active',
-              help="list users with the specified status (default: "
-              "'active')")
+              help="list users with the specified status; can be "
+              "one of 'active', 'deleted', 'purged', 'all' "
+              "(default: 'active')")
 @click.option("--long","-l","long_listing",is_flag=True,
               help="use a long listing format that includes ids,"
               " disk usage and admin status.")
+@click.option("--sort",
+              default='email',
+              help="comma-separated list of fields to output on; "
+              "valid fields are 'email', 'disk_usage', 'quota', "
+              "'quota_usage' (default: 'email').")
 @click.option("--show_id",is_flag=True,
               help="include internal Galaxy user ID.")
 @click.argument("galaxy")
 @pass_context
-def list_users(context,galaxy,name,status,long_listing,show_id):
+def list_users(context,galaxy,name,status,long_listing,sort,show_id):
     """
     List users in Galaxy instance.
 
@@ -331,9 +337,16 @@ def list_users(context,galaxy,name,status,long_listing,show_id):
     if gi is None:
         logger.critical("Failed to connect to Galaxy instance")
         sys.exit(1)
+    # Turn sort keys into a list
+    sort_keys = sort.split(',')
+    for key in sort_keys:
+        if key not in ('email','disk_usage','quota','quota_usage'):
+            logger.fatal("'%s': invalid sort key" % key)
+            sys.exit(1)
     # List users
     sys.exit(users.list_users(gi,name=name,
                               long_listing_format=long_listing,
+                              sort_by=sort_keys,
                               status=status,
                               show_id=show_id))
 
