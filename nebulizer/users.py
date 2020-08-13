@@ -99,6 +99,37 @@ class User(object):
         else:
             return ''
 
+    def sort_key(self,*keys):
+        """
+        Return 'sort key' based on specified keys
+
+        Given one or more keys, returns a tuple
+        with the values for each of those keys
+        for this user (in the specified order),
+        which can then be used in
+        sorting operations.
+
+        Valid keys are:
+
+        - email
+        - disk_usage
+
+        """
+        keys = list(keys)
+        if 'email' not in keys:
+            keys.append('email')
+        sort_key = []
+        for key in keys:
+            if key == 'email':
+                sort_key.append(
+                    self.email.lower()
+                    if not (self.purged and '@' not in self.email) else '')
+            elif key == 'disk_usage':
+                sort_key.append(-self.total_disk_usage)
+            else:
+                raise KeyError("Unknown sort key: '%s'" % key)
+        return tuple(sort_key)
+
 # Functions
 
 def get_users(gi,status='active'):
@@ -211,12 +242,7 @@ def list_users(gi,name=None,long_listing_format=False,status='active',
                  (fnmatch.fnmatch(u.username.lower(),name) or
                   fnmatch.fnmatch(u.email.lower(),name))]
     # Sort into order
-    if sort_by == 'email':
-        sort_func = lambda u: u.email.lower() \
-                    if not (u.purged and '@' not in u.email) else ''
-    elif sort_by == 'disk_usage':
-        sort_func = lambda u: -u.total_disk_usage
-    users.sort(key=sort_func)
+    users.sort(key=lambda u: u.sort_key(sort_by))
     # Report users
     output = Reporter()
     for user in users:
