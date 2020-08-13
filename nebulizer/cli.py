@@ -318,10 +318,10 @@ def remove_key(context,alias):
               help="use a long listing format that includes ids,"
               " disk usage and admin status.")
 @click.option("--sort",
-              type=click.Choice(['email','disk_usage',]),
               default='email',
-              help="property to sort output on; can be one of "
-              "'email', 'disk_usage' (default: 'email').")
+              help="comma-separated list of fields to output on; "
+              "valid fields are 'email', 'disk_usage' (default: "
+              "'email').")
 @click.option("--show_id",is_flag=True,
               help="include internal Galaxy user ID.")
 @click.argument("galaxy")
@@ -337,10 +337,16 @@ def list_users(context,galaxy,name,status,long_listing,sort,show_id):
     if gi is None:
         logger.critical("Failed to connect to Galaxy instance")
         sys.exit(1)
+    # Turn sort keys into a list
+    sort_keys = sort.split(',')
+    for key in sort_keys:
+        if key not in ('email','disk_usage'):
+            logger.fatal("'%s': invalid sort key" % key)
+            sys.exit(1)
     # List users
     sys.exit(users.list_users(gi,name=name,
                               long_listing_format=long_listing,
-                              sort_by=sort,
+                              sort_by=sort_keys,
                               status=status,
                               show_id=show_id))
 

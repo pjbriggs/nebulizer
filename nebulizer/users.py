@@ -204,7 +204,7 @@ def get_user_id(gi,email):
         return None
 
 def list_users(gi,name=None,long_listing_format=False,status='active',
-               sort_by='email',show_id=False):
+               sort_by=None,show_id=False):
     """
     List users in Galaxy instance
 
@@ -216,8 +216,8 @@ def list_users(gi,name=None,long_listing_format=False,status='active',
       status (str): list users with matching status: 'active'
         (default), 'deleted', or 'purged'. Use 'all' to list
         all accounts regardless of status
-      sort_by (str): sort users into order on this field:
-        'email' (default), 'disk_usage'
+      sort_by (list): list of fields to sort users into order
+        on this field (default sorting is done on user email)
       show_id (bool): if True then report user's Galaxy ID
 
     """
@@ -242,7 +242,9 @@ def list_users(gi,name=None,long_listing_format=False,status='active',
                  (fnmatch.fnmatch(u.username.lower(),name) or
                   fnmatch.fnmatch(u.email.lower(),name))]
     # Sort into order
-    users.sort(key=lambda u: u.sort_key(sort_by))
+    if not sort_by:
+        sort_by = ()
+    users.sort(key=lambda u: u.sort_key(*sort_by))
     # Report users
     output = Reporter()
     for user in users:
