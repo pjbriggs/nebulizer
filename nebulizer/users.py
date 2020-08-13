@@ -99,6 +99,22 @@ class User(object):
         else:
             return ''
 
+    @property
+    def display_quota_percent(self):
+        """
+        Return quota percentage for display
+
+        Percentage will be 'n/a' for unlimited
+        quotas, or a value with a percentage
+        symbol for real quotas.
+        """
+        if self.quota == 'unlimited':
+            return 'n/a'
+        elif self.quota_percent:
+            return "%s%%" % self.quota_percent
+        else:
+            return "0%"
+
     def sort_key(self,*keys):
         """
         Return 'sort key' based on specified keys
@@ -304,14 +320,8 @@ def list_users(gi,name=None,long_listing_format=False,status='active',
             # - if user is an admin
             display_items.append(user.nice_total_disk_usage)
             if enable_quotas:
-                if user.quota == 'unlimited':
-                    quota_percent = 'n/a'
-                elif user.quota_percent:
-                    quota_percent = "%s%%" % user.quota_percent
-                else:
-                    quota_percent = "0%"
                 display_items.extend([user.quota,
-                                      quota_percent])
+                                      user.display_quota_percent])
             display_items.extend([user.display_status,
                                   'admin' if user.is_admin else ''])
         if show_id:
