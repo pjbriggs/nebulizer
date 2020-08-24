@@ -29,6 +29,7 @@ Contents:
    users
    libraries
    tools
+   quotas
    querying_galaxy
    managing_keys
    general_options

@@ -21,6 +21,11 @@ from . import users
 from . import libraries
 from . import tools
 from . import search
+from .quotas import handle_quota_spec
+from .quotas import list_quotas
+from .quotas import create_quota
+from .quotas import update_quota
+from .quotas import delete_quota
 
 # Initialise logging
 logger = logging.getLogger(__name__)
@@ -1148,6 +1153,202 @@ def add_library_datasets(context,galaxy,dest,file,file_type,
                                    link_only=link,
                                    file_type=file_type,
                                    dbkey=dbkey)
+
+@nebulizer.command()
+@click.option("--name",
+              help="list only quotas with matching name. Can "
+              "include glob-style wild-cards.")
+@click.option("--status",
+              type=click.Choice(['active','deleted','all']),
+              default='active',
+              help="list quotas with the specified status; can be "
+              "one of 'active', 'deleted', 'all' (default: 'active')")
+@click.option("--long","-l","long_listing",is_flag=True,
+              help="use a long listing format that includes lists "
+              "of associated users and groups.")
+@click.argument("galaxy")
+@pass_context
+def quotas(context,galaxy,name,status,long_listing):
+    """
+    List quotas in Galaxy instance.
+
+    Prints details of quotas in GALAXY instance.
+    """
+    # Get a Galaxy instance
+    gi = context.galaxy_instance(galaxy)
+    if gi is None:
+        logger.critical("Failed to connect to Galaxy instance")
+        sys.exit(1)
+    # List users
+    sys.exit(list_quotas(gi,name=name,
+                         status=status,
+                         long_listing_format=long_listing))
+
+@nebulizer.command()
+@click.option('-d','--description',
+              help="description of the new quota (will be "
+              "the same as the NAME if not supplied).")
+@click.option('--default_for',
+              help="set the quota as the default for either "
+              "'registered' or 'unregistered' users.")
+@click.option('-u','--users',metavar="EMAIL[,EMAIL...]",
+              help="list of user emails to associate with the "
+              "quota, separated by commas.")
+@click.option('-g','--groups',metavar="GROUP[,GROUP...]",
+              help="list of group names to associate with the "
+              "quota, separated by commas.")
+@click.argument("galaxy")
+@click.argument("name")
+@click.argument("quota")
+@pass_context
+def quotaadd(context,galaxy,name,quota,description=None,
+             default_for=None,users=None,groups=None):
+    """
+    Create new quota.
+
+    Makes a new quota called NAME in GALAXY. A quota with
+    the same name must not already exist.
+
+    QUOTA specifies the type of quota, and must be of the
+    form
+
+    [OPERATION][AMOUNT]
+
+    where OPERATION is any valid operation ('=','+','-';
+    defaults to '=' if not specified) and AMOUNT is any
+    valid amount (e.g. '10000MB', '99 gb', '0.2T',
+    'unlimited').
+
+    If DESCRIPTION is not supplied then it will be the
+    same as the NAME.
+
+    If supplied then DEFAULT_FOR must be one of
+    'registered' or 'unregistered', in which case the new
+    quota will become the default for that class of user
+    (overriding any default which was previously defined).
+
+    Users and groups can also be associated with the new
+    quota with the -u/--users and -g/--groups options.
+    """
+    # Get a Galaxy instance
+    gi = context.galaxy_instance(galaxy)
+    if gi is None:
+        logger.critical("Failed to connect to Galaxy instance")
+        sys.exit(1)
+    # Deal with quota specification
+    operation,amount = handle_quota_spec(quota)
+    # Deal with description
+    if description is None:
+        description = name
+    # Deal with user and groups
+    if users:
+        users = users.split(',')
+    if groups:
+        groups = groups.split(',')
+    # Create new quota
+    sys.exit(create_quota(gi,name,description,
+                          amount,operation,
+                          default=default_for,
+                          users=users,
+                          groups=groups))
+
+@nebulizer.command()
+@click.option('-n','--name',metavar="NEW_NAME",
+              help="new name for the quota.")
+@click.option('-d','--description',metavar="NEW_DESCRIPTION",
+              help="new description for the quota.")
+@click.option('-q','--quota-size',metavar="NEW_QUOTA_SIZE",
+              help="new quota size in the form "
+              "'[OPERATION][AMOUNT]' (e.g. '=0.2T').")
+@click.option('--default_for',metavar="registered|unregistered",
+              help="set the quota as the default for either "
+              "'registered' or 'unregistered' users.")
+@click.option('-a','--add-users',metavar="EMAIL[,EMAIL...]",
+              help="list of user emails to associate with the "
+              "quota, separated by commas.")
+@click.option('-r','--remove-users',metavar="EMAIL[,EMAIL...]",
+              help="list of user emails to disassociate from "
+              "the quota, separated by commas.")
+@click.option('-A','--add-groups',metavar="GROUP[,GROUP...]",
+              help="list of group names to associate with the "
+              "quota, separated by commas.")
+@click.option('-R','--remove-groups',metavar="GROUP[,GROUP...]",
+              help="list of group names to disassociate from "
+              "the quota, separated by commas.")
+@click.option('-u','--undelete',is_flag=True,
+              help="restores a previously deleted quota")
+@click.argument("galaxy")
+@click.argument("quota")
+@pass_context
+def quotamod(context,galaxy,quota,name=None,description=None,
+             quota_size=None,default_for=None,add_users=None,
+             remove_users=None,add_groups=None,remove_groups=None,
+             undelete=False):
+    """
+    Modify an existing quota.
+
+    Updates the definition of the existing QUOTA in GALAXY.
+
+    The command line arguments can be used to modify any of
+    the quota's attributes, to set a new name, description
+    or quota size and type.
+
+    Users and groups can also be associated with or
+    disassociated from the quota, and deleted quotas can
+    be restored and modified.
+    """
+    # Get a Galaxy instance
+    gi = context.galaxy_instance(galaxy)
+    if gi is None:
+        logger.critical("Failed to connect to Galaxy instance")
+        sys.exit(1)
+    # Deal with quota specification
+    if quota_size:
+        operation,amount = handle_quota_spec(quota_size)
+    else:
+        operation = None
+        amount = None
+    # Deal with user and groups
+    if add_users:
+        add_users = add_users.split(',')
+    if remove_users:
+        remove_users = remove_users.split(',')
+    if add_groups:
+        add_groups = add_groups.split(',')
+    if remove_groups:
+        remove_groups = remove_groups.split(',')
+    # Create new quota
+    sys.exit(update_quota(gi,quota,
+                          new_name=name,
+                          new_description=description,
+                          new_amount=amount,
+                          new_operation=operation,
+                          new_default=default_for,
+                          add_users=add_users,
+                          remove_users=remove_users,
+                          add_groups=add_groups,
+                          remove_groups=remove_groups,
+                          undelete=undelete))
+
+@nebulizer.command()
+@click.argument("galaxy")
+@click.argument("quota")
+@click.option('-y','--yes',is_flag=True,
+              help="don't ask for confirmation of deletions.")
+@pass_context
+def quotadel(context,galaxy,quota,yes):
+    """
+    Delete quota.
+
+    Deletes QUOTA from GALAXY.
+    """
+    # Get a Galaxy instance
+    gi = context.galaxy_instance(galaxy)
+    if gi is None:
+        logger.critical("Failed to connect to Galaxy instance")
+        sys.exit(1)
+    # Delete quota
+    sys.exit(delete_quota(gi,quota,no_confirm=yes))
 
 @nebulizer.command()
 @click.argument("galaxy")
