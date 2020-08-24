@@ -16,9 +16,9 @@ from .groups import get_groups
 logger = logging.getLogger(__name__)
 
 # Constants
-VALID_DEFAULTSs = ('registered',
-                   'unregistered',
-                   'no')
+VALID_DEFAULTS = ('registered',
+                  'unregistered',
+                  'no')
 
 # Classes
 
