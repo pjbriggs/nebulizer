@@ -1227,6 +1227,79 @@ def create_quota(context,galaxy,name,quota,description=None,
                                  default=default_for))
 
 @nebulizer.command()
+@click.option('-n','--name',metavar="NEW_NAME",
+              help="new name for the quota.")
+@click.option('-d','--description',metavar="NEW_DESCRIPTION",
+              help="new description for the quota.")
+@click.option('-q','--quota-size',metavar="NEW_QUOTA_SIZE",
+              help="new quota size in the form "
+              "'[OPERATION][AMOUNT]' (e.g. '=0.2T').")
+@click.option('--default_for',metavar="registered|unregistered",
+              help="set the quota as the default for either "
+              "'registered' or 'unregistered' users.")
+@click.option('-a','--add-users',metavar="EMAIL[,EMAIL...]",
+              help="list of user emails to associate with the "
+              "quota, separated by commas.")
+@click.option('-r','--remove-users',metavar="EMAIL[,EMAIL...]",
+              help="list of user emails to disassociate from "
+              "the quota, separated by commas.")
+@click.option('-A','--add-groups',metavar="GROUP[,GROUP...]",
+              help="list of group names to associate with the "
+              "quota, separated by commas.")
+@click.option('-R','--remove-groups',metavar="GROUP[,GROUP...]",
+              help="list of group names to disassociate from "
+              "the quota, separated by commas.")
+@click.argument("galaxy")
+@click.argument("quota")
+@pass_context
+def update_quota(context,galaxy,quota,name=None,description=None,
+                 quota_size=None,default_for=None,add_users=None,
+                 remove_users=None,add_groups=None,remove_groups=None):
+    """
+    Update an existing quota.
+
+    Updates the details for the existing QUOTA in GALAXY.
+
+    The command line arguments can be used to modify any of
+    the quota's attributes, to set a new name, description
+    or quota size and type.
+
+    Users and groups can also be associated with or
+    disassociated from the quota.
+    """
+    # Get a Galaxy instance
+    gi = context.galaxy_instance(galaxy)
+    if gi is None:
+        logger.critical("Failed to connect to Galaxy instance")
+        sys.exit(1)
+    # Deal with quota specification
+    if quota_size:
+        operation,amount = quotas.handle_quota_spec(quota_size)
+    else:
+        operation = None
+        amount = None
+    # Deal with user and groups
+    if add_users:
+        add_users = add_users.split(',')
+    if remove_users:
+        remove_users = remove_users.split(',')
+    if add_groups:
+        add_groups = add_groups.split(',')
+    if remove_groups:
+        remove_groups = remove_groups.split(',')
+    # Create new quota
+    sys.exit(quotas.update_quota(gi,quota,
+                                 new_name=name,
+                                 new_description=description,
+                                 new_amount=amount,
+                                 new_operation=operation,
+                                 new_default=default_for,
+                                 add_users=add_users,
+                                 remove_users=remove_users,
+                                 add_groups=add_groups,
+                                 remove_groups=remove_groups))
+
+@nebulizer.command()
 @click.argument("galaxy")
 @click.option('--name',
               help="only show configuration items that match "
