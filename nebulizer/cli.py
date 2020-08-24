@@ -1154,12 +1154,17 @@ def add_library_datasets(context,galaxy,dest,file,file_type,
 @click.option("--name",
               help="list only quotas with matching name. Can "
               "include glob-style wild-cards.")
+@click.option("--status",
+              type=click.Choice(['active','deleted','all']),
+              default='active',
+              help="list quotas with the specified status; can be "
+              "one of 'active', 'deleted', 'all' (default: 'active')")
 @click.option("--long","-l","long_listing",is_flag=True,
               help="use a long listing format that includes lists "
               "of associated users and groups.")
 @click.argument("galaxy")
 @pass_context
-def list_quotas(context,galaxy,name,long_listing):
+def list_quotas(context,galaxy,name,status,long_listing):
     """
     List quotas in Galaxy instance.
 
@@ -1172,6 +1177,7 @@ def list_quotas(context,galaxy,name,long_listing):
         sys.exit(1)
     # List users
     sys.exit(quotas.list_quotas(gi,name=name,
+                                status=status,
                                 long_listing_format=long_listing))
 
 @nebulizer.command()

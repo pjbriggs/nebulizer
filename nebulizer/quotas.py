@@ -15,6 +15,13 @@ from .groups import get_groups
 # Logging
 logger = logging.getLogger(__name__)
 
+# Constants
+VALID_DEFAULTSs = ('registered',
+                   'unregistered',
+                   'no')
+
+# Classes
+
 class Quota(object):
     """
     Class wrapping extraction of quota data
@@ -48,6 +55,7 @@ class Quota(object):
         self.groups = None
         self.operation = None
         self.users = None
+        self.deleted = None
         # Populate with additional data items
         self.update(quota_data)
 
@@ -130,7 +138,7 @@ def handle_quota_spec(quota):
         amount = quota
     return (operation,amount)
 
-def get_quotas(gi):
+def get_quotas(gi,status='active'):
     """
     Return list of quotas from a Galaxy instance
 
@@ -139,30 +147,45 @@ def get_quotas(gi):
 
     Returns:
       list: list of Quota objects.
+      status (bool): only return quotas with the matching
+        status ('active', 'deleted' or 'all')
 
     """
     quotas = []
     quota_client = galaxy.quotas.QuotaClient(gi)
-    for quota_data in quota_client.get_quotas():
-        quota = Quota(quota_data)
-        quota.update(quota_client.show_quota(quota.id))
-        quotas.append(quota)
+    # Get active quotas
+    if status in ('active','all'):
+        for quota_data in quota_client.get_quotas():
+            quota = Quota(quota_data)
+            quota.update(quota_client.show_quota(quota.id))
+            quotas.append(quota)
+    # Get deleted quotas
+    if status in ('deleted','all'):
+        for quota_data in quota_client.get_quotas(deleted=True):
+            quota = Quota(quota_data)
+            quota.update(quota_client.show_quota(quota.id,
+                                                 deleted=True))
+            quota.deleted = True
+            quotas.append(quota)
     return quotas
 
-def list_quotas(gi,name=None,long_listing_format=False):
+def list_quotas(gi,name=None,status='active',long_listing_format=False):
     """
     List quotas in Galaxy instance
 
     Arguments:
       gi    : Galaxy instance
       name  : optionally, only list matching quota names
+      status (str): list quotas with matching status: 'active'
+        (default) or 'deleted'. Use 'all' to list all quotas
+        regardless of status
       long_listing_format (boolean): if True then use a
         long listing format when reporting items
 
     """
     # Get quota data
     try:
-        quotas = get_quotas(gi)
+        quotas = get_quotas(gi,status=status)
     except ConnectionError as ex:
         logger.fatal("Failed to get quota list: %s (%s)" % (ex.body,
                                                             ex.status_code))
@@ -189,7 +212,9 @@ def list_quotas(gi,name=None,long_listing_format=False):
                              "%s user%s" %
                              (n_users,'' if n_users == 1 else 's'),
                              "%s group%s" %
-                             (n_groups,'' if n_groups == 1 else 's')]
+                             (n_groups,'' if n_groups == 1 else 's'),
+                             "active" if not quota.deleted
+                             else "deleted"]
             output.append(display_items)
         output.report()
     else:
@@ -202,7 +227,10 @@ def list_quotas(gi,name=None,long_listing_format=False):
             print("Description: %s" % quota.description)
             print("Operation  : %s" % quota.operation)
             print("Amount     : %s" % quota.display_amount)
-            print("Default    : %s" % quota.default_for)
+            print("Default    : %s" % (quota.default_for
+                                       if quota.default_for else 'no'))
+            print("Status     : %s" % ("active" if not quota.deleted
+                                       else "deleted"))
             print("%s associated user%s" % (n_users,
                                             '' if n_users == 1 else 's'))
             for user in quota.list_users:
@@ -231,18 +259,24 @@ def create_quota(gi,name,description,amount,operation,default=None):
         be the default for 'registered' or 'unregistered'
         users
     """
-    valid_defaults = ('registered',
-                      'unregistered',
-                      'no')
+    # Check for existing quota name
+    existing_quotas = [q for q in get_quotas(gi,status='all')
+                       if q.name == name]
+    if existing_quotas:
+        logger.fatal("'%s': quota already exists with this name" %
+                     name)
+        return 1
+    # Check for valid 'default' setting
     if default:
-        if default not in valid_defaults:
+        if default not in VALID_DEFAULTS:
             logger.fatal("'%s': not a valid default (must be one of "
                          "%s)" % (default,
                                   ','.join(["'%s'" % d
-                                            for d in valid_defaults])))
+                                            for d in VALID_DEFAULTS])))
             return 1
     else:
         default = 'no'
+    # Create the new quota
     print("Quota name : %s" % name)
     print("Description: %s" % description)
     print("Operation  : %s" % operation)
@@ -290,9 +324,6 @@ def update_quota(gi,name,new_name=None,new_description=None,
       remove_groups: list of group names to disassociate from
         the quota
     """
-    valid_defaults = ('registered',
-                      'unregistered',
-                      'no')
     # Get the current settings for the quota
     quota = [q for q in get_quotas(gi) if q.name == name]
     if len(quota) != 1:
