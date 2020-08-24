@@ -299,7 +299,8 @@ def create_quota(gi,name,description,amount,operation,default=None):
 def update_quota(gi,name,new_name=None,new_description=None,
                  new_amount=None,new_operation=None,
                  new_default=None,add_users=None,add_groups=None,
-                 remove_users=None,remove_groups=None):
+                 remove_users=None,remove_groups=None,
+                 undelete=False):
     """
     Create a new quota in a Galaxy instance
 
@@ -323,13 +324,21 @@ def update_quota(gi,name,new_name=None,new_description=None,
         the quota
       remove_groups: list of group names to disassociate from
         the quota
+      undelete: if True then restores deleted quota
     """
     # Get the current settings for the quota
-    quota = [q for q in get_quotas(gi) if q.name == name]
+    quota = [q for q in get_quotas(gi,status='all')
+             if q.name == name]
     if len(quota) != 1:
         logger.fatal("'%s': no such quota?" % name)
         return 1
     quota = quota[0]
+    # Check if deleted quota is being restored
+    if quota.deleted and not undelete:
+        logger.fatal("'%s': trying to modify a deleted quota"
+                     % name)
+        return 1
+    # Set defaults
     name = None
     description = None
     amount = None
@@ -399,6 +408,12 @@ def update_quota(gi,name,new_name=None,new_description=None,
                 groups = [g for g in groups if g != group]
     try:
         quota_client = galaxy.quotas.QuotaClient(gi)
+        if quota.deleted and undelete:
+            # Undelete quota
+            print("Restoring deleted quota")
+            result = quota_client.undelete_quota(quota.id)
+            print("%s" % result)
+        # Do the update
         result = quota_client.update_quota(quota.id,
                                            name=name,
                                            description=description,
@@ -407,7 +422,8 @@ def update_quota(gi,name,new_name=None,new_description=None,
                                            default=default,
                                            in_users=users,
                                            in_groups=groups)
-        print("%s" % result)
+        if result:
+            print("%s" % result)
         return 0
     except galaxy.client.ConnectionError as ex:
         logger.fatal("Failed to update quota:")

@@ -1259,12 +1259,15 @@ def quotaadd(context,galaxy,name,quota,description=None,
 @click.option('-R','--remove-groups',metavar="GROUP[,GROUP...]",
               help="list of group names to disassociate from "
               "the quota, separated by commas.")
+@click.option('-u','--undelete',is_flag=True,
+              help="restores a previously deleted quota")
 @click.argument("galaxy")
 @click.argument("quota")
 @pass_context
 def quotamod(context,galaxy,quota,name=None,description=None,
              quota_size=None,default_for=None,add_users=None,
-             remove_users=None,add_groups=None,remove_groups=None):
+             remove_users=None,add_groups=None,remove_groups=None,
+             undelete=False):
     """
     Modify an existing quota.
 
@@ -1275,7 +1278,8 @@ def quotamod(context,galaxy,quota,name=None,description=None,
     or quota size and type.
 
     Users and groups can also be associated with or
-    disassociated from the quota.
+    disassociated from the quota, and deleted quotas can
+    be restored and modified.
     """
     # Get a Galaxy instance
     gi = context.galaxy_instance(galaxy)
@@ -1307,7 +1311,8 @@ def quotamod(context,galaxy,quota,name=None,description=None,
                           add_users=add_users,
                           remove_users=remove_users,
                           add_groups=add_groups,
-                          remove_groups=remove_groups))
+                          remove_groups=remove_groups,
+                          undelete=undelete))
 
 @nebulizer.command()
 @click.argument("galaxy")
