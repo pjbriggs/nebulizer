@@ -19,9 +19,13 @@ from .core import Reporter
 from . import options
 from . import users
 from . import libraries
-from . import quotas
 from . import tools
 from . import search
+from .quotas import handle_quota_spec
+from .quotas import list_quotas
+from .quotas import create_quota
+from .quotas import update_quota
+from .quotas import delete_quota
 
 # Initialise logging
 logger = logging.getLogger(__name__)
@@ -1164,7 +1168,7 @@ def add_library_datasets(context,galaxy,dest,file,file_type,
               "of associated users and groups.")
 @click.argument("galaxy")
 @pass_context
-def list_quotas(context,galaxy,name,status,long_listing):
+def quotas(context,galaxy,name,status,long_listing):
     """
     List quotas in Galaxy instance.
 
@@ -1176,9 +1180,9 @@ def list_quotas(context,galaxy,name,status,long_listing):
         logger.critical("Failed to connect to Galaxy instance")
         sys.exit(1)
     # List users
-    sys.exit(quotas.list_quotas(gi,name=name,
-                                status=status,
-                                long_listing_format=long_listing))
+    sys.exit(list_quotas(gi,name=name,
+                         status=status,
+                         long_listing_format=long_listing))
 
 @nebulizer.command()
 @click.option('-d','--description',
@@ -1191,8 +1195,8 @@ def list_quotas(context,galaxy,name,status,long_listing):
 @click.argument("name")
 @click.argument("quota")
 @pass_context
-def create_quota(context,galaxy,name,quota,description=None,
-                 default_for=None):
+def quotaadd(context,galaxy,name,quota,description=None,
+             default_for=None):
     """
     Create new quota.
 
@@ -1223,14 +1227,14 @@ def create_quota(context,galaxy,name,quota,description=None,
         logger.critical("Failed to connect to Galaxy instance")
         sys.exit(1)
     # Deal with quota specification
-    operation,amount = quotas.handle_quota_spec(quota)
+    operation,amount = handle_quota_spec(quota)
     # Deal with description
     if description is None:
         description = name
     # Create new quota
-    sys.exit(quotas.create_quota(gi,name,description,
-                                 amount,operation,
-                                 default=default_for))
+    sys.exit(create_quota(gi,name,description,
+                          amount,operation,
+                          default=default_for))
 
 @nebulizer.command()
 @click.option('-n','--name',metavar="NEW_NAME",
@@ -1258,13 +1262,13 @@ def create_quota(context,galaxy,name,quota,description=None,
 @click.argument("galaxy")
 @click.argument("quota")
 @pass_context
-def update_quota(context,galaxy,quota,name=None,description=None,
-                 quota_size=None,default_for=None,add_users=None,
-                 remove_users=None,add_groups=None,remove_groups=None):
+def quotamod(context,galaxy,quota,name=None,description=None,
+             quota_size=None,default_for=None,add_users=None,
+             remove_users=None,add_groups=None,remove_groups=None):
     """
-    Update an existing quota.
+    Modify an existing quota.
 
-    Updates the details for the existing QUOTA in GALAXY.
+    Updates the definition of the existing QUOTA in GALAXY.
 
     The command line arguments can be used to modify any of
     the quota's attributes, to set a new name, description
@@ -1280,7 +1284,7 @@ def update_quota(context,galaxy,quota,name=None,description=None,
         sys.exit(1)
     # Deal with quota specification
     if quota_size:
-        operation,amount = quotas.handle_quota_spec(quota_size)
+        operation,amount = handle_quota_spec(quota_size)
     else:
         operation = None
         amount = None
@@ -1294,16 +1298,16 @@ def update_quota(context,galaxy,quota,name=None,description=None,
     if remove_groups:
         remove_groups = remove_groups.split(',')
     # Create new quota
-    sys.exit(quotas.update_quota(gi,quota,
-                                 new_name=name,
-                                 new_description=description,
-                                 new_amount=amount,
-                                 new_operation=operation,
-                                 new_default=default_for,
-                                 add_users=add_users,
-                                 remove_users=remove_users,
-                                 add_groups=add_groups,
-                                 remove_groups=remove_groups))
+    sys.exit(update_quota(gi,quota,
+                          new_name=name,
+                          new_description=description,
+                          new_amount=amount,
+                          new_operation=operation,
+                          new_default=default_for,
+                          add_users=add_users,
+                          remove_users=remove_users,
+                          add_groups=add_groups,
+                          remove_groups=remove_groups))
 
 @nebulizer.command()
 @click.argument("galaxy")
@@ -1311,7 +1315,7 @@ def update_quota(context,galaxy,quota,name=None,description=None,
 @click.option('-y','--yes',is_flag=True,
               help="don't ask for confirmation of deletions.")
 @pass_context
-def delete_quota(context,galaxy,quota,yes):
+def quotadel(context,galaxy,quota,yes):
     """
     Delete quota.
 
@@ -1323,7 +1327,7 @@ def delete_quota(context,galaxy,quota,yes):
         logger.critical("Failed to connect to Galaxy instance")
         sys.exit(1)
     # Delete quota
-    sys.exit(quotas.delete_quota(gi,quota,no_confirm=yes))
+    sys.exit(delete_quota(gi,quota,no_confirm=yes))
 
 @nebulizer.command()
 @click.argument("galaxy")
