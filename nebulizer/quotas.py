@@ -6,6 +6,7 @@ import fnmatch
 from bioblend import galaxy
 from bioblend import ConnectionError
 from .core import Reporter
+from .core import prompt_for_confirmation
 from .users import User
 from .users import get_users
 from .groups import Group
@@ -381,3 +382,37 @@ def update_quota(gi,name,new_name=None,new_description=None,
         logger.fatal("Failed to update quota:")
         logger.fatal(ex)
         return 1
+
+def delete_quota(gi,name,no_confirm=False):
+    """
+    Delete the named quota from the Galaxy instance
+
+    Arguments:
+      gi: Galaxy instance
+      name: name of the quota to delete
+      no_confirm : if True then don't prompt to confirm the
+        deletion operation
+    """
+    # Get the id for the quota
+    quota = [q for q in get_quotas(gi) if q.name == name]
+    if len(quota) != 1:
+        logger.fatal("'%s': no such quota?" % name)
+        return 1
+    quota = quota[0]
+    # Prompt user for confirmation
+    if no_confirm or \
+       prompt_for_confirmation("Delete quota '%s'?" % quota.name,
+                               default="n"):
+        # Delete the quota
+        try:
+            quota_client = galaxy.quotas.QuotaClient(gi)
+            result = quota_client.delete_quota(quota.id)
+            print("%s" % result)
+            return 0
+        except galaxy.client.ConnectionError as ex:
+            logger.fatal("Failed to delete quota:")
+            logger.fatal(ex)
+            return 1
+    else:
+        print("Quota '%s' not deleted" % quota.name)
+        return 0

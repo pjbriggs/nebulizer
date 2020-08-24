@@ -1301,6 +1301,26 @@ def update_quota(context,galaxy,quota,name=None,description=None,
 
 @nebulizer.command()
 @click.argument("galaxy")
+@click.argument("quota")
+@click.option('-y','--yes',is_flag=True,
+              help="don't ask for confirmation of deletions.")
+@pass_context
+def delete_quota(context,galaxy,quota,yes):
+    """
+    Delete quota.
+
+    Deletes QUOTA from GALAXY.
+    """
+    # Get a Galaxy instance
+    gi = context.galaxy_instance(galaxy)
+    if gi is None:
+        logger.critical("Failed to connect to Galaxy instance")
+        sys.exit(1)
+    # Delete quota
+    sys.exit(quotas.delete_quota(gi,quota,no_confirm=yes))
+
+@nebulizer.command()
+@click.argument("galaxy")
 @click.option('--name',
               help="only show configuration items that match "
               "NAME. Can include glob-style wild-cards.")
