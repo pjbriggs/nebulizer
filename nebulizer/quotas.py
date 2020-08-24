@@ -242,7 +242,8 @@ def list_quotas(gi,name=None,status='active',long_listing_format=False):
             print("")
     print("total %s" % len(quotas))
 
-def create_quota(gi,name,description,amount,operation,default=None):
+def create_quota(gi,name,description,amount,operation,default=None,
+                 users=None,groups=None):
     """
     Create a new quota in a Galaxy instance
 
@@ -258,6 +259,10 @@ def create_quota(gi,name,description,amount,operation,default=None):
       default: optionally specify if the new quota will
         be the default for 'registered' or 'unregistered'
         users
+      users: list of user emails to associate with the
+        new quota
+      groups: list of group names to associate with the
+        new quota
     """
     # Check for existing quota name
     existing_quotas = [q for q in get_quotas(gi,status='all')
@@ -276,19 +281,44 @@ def create_quota(gi,name,description,amount,operation,default=None):
             return 1
     else:
         default = 'no'
+    # Sort out the users and groups
+    if users:
+        galaxy_users = [u.email for u in get_users(gi)]
+        for user in users:
+            # Check that user exists
+            if user not in galaxy_users:
+                logger.fatal("%s: user doesn't exist" % user)
+                return 1
+    if groups:
+        galaxy_groups = [g.name for g in get_groups(gi)]
+        for group in groups:
+            # Check that the group exists
+            if group not in galaxy_groups:
+                logger.fatal("%s: group doesn't exist" % group)
+                return 1
     # Create the new quota
     print("Quota name : %s" % name)
     print("Description: %s" % description)
     print("Operation  : %s" % operation)
     print("Amount     : %s" % amount)
     print("Default    : %s" % default)
+    if users:
+        print("Users:")
+        for user in users:
+            print("-- %s" % user)
+    if groups:
+        print("Groups:")
+        for group in groups:
+            print("-- %s" % group)
     try:
         quota_client = galaxy.quotas.QuotaClient(gi)
         result = quota_client.create_quota(name,
                                            description,
                                            amount,
                                            operation,
-                                           default=default)
+                                           default=default,
+                                           in_users=users,
+                                           in_groups=groups)
         print("%s" % result['message'])
         return 0
     except galaxy.client.ConnectionError as ex:

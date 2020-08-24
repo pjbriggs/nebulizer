@@ -1191,12 +1191,18 @@ def quotas(context,galaxy,name,status,long_listing):
 @click.option('--default_for',
               help="set the quota as the default for either "
               "'registered' or 'unregistered' users.")
+@click.option('-u','--users',metavar="EMAIL[,EMAIL...]",
+              help="list of user emails to associate with the "
+              "quota, separated by commas.")
+@click.option('-g','--groups',metavar="GROUP[,GROUP...]",
+              help="list of group names to associate with the "
+              "quota, separated by commas.")
 @click.argument("galaxy")
 @click.argument("name")
 @click.argument("quota")
 @pass_context
 def quotaadd(context,galaxy,name,quota,description=None,
-             default_for=None):
+             default_for=None,users=None,groups=None):
     """
     Create new quota.
 
@@ -1220,6 +1226,9 @@ def quotaadd(context,galaxy,name,quota,description=None,
     'registered' or 'unregistered', in which case the new
     quota will become the default for that class of user
     (overriding any default which was previously defined).
+
+    Users and groups can also be associated with the new
+    quota with the -u/--users and -g/--groups options.
     """
     # Get a Galaxy instance
     gi = context.galaxy_instance(galaxy)
@@ -1231,10 +1240,17 @@ def quotaadd(context,galaxy,name,quota,description=None,
     # Deal with description
     if description is None:
         description = name
+    # Deal with user and groups
+    if users:
+        users = users.split(',')
+    if groups:
+        groups = groups.split(',')
     # Create new quota
     sys.exit(create_quota(gi,name,description,
                           amount,operation,
-                          default=default_for))
+                          default=default_for,
+                          users=users,
+                          groups=groups))
 
 @nebulizer.command()
 @click.option('-n','--name',metavar="NEW_NAME",

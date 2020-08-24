@@ -38,6 +38,14 @@ specified then ``=`` is assumed.
 * ``--default_for``: set the quota as the the default for either
   'registered' or 'unregistered' users.
 
+Users and groups can be associated with the new quota using the
+``-u`` and ``-g`` options:
+
+* ``-u``/``--users``: associate one or more users with the
+  quota, as a comma-separated list of email addresses.
+* ``-g``/``--groups``: associate one or more groups with the
+  quota, as a comma-separated list of group names.
+
 ``quotadel`` deletes an existing quota:
 
 ::
