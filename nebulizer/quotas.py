@@ -7,7 +7,9 @@ from bioblend import galaxy
 from bioblend import ConnectionError
 from .core import Reporter
 from .users import User
+from .users import get_users
 from .groups import Group
+from .groups import get_groups
 
 # Logging
 logger = logging.getLogger(__name__)
@@ -256,5 +258,126 @@ def create_quota(gi,name,description,amount,operation,default=None):
         return 0
     except galaxy.client.ConnectionError as ex:
         logger.fatal("Failed to create quota:")
+        logger.fatal(ex)
+        return 1
+
+def update_quota(gi,name,new_name=None,new_description=None,
+                 new_amount=None,new_operation=None,
+                 new_default=None,add_users=None,add_groups=None,
+                 remove_users=None,remove_groups=None):
+    """
+    Create a new quota in a Galaxy instance
+
+    Attempts to create a new quota with the supplied details.
+
+    Arguments:
+      gi: Galaxy instance
+      name: name of the quota to update
+      new_name: new name for the quota
+      new_description: new description for the quota
+      new_amount: string specifying the new size of the quota
+      new_operation: new operation to use when applying the
+        quota (i.e. '=','+' or '-')
+      new_default: whether the new quota will be the default
+        for 'registered' or 'unregistered' users
+      add_users: list of user emails to associate with the
+        quota (in addition to any already associated)
+      add_groups: list of group names to associate with the
+        quota (in addition to any already associated)
+      remove_users: list of user emails to disassociate from
+        the quota
+      remove_groups: list of group names to disassociate from
+        the quota
+    """
+    valid_defaults = ('registered',
+                      'unregistered',
+                      'no')
+    # Get the current settings for the quota
+    quota = [q for q in get_quotas(gi) if q.name == name]
+    if len(quota) != 1:
+        logger.fatal("'%s': no such quota?" % name)
+        return 1
+    quota = quota[0]
+    name = None
+    description = None
+    amount = None
+    operation = None
+    default = None
+    # Update the quota name
+    if new_name:
+        name = new_name
+        print("Quota name : %s" % name)
+    # Update the description
+    if new_description:
+        if not name:
+            name = quota.name
+        description = new_description
+        print("Description: %s" % description)
+    # Update the quota size
+    if new_amount and new_operation:
+        if new_amount:
+            amount = new_amount
+        else:
+            amount = quota.display_amount
+        if new_operation:
+            operation = new_operation
+        else:
+            operation = quota.operation
+        print("Operation  : %s" % operation)
+        print("Amount     : %s" % amount)
+    # Update the default class
+    if new_default:
+        default = new_default
+        print("Default    : %s" % default)
+    # Update the list of users
+    users = None
+    if add_users or remove_users:
+        users = [u.email for u in quota.list_users]
+        if add_users:
+            galaxy_users = [u.email for u in get_users(gi)]
+            for user in add_users:
+                # Check that user exists
+                if user not in galaxy_users:
+                    logger.fatal("%s: user doesn't exist" % user)
+                    return 1
+                # Only add users that aren't already associated
+                # with the quota
+                if user not in users:
+                    users.append(user)
+        if remove_users:
+            for user in remove_users:
+                users = [u for u in users if u != user]
+    # Update list of groups
+    groups = None
+    if add_groups or remove_groups:
+        groups = [g.name for g in quota.list_groups]
+        if add_groups:
+            galaxy_groups = [g.name for g in get_groups(gi)]
+            for group in add_groups:
+                # Check that group exists
+                if group not in galaxy_groups:
+                    logger.fatal("%s: group doesn't exist" % group)
+                    return 1
+                # Only add groups that aren't already associated
+                # with the quota
+                if group not in groups:
+                    groups.append(group)
+        if remove_groups:
+            for group in remove_groups:
+                groups = [g for g in groups if g != group]
+    try:
+        quota_client = galaxy.quotas.QuotaClient(gi)
+        result = quota_client.update_quota(quota.id,
+                                           name=name,
+                                           description=description,
+                                           amount=amount,
+                                           operation=operation,
+                                           default=default,
+                                           in_users=users,
+                                           in_groups=groups)
+        print("%s" % result)
+        return 0
+    except galaxy.client.ConnectionError as ex:
+        logger.fatal("Failed to update quota:")
         logger.fatal(ex)
         return 1
