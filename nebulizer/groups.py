@@ -55,3 +55,25 @@ class Group(object):
                 setattr(self,attr,group_data[attr])
             except AttributeError:
                 pass
+
+# Functions
+
+def get_groups(gi):
+    """
+    Return list of groups in a Galaxy instance
+
+    Arguments:
+      gi (bioblend.galaxy.GalaxyInstance): Galaxy instance
+
+    Returns:
+      list: list of Group objects.
+
+    """
+    groups = []
+    group_client = galaxy.groups.GroupsClient(gi)
+    # Get (undeleted) groups
+    for group_data in group_client.get_groups():
+        group = Group(user_data)
+        group.update(group_client.show_group(group.id))
+        groups.append(group)
+    return groups
