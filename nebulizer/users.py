@@ -76,6 +76,118 @@ class User:
             except AttributeError:
                 pass
 
+    @property
+    def display_status(self):
+        """
+        Return status based on the user data
+
+        Status will be returned as one of:
+
+        - active
+        - deleted
+        - purged
+
+        or an empty string, depending on the `purged`,
+        `deleted` and `active` flag.
+        """
+        if self.purged:
+            return 'purged'
+        elif self.deleted:
+            return 'deleted'
+        elif self.active:
+            return 'active'
+        else:
+            return ''
+
+    @property
+    def display_quota_percent(self):
+        """
+        Return quota percentage for display
+
+        Percentage will be 'n/a' for unlimited
+        quotas, or a value with a percentage
+        symbol for real quotas.
+        """
+        if self.quota == 'unlimited':
+            return 'n/a'
+        elif self.quota_percent:
+            return "%s%%" % self.quota_percent
+        else:
+            return "0%"
+
+    def sort_key(self,*keys):
+        """
+        Return 'sort key' based on specified keys
+
+        Given one or more keys, returns a tuple
+        with the values for each of those keys
+        for this user (in the specified order),
+        which can then be used in
+        sorting operations.
+
+        Valid keys are:
+
+        - email (normalised email address)
+        - disk_usage (amount of disk space used)
+        - quota (total quota allowance)
+        - quota_usage (percentage of quota used)
+
+        """
+        keys = list(keys)
+        if 'email' not in keys:
+            keys.append('email')
+        sort_key = []
+        for key in keys:
+            if key == 'email':
+                # Normalised email address
+                sort_key.append(
+                    self.email.lower()
+                    if not (self.purged and '@' not in self.email) else '')
+            elif key == 'disk_usage':
+                # Disk usage (high to low)
+                sort_key.append(-self.total_disk_usage)
+            elif key == 'quota':
+                # Quota allowance (high to low)
+                if self.quota:
+                    # Quota is defined, convert from 'nice'
+                    # format to a float
+                    if self.quota.endswith('KB'):
+                        quota = float(self.quota[:-2])*1024
+                    elif self.quota.endswith('GB'):
+                        quota = float(self.quota[:-2])*(1024**2)
+                    elif self.quota.endswith('TB'):
+                        quota = float(self.quota[:-2])*(1024**3)
+                    elif self.quota == 'unlimited':
+                        # Special case: try and make 'unlimited'
+                        # bigger than any other value
+                        quota = 1024.0**6
+                    else:
+                        # Assume it's bytes
+                        quota = float(self.quota)
+                else:
+                    # No quota defined so set to zero
+                    quota = 0.0
+                sort_key.append(-quota)
+            elif key == 'quota_usage':
+                # Percentage of quota used (high to low)
+                if self.quota_percent:
+                    # Quota percentage is defined
+                    if self.quota == 'unlimited':
+                        # Special case: set 'unlimited' to
+                        # zero
+                        quota_usage = 0.0
+                    else:
+                        # Use as-is
+                        quota_usage = -self.quota_percent
+                else:
+                    # No quota percentage defined, so
+                    # set to zero
+                    quota_usage = 0.0
+                sort_key.append(quota_usage)
+            else:
+                raise KeyError("Unknown sort key: '%s'" % key)
+        return tuple(sort_key)
+
 # Functions
 
 def get_users(gi,status='active'):
@@ -149,8 +261,8 @@ def get_user_id(gi,email):
     except AttributeError:
         return None
 
-def list_users(gi,name=None,long_listing_format=False,status=False,
-               show_id=False):
+def list_users(gi,name=None,long_listing_format=False,status='active',
+               sort_by=None,show_id=False):
     """
     List users in Galaxy instance
 
@@ -162,6 +274,8 @@ def list_users(gi,name=None,long_listing_format=False,status=False,
       status (str): list users with matching status: 'active'
         (default), 'deleted', or 'purged'. Use 'all' to list
         all accounts regardless of status
+      sort_by (list): list of fields to sort users into order
+        on this field (default sorting is done on user email)
       show_id (bool): if True then report user's Galaxy ID
 
     """
@@ -185,9 +299,11 @@ def list_users(gi,name=None,long_listing_format=False,status=False,
         users = [u for u in users if
                  (fnmatch.fnmatch(u.username.lower(),name) or
                   fnmatch.fnmatch(u.email.lower(),name))]
+    # Sort into order
+    if not sort_by:
+        sort_by = ()
+    users.sort(key=lambda u: u.sort_key(*sort_by))
     # Report users
-    users.sort(key=lambda u: u.email.lower()
-               if not (u.purged and '@' not in u.email) else '')
     output = Reporter()
     for user in users:
         # Collect data items to report
@@ -200,24 +316,14 @@ def list_users(gi,name=None,long_listing_format=False,status=False,
             # - disk usage
             # - quota size (if quotas enabled)
             # - % quota used (if quotas enabled)
-            # - if account is active
+            # - if account status ('active','deleted' etc)
             # - if user is an admin
             display_items.append(user.nice_total_disk_usage)
             if enable_quotas:
                 display_items.extend([user.quota,
-                                      "%s%%" % user.quota_percent
-                                      if user.quota_percent
-                                      else "0%"])
-            if user.purged:
-                status = 'purged'
-            elif user.deleted:
-                status = 'deleted'
-            elif user.active:
-                status = 'active'
-            else:
-                status = ''
-            display_items.append(status)
-            display_items.append('admin' if user.is_admin else '')
+                                      user.display_quota_percent])
+            display_items.extend([user.display_status,
+                                  'admin' if user.is_admin else ''])
         if show_id:
             # Also report the internal user ID
             display_items.append(user.id)

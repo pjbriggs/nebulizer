@@ -19,6 +19,10 @@ instance:
   ``active`` (the default), ``deleted`` (only list deleted
   users which haven't been purged) or ``all`` (list all active,
   deleted, and purged users).
+* ``--sort``: specify one or more fields to sort the output on;
+  valid fields are ``email``, ``disk_usage``, ``quota``,
+  ``quota_usage``. Multiple fields should be separated by commas
+  (e.g. ``--sort=quota,disk_usage``).
 * ``--name``: filter list on user email (can include glob-style
   wildcards e.g. ``--name="*bloggs*"``).
 
