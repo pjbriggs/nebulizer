@@ -32,6 +32,7 @@ setup(
     test_suite = 'nose.collector',
     tests_require = ['nose'],
     platforms="Posix; MacOS X; Windows",
+    python_requires=">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*, !=3.4.*, !=3.5.*",
     classifiers=[
         "Development Status :: 4 - Beta",
         "Environment :: Console",
