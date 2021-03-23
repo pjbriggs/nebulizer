@@ -17,7 +17,7 @@ logger = logging.getLogger(__name__)
 
 # Classes
 
-class User(object):
+class User:
     """
     Class wrapping extraction of user data
 
@@ -241,7 +241,7 @@ def get_user(gi,email):
             if fnmatch.fnmatch(u.email,email):
                 return u
     except ConnectionError as ex:
-        logger.warning("Failed to get user list: %s (%s)" % (ex.body,
+        logger.warning("Failed to get user list: {} ({})".format(ex.body,
                                                              ex.status_code))
     return None
 
@@ -283,7 +283,7 @@ def list_users(gi,name=None,long_listing_format=False,status='active',
     try:
         users = get_users(gi,status=status)
     except ConnectionError as ex:
-        logger.fatal("Failed to get user list: %s (%s)" % (ex.body,
+        logger.fatal("Failed to get user list: {} ({})".format(ex.body,
                                                            ex.status_code))
         return 1
     # Get Galaxy config data to determine if quotas are enabled
@@ -492,7 +492,7 @@ def create_batch_of_users(gi,tsv,only_check=False,mako_template=None):
     # Open file
     print("Reading data from file '%s'" % tsv)
     users = {}
-    for line in open(tsv,'r'):
+    for line in open(tsv):
         # Skip blank or comment lines
         if line.startswith('#') or not line.strip():
             continue
@@ -520,7 +520,7 @@ def create_batch_of_users(gi,tsv,only_check=False,mako_template=None):
             name = get_username_from_login(email)
         if check_new_user_info(gi,email,name):
             users[email] = { 'name': name, 'passwd': passwd }
-            print("%s\t%s\t%s" % (email,'*****',name))
+            print("{}\t{}\t{}".format(email,'*****',name))
     if only_check:
         return 0
     # Make the accounts
@@ -563,10 +563,10 @@ def delete_user(gi,email,purge=False,no_confirm=False):
         return 0
     # Prompt user for confirmation
     if not user.deleted:
-        prompt = "Delete %suser '%s'?" % ("& purge " if purge else '',
+        prompt = "Delete {}user '{}'?".format("& purge " if purge else '',
                                           email)
     else:
-        prompt = "Purge deleted user '%s'?" % email
+        prompt = "Purge deleted user '{}'?".format(email)
     if no_confirm or prompt_for_confirmation(prompt,default="n"):
         try:
             if not user.deleted:
@@ -575,11 +575,11 @@ def delete_user(gi,email,purge=False,no_confirm=False):
             if purge:
                 # Can only purge a deleted user
                 galaxy.users.UserClient(gi).delete_user(user.id,purge=True)
-            print("Deleted %suser '%s'" % ("& purged " if purge else '',
+            print("Deleted {}user '{}'".format("& purged " if purge else '',
                                            email))
             return 0
         except ConnectionError as ex:
-            logger.fatal("Failed to delete user: %s (%s)" % (ex.body,
+            logger.fatal("Failed to delete user: {} ({})".format(ex.body,
                                                              ex.status_code))
             return 1
     else:

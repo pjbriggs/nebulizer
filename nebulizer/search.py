@@ -132,13 +132,13 @@ def search_toolshed(tool_shed,query_string,gi=None,
             # Print details
             if not long_listing_format:
                 display_items = [owner,name,
-                                 "%s:%s" % (version,changeset),
+                                 f"{version}:{changeset}",
                                  status]
                 output.append(display_items)
             else:
                 output.append(("Name",name))
                 output.append(("Owner",owner))
-                output.append(("Revision","%s:%s" % (version,changeset)))
+                output.append(("Revision",f"{version}:{changeset}"))
                 output.append(("Description",description))
                 output.append(("URL",url))
                 if gi is not None:

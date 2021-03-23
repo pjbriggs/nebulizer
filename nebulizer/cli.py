@@ -118,7 +118,7 @@ def fetch_new_api_key(galaxy_url,email,password=None,verify=True):
                              verify_ssl=verify)
     return users.get_user_api_key(gi,username=email)
 
-class Context(object):
+class Context:
     """
     Provide context for nebulizer command
     """
@@ -895,7 +895,7 @@ def update_tool(context,galaxy,repository,
     except Exception as ex:
         logger.fatal(ex)
         sys.exit(1)
-    print("Updating %s/%s from %s" % (owner,repository,toolshed))
+    print(f"Updating {owner}/{repository} from {toolshed}")
     if revision is not None:
         logger.fatal("A revision ('%s') was also supplied "
                      "but this is not valid for tool update "
@@ -957,7 +957,7 @@ def uninstall_tool(context,galaxy,repository,remove_from_disk,
     except Exception as ex:
         logger.fatal(ex)
         sys.exit(1)
-    print("Uninstalling %s/%s%s from %s" % (repository,
+    print("Uninstalling {}/{}{} from {}".format(repository,
                                             owner,
                                             '/%s' % revision
                                             if revision is not None

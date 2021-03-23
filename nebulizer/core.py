@@ -13,7 +13,7 @@ from bioblend.galaxy.client import ConnectionError
 
 logger = logging.getLogger(__name__)
 
-class Credentials(object):
+class Credentials:
     """Class for managing credentials for Galaxy instances
 
     Credentials for different galaxy instances can be
@@ -53,7 +53,7 @@ class Credentials(object):
         """
         key_names = []
         if os.path.exists(self._key_file):
-            with open(self._key_file,'r') as fp:
+            with open(self._key_file) as fp:
                 for line in fp:
                     if line.startswith('#') or not line.strip():
                         continue
@@ -78,7 +78,7 @@ class Credentials(object):
             logger.warning("Empty API key")
             return False
         with open(self._key_file,'a') as fp:
-            fp.write("%s\t%s\t%s\n" % (name,url,api_key))
+            fp.write(f"{name}\t{url}\t{api_key}\n")
         return True
 
     def remove_key(self,name):
@@ -158,7 +158,7 @@ class Credentials(object):
           Tuple: consisting of (GALAXY_URL,API_KEY)
         """
         if os.path.exists(self._key_file):
-            with open(self._key_file,'r') as fp:
+            with open(self._key_file) as fp:
                 for line in fp:
                     if line.startswith('#') or not line.strip():
                         continue
@@ -177,7 +177,7 @@ class Credentials(object):
         except KeyError:
             return False
 
-class Reporter(object):
+class Reporter:
     """
     Class for reporting column data
 
@@ -251,7 +251,7 @@ class Reporter(object):
         if not prefix:
             prefix = ''
         for line in output:
-            out_line = "%s%s" % (prefix,delimiter.join(line))
+            out_line = "{}{}".format(prefix,delimiter.join(line))
             if rstrip:
                 out_line = out_line.rstrip()
             print(out_line)
