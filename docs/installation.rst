@@ -29,8 +29,7 @@ with ``pip``, use the  following ``pip install`` idiom instead:
 
     $ pip install -U git+git://github.com/pjbriggs/nebulizer.git@devel
 
-Nebulizer should work with both Python 2.7 and recent Python 3
-versions.
+Nebulizer should work with recent Python 3 versions.
 
 Conda
 =====
@@ -47,4 +46,4 @@ Note that the version available via ``bioconda`` may lag the
 most recent version available via ``pip``.
 
 .. _pip: https://pip.pypa.io/
-.. _Conda: http://conda.pydata.org/docs/
+.. _Conda: https://conda.io/

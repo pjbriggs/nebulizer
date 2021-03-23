@@ -21,6 +21,11 @@ from . import users
 from . import libraries
 from . import tools
 from . import search
+from .quotas import handle_quota_spec
+from .quotas import list_quotas
+from .quotas import create_quota
+from .quotas import update_quota
+from .quotas import delete_quota
 
 # Initialise logging
 logger = logging.getLogger(__name__)
@@ -113,7 +118,7 @@ def fetch_new_api_key(galaxy_url,email,password=None,verify=True):
                              verify_ssl=verify)
     return users.get_user_api_key(gi,username=email)
 
-class Context(object):
+class Context:
     """
     Provide context for nebulizer command
     """
@@ -124,7 +129,7 @@ class Context(object):
         self.no_verify = False
         self.debug = False
 
-    def galaxy_instance(self,alias):
+    def galaxy_instance(self,alias,validate_key=True):
         """
         Return Galaxy instance based on context
 
@@ -137,6 +142,7 @@ class Context(object):
             prompt="Password for %s: " % alias)
         gi = get_galaxy_instance(alias,api_key=self.api_key,
                                  email=email,password=password,
+                                 validate_key=validate_key,
                                  verify_ssl=(not self.no_verify))
         return gi
 
@@ -307,14 +313,25 @@ def remove_key(context,alias):
 @click.option("--name",
               help="list only users with matching email or user "
               "name. Can include glob-style wild-cards.")
+@click.option("--status",
+              type=click.Choice(['active','deleted','purged','all']),
+              default='active',
+              help="list users with the specified status; can be "
+              "one of 'active', 'deleted', 'purged', 'all' "
+              "(default: 'active')")
 @click.option("--long","-l","long_listing",is_flag=True,
               help="use a long listing format that includes ids,"
               " disk usage and admin status.")
+@click.option("--sort",
+              default='email',
+              help="comma-separated list of fields to output on; "
+              "valid fields are 'email', 'disk_usage', 'quota', "
+              "'quota_usage' (default: 'email').")
 @click.option("--show_id",is_flag=True,
               help="include internal Galaxy user ID.")
 @click.argument("galaxy")
 @pass_context
-def list_users(context,galaxy,name,long_listing,show_id):
+def list_users(context,galaxy,name,status,long_listing,sort,show_id):
     """
     List users in Galaxy instance.
 
@@ -325,9 +342,17 @@ def list_users(context,galaxy,name,long_listing,show_id):
     if gi is None:
         logger.critical("Failed to connect to Galaxy instance")
         sys.exit(1)
+    # Turn sort keys into a list
+    sort_keys = sort.split(',')
+    for key in sort_keys:
+        if key not in ('email','disk_usage','quota','quota_usage'):
+            logger.fatal("'%s': invalid sort key" % key)
+            sys.exit(1)
     # List users
     sys.exit(users.list_users(gi,name=name,
                               long_listing_format=long_listing,
+                              sort_by=sort_keys,
+                              status=status,
                               show_id=show_id))
 
 @nebulizer.command()
@@ -828,7 +853,9 @@ def install_repositories(context,galaxy,file,
               "complete.")
 @click.option('--check-toolshed',is_flag=True,
               help="check installed revisions directly against those "
-              "available in the toolshed")
+              "available in the toolshed.")
+@click.option('-y','--yes',is_flag=True,
+              help="don't ask for confirmation of updates.")
 @click.argument("galaxy")
 @click.argument("repository",nargs=-1)
 @pass_context
@@ -836,7 +863,8 @@ def update_tool(context,galaxy,repository,
                 install_tool_dependencies,
                 install_repository_dependencies,
                 install_resolver_dependencies,
-                timeout,no_wait,check_toolshed):
+                timeout,no_wait,check_toolshed,
+                yes):
     """
     Update tool installed from toolshed.
 
@@ -852,6 +880,9 @@ def update_tool(context,galaxy,repository,
     - [ TOOLSHED ] OWNER TOOLNAME e.g.
     https://toolshed.g2.bx.psu.edu devteam fastqc
 
+    OWNER and TOOLNAME can include glob-style wildcards;
+    use '*/*' to update all tools.
+
     The tool must already be present in GALAXY and a newer
     changeset revision must be available. The update will
     be installed into the same tool panel section as the
@@ -864,7 +895,7 @@ def update_tool(context,galaxy,repository,
     except Exception as ex:
         logger.fatal(ex)
         sys.exit(1)
-    print("Updating %s/%s from %s" % (repository,owner,toolshed))
+    print(f"Updating {owner}/{repository} from {toolshed}")
     if revision is not None:
         logger.fatal("A revision ('%s') was also supplied "
                      "but this is not valid for tool update "
@@ -884,7 +915,8 @@ def update_tool(context,galaxy,repository,
                                install_repository_dependencies=
                                (install_repository_dependencies== 'yes'),
                                install_resolver_dependencies=
-                               (install_resolver_dependencies== 'yes')))
+                               (install_resolver_dependencies== 'yes'),
+                               no_confirm=yes))
 
 @nebulizer.command()
 @click.option('--remove_from_disk',is_flag=True,
@@ -925,7 +957,7 @@ def uninstall_tool(context,galaxy,repository,remove_from_disk,
     except Exception as ex:
         logger.fatal(ex)
         sys.exit(1)
-    print("Uninstalling %s/%s%s from %s" % (repository,
+    print("Uninstalling {}/{}{} from {}".format(repository,
                                             owner,
                                             '/%s' % revision
                                             if revision is not None
@@ -1123,6 +1155,202 @@ def add_library_datasets(context,galaxy,dest,file,file_type,
                                    dbkey=dbkey)
 
 @nebulizer.command()
+@click.option("--name",
+              help="list only quotas with matching name. Can "
+              "include glob-style wild-cards.")
+@click.option("--status",
+              type=click.Choice(['active','deleted','all']),
+              default='active',
+              help="list quotas with the specified status; can be "
+              "one of 'active', 'deleted', 'all' (default: 'active')")
+@click.option("--long","-l","long_listing",is_flag=True,
+              help="use a long listing format that includes lists "
+              "of associated users and groups.")
+@click.argument("galaxy")
+@pass_context
+def quotas(context,galaxy,name,status,long_listing):
+    """
+    List quotas in Galaxy instance.
+
+    Prints details of quotas in GALAXY instance.
+    """
+    # Get a Galaxy instance
+    gi = context.galaxy_instance(galaxy)
+    if gi is None:
+        logger.critical("Failed to connect to Galaxy instance")
+        sys.exit(1)
+    # List users
+    sys.exit(list_quotas(gi,name=name,
+                         status=status,
+                         long_listing_format=long_listing))
+
+@nebulizer.command()
+@click.option('-d','--description',
+              help="description of the new quota (will be "
+              "the same as the NAME if not supplied).")
+@click.option('--default_for',
+              help="set the quota as the default for either "
+              "'registered' or 'unregistered' users.")
+@click.option('-u','--users',metavar="EMAIL[,EMAIL...]",
+              help="list of user emails to associate with the "
+              "quota, separated by commas.")
+@click.option('-g','--groups',metavar="GROUP[,GROUP...]",
+              help="list of group names to associate with the "
+              "quota, separated by commas.")
+@click.argument("galaxy")
+@click.argument("name")
+@click.argument("quota")
+@pass_context
+def quotaadd(context,galaxy,name,quota,description=None,
+             default_for=None,users=None,groups=None):
+    """
+    Create new quota.
+
+    Makes a new quota called NAME in GALAXY. A quota with
+    the same name must not already exist.
+
+    QUOTA specifies the type of quota, and must be of the
+    form
+
+    [OPERATION][AMOUNT]
+
+    where OPERATION is any valid operation ('=','+','-';
+    defaults to '=' if not specified) and AMOUNT is any
+    valid amount (e.g. '10000MB', '99 gb', '0.2T',
+    'unlimited').
+
+    If DESCRIPTION is not supplied then it will be the
+    same as the NAME.
+
+    If supplied then DEFAULT_FOR must be one of
+    'registered' or 'unregistered', in which case the new
+    quota will become the default for that class of user
+    (overriding any default which was previously defined).
+
+    Users and groups can also be associated with the new
+    quota with the -u/--users and -g/--groups options.
+    """
+    # Get a Galaxy instance
+    gi = context.galaxy_instance(galaxy)
+    if gi is None:
+        logger.critical("Failed to connect to Galaxy instance")
+        sys.exit(1)
+    # Deal with quota specification
+    operation,amount = handle_quota_spec(quota)
+    # Deal with description
+    if description is None:
+        description = name
+    # Deal with user and groups
+    if users:
+        users = users.split(',')
+    if groups:
+        groups = groups.split(',')
+    # Create new quota
+    sys.exit(create_quota(gi,name,description,
+                          amount,operation,
+                          default=default_for,
+                          users=users,
+                          groups=groups))
+
+@nebulizer.command()
+@click.option('-n','--name',metavar="NEW_NAME",
+              help="new name for the quota.")
+@click.option('-d','--description',metavar="NEW_DESCRIPTION",
+              help="new description for the quota.")
+@click.option('-q','--quota-size',metavar="NEW_QUOTA_SIZE",
+              help="new quota size in the form "
+              "'[OPERATION][AMOUNT]' (e.g. '=0.2T').")
+@click.option('--default_for',metavar="registered|unregistered",
+              help="set the quota as the default for either "
+              "'registered' or 'unregistered' users.")
+@click.option('-a','--add-users',metavar="EMAIL[,EMAIL...]",
+              help="list of user emails to associate with the "
+              "quota, separated by commas.")
+@click.option('-r','--remove-users',metavar="EMAIL[,EMAIL...]",
+              help="list of user emails to disassociate from "
+              "the quota, separated by commas.")
+@click.option('-A','--add-groups',metavar="GROUP[,GROUP...]",
+              help="list of group names to associate with the "
+              "quota, separated by commas.")
+@click.option('-R','--remove-groups',metavar="GROUP[,GROUP...]",
+              help="list of group names to disassociate from "
+              "the quota, separated by commas.")
+@click.option('-u','--undelete',is_flag=True,
+              help="restores a previously deleted quota")
+@click.argument("galaxy")
+@click.argument("quota")
+@pass_context
+def quotamod(context,galaxy,quota,name=None,description=None,
+             quota_size=None,default_for=None,add_users=None,
+             remove_users=None,add_groups=None,remove_groups=None,
+             undelete=False):
+    """
+    Modify an existing quota.
+
+    Updates the definition of the existing QUOTA in GALAXY.
+
+    The command line arguments can be used to modify any of
+    the quota's attributes, to set a new name, description
+    or quota size and type.
+
+    Users and groups can also be associated with or
+    disassociated from the quota, and deleted quotas can
+    be restored and modified.
+    """
+    # Get a Galaxy instance
+    gi = context.galaxy_instance(galaxy)
+    if gi is None:
+        logger.critical("Failed to connect to Galaxy instance")
+        sys.exit(1)
+    # Deal with quota specification
+    if quota_size:
+        operation,amount = handle_quota_spec(quota_size)
+    else:
+        operation = None
+        amount = None
+    # Deal with user and groups
+    if add_users:
+        add_users = add_users.split(',')
+    if remove_users:
+        remove_users = remove_users.split(',')
+    if add_groups:
+        add_groups = add_groups.split(',')
+    if remove_groups:
+        remove_groups = remove_groups.split(',')
+    # Create new quota
+    sys.exit(update_quota(gi,quota,
+                          new_name=name,
+                          new_description=description,
+                          new_amount=amount,
+                          new_operation=operation,
+                          new_default=default_for,
+                          add_users=add_users,
+                          remove_users=remove_users,
+                          add_groups=add_groups,
+                          remove_groups=remove_groups,
+                          undelete=undelete))
+
+@nebulizer.command()
+@click.argument("galaxy")
+@click.argument("quota")
+@click.option('-y','--yes',is_flag=True,
+              help="don't ask for confirmation of deletions.")
+@pass_context
+def quotadel(context,galaxy,quota,yes):
+    """
+    Delete quota.
+
+    Deletes QUOTA from GALAXY.
+    """
+    # Get a Galaxy instance
+    gi = context.galaxy_instance(galaxy)
+    if gi is None:
+        logger.critical("Failed to connect to Galaxy instance")
+        sys.exit(1)
+    # Delete quota
+    sys.exit(delete_quota(gi,quota,no_confirm=yes))
+
+@nebulizer.command()
 @click.argument("galaxy")
 @click.option('--name',
               help="only show configuration items that match "
@@ -1136,7 +1364,7 @@ def config(context,galaxy,name=None):
     GALAXY. Use --name to filter which items are reported.
     """
     # Get a Galaxy instance
-    gi = context.galaxy_instance(galaxy)
+    gi = context.galaxy_instance(galaxy,validate_key=False)
     if gi is None:
         logger.critical("Failed to connect to Galaxy instance")
         sys.exit(1)
@@ -1181,7 +1409,7 @@ def ping(context,galaxy,count,interval=5,timeout=None):
     while True:
         try:
             # Get a Galaxy instance
-            gi = context.galaxy_instance(galaxy_url)
+            gi = context.galaxy_instance(galaxy_url,validate_key=False)
             if gi is None:
                 click.echo("%s: failed to connect" % galaxy_url)
                 status_code = 1

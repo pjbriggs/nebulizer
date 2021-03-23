@@ -13,25 +13,29 @@ class TestUser(unittest.TestCase):
     """
     def test_load_user_data_minimal(self):
         # Data returned from galaxy.users.UserClient(gi).get_users()
-        user_data = { u'username': u'bloggs',
-                      u'model_class': u'User',
-                      u'id': u'd6fbfd317568bb93',
-                      u'email': u'joe.bloggs@galaxy.org' }
+        user_data = { 'username': 'bloggs',
+                      'model_class': 'User',
+                      'id': 'd6fbfd317568bb93',
+                      'email': 'joe.bloggs@galaxy.org' }
         user = User(user_data)
         self.assertEqual(user.username,'bloggs')
         self.assertEqual(user.email,'joe.bloggs@galaxy.org')
         self.assertEqual(user.id,'d6fbfd317568bb93')
+        self.assertEqual(user.display_status,'')
     def test_load_user_data_full(self):
         # Data returned from galaxy.users.UserClient(gi).show_user()
-        user_data = { u'username': u'bloggs',
-                      u'quota_percent': 4,
-                      u'total_disk_usage': 13181590307.0,
-                      u'nice_total_disk_usage': u'12.3 GB',
-                      u'id': u'd6fbfd317568bb93',
-                      u'is_admin': True,
-                      u'tags_used': [],
-                      u'model_class': u'User',
-                      u'email': u'joe.bloggs@galaxy.org' }
+        user_data = { 'username': 'bloggs',
+                      'quota_percent': 4,
+                      'total_disk_usage': 13181590307.0,
+                      'nice_total_disk_usage': '12.3 GB',
+                      'id': 'd6fbfd317568bb93',
+                      'is_admin': True,
+                      'tags_used': [],
+                      'model_class': 'User',
+                      'email': 'joe.bloggs@galaxy.org',
+                      'active': True,
+                      'deleted': False,
+                      'purged': False, }
         user = User(user_data)
         self.assertEqual(user.username,'bloggs')
         self.assertEqual(user.email,'joe.bloggs@galaxy.org')
@@ -40,6 +44,7 @@ class TestUser(unittest.TestCase):
         self.assertEqual(user.total_disk_usage,13181590307.0)
         self.assertTrue(user.is_admin)
         self.assertEqual(user.nice_total_disk_usage,'12.3 GB')
+        self.assertEqual(user.display_status,'active')
 
 class TestCheckUsernameFormat(unittest.TestCase):
     def test_valid_username(self):

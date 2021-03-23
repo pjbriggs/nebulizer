@@ -27,7 +27,7 @@ TOOL_UNINSTALL_FAIL = 1
 
 # Classes
 
-class Tool(object):
+class Tool:
     """
     Class wrapping extraction of tool data
 
@@ -118,14 +118,14 @@ class Tool(object):
             tool_shed = '/'.join(ele[:-2])
             owner = ele[-2]
             repo = ele[-1]
-            search_string = "/repos/%s/%s/" % (owner,repo)
+            search_string = f"/repos/{owner}/{repo}/"
             i = self.config_file.index(search_string) + len(search_string)
             revision = self.config_file[i:].split('/')[0]
             return revision
         except (AttributeError,ValueError):
             return None
 
-class RepositoryRevision(object):
+class RepositoryRevision:
     """
     Class wrapping extraction of toolshed repository version data
 
@@ -264,7 +264,7 @@ class RepositoryRevision(object):
         return ':'.join((self.revision_number,
                          self.changeset_revision))
 
-class Repository(object):
+class Repository:
     """
     Class wrapping extraction of toolshed repository data
 
@@ -403,7 +403,7 @@ class Repository(object):
                          self.owner,
                          self.name))
 
-class ToolPanelSection(object):
+class ToolPanelSection:
     """
     Class wrapping extraction of tool panel sections
 
@@ -459,7 +459,7 @@ class ToolPanelSection(object):
         """
         return (self.model_class == "ToolSectionLabel")
 
-class ToolPanel(object):
+class ToolPanel:
     """
     Class wrapping extraction of tool panel
 
@@ -990,7 +990,7 @@ def list_installed_repositories(gi,name=None,
         for r in repos:
             # Print details
             repo,revision,tools = r
-            output.append(('%s %s' % (revision.status_indicator,
+            output.append(('{} {}'.format(revision.status_indicator,
                                       repo.name),
                            repo.tool_shed,
                            repo.owner,
@@ -1026,7 +1026,8 @@ def list_tool_panel(gi,name=None,list_tools=False):
     if name:
         name = name.lower()
         sections = [s for s in tool_panel.sections
-                    if fnmatch.fnmatch(s.name.lower(),name)]
+                    if s.name is not None and
+                    fnmatch.fnmatch(s.name.lower(),name)]
     else:
         sections = tool_panel.sections
     # Get list of tools, if required
@@ -1118,7 +1119,7 @@ def install_tool(gi,tool_shed,name,owner,revision=None,
     install_status = tool_install_status(gi,tool_shed,owner,name,
                                          revision)
     if install_status.startswith("Installed"):
-        print("%s: already installed (status is \"%s\")" % (name,
+        print("{}: already installed (status is \"{}\")".format(name,
                                                             install_status))
         return TOOL_INSTALL_OK
     # Get available revisions
@@ -1141,7 +1142,7 @@ def install_tool(gi,tool_shed,name,owner,revision=None,
     install_status = tool_install_status(gi,tool_shed,owner,name,
                                          revision)
     if install_status.startswith("Installed"):
-        print("%s: already installed (status is \"%s\")" % (name,
+        print("{}: already installed (status is \"{}\")".format(name,
                                                             install_status))
         return TOOL_INSTALL_OK
     # Look up tool panel section
@@ -1182,16 +1183,21 @@ def install_tool(gi,tool_shed,name,owner,revision=None,
             new_tool_panel_section_label=new_tool_panel_section)
     except ConnectionError as connection_error:
         # Handle API error
-        logger.warning("Got error from Galaxy API on attempted install "
-                       "(ignored)")
-        logger.warning("Status code: %s" % connection_error.status_code)
-        logger.warning("Message    : \"%s\"" %
-                       json.loads(connection_error.body)["err_msg"])
+        logger.debug("Got error from Galaxy API on attempted install "
+                     "(ignored)")
+        logger.debug("Status code: %s" % connection_error.status_code)
+        if connection_error.body:
+            try:
+                logger.debug("Message    : \"%s\"" %
+                             json.loads(connection_error.body)["err_msg"])
+            except Exception as ex:
+                # Unable to decode JSON, report and ignore
+                logger.debug("Unable to extract error message: %s" % ex)
     except Exception as ex:
         # Handle general error
-        logger.warning("Error while requesting tool installation "
-                       "(ignored)")
-        logger.warning("Exception: %s" % ex)
+        logger.debug("Error while requesting tool installation "
+                     "(ignored)")
+        logger.debug("Exception: %s" % ex)
     # Monitor installation status
     if not no_wait:
         print("Galaxy connection closed: monitoring installation")
@@ -1201,7 +1207,7 @@ def install_tool(gi,tool_shed,name,owner,revision=None,
         install_status = tool_install_status(gi,tool_shed,owner,
                                              name,revision)
         if install_status.startswith("Installed"):
-            print("%s: installed (status is \"%s\")" % (name,
+            print("{}: installed (status is \"{}\")".format(name,
                                                         install_status))
             return TOOL_INSTALL_OK
         elif install_status.startswith("Installing") or \
@@ -1217,14 +1223,14 @@ def install_tool(gi,tool_shed,name,owner,revision=None,
                 return TOOL_INSTALL_PENDING
             # Monitor the tool installation status
             ntries += 1
-            status_msg = "%s: installing (status is \"%s\")" % (name,
+            status_msg = "{}: installing (status is \"{}\")".format(name,
                                                                 install_status)
             if status_msg != prev_status_msg:
                 print(status_msg)
                 prev_status_msg = status_msg
             time.sleep(poll_interval)
         else:
-            logger.critical("%s: failed (%s)" % (name,install_status))
+            logger.critical(f"{name}: failed ({install_status})")
             return TOOL_INSTALL_FAIL
     # Reaching here means timed out
     logger.critical("%s: timed out waiting for install" % name)
@@ -1235,7 +1241,8 @@ def update_tool(gi,tool_shed,name,owner,
                 install_repository_dependencies=True,
                 install_resolver_dependencies=True,
                 timeout=600,poll_interval=10,
-                no_wait=False,check_tool_shed=False):
+                no_wait=False,check_tool_shed=False,
+                no_confirm=False):
     """
     Update a tool repository in a Galaxy instance
 
@@ -1269,57 +1276,97 @@ def update_tool(gi,tool_shed,name,owner,
         revisions against the tool shed, to determine if
         updates are available for the tool (default is
         False i.e. do not check status against toolshed)
+      no_confirm : if True then don't prompt to confirm the
+        uninstall operation.
     """
     # Locate the existing installation
-    update_repo = None
+    repos = []
     for repo in get_repositories(gi):
         if repo.tool_shed == tool_shed and \
-           repo.name == name and \
-           repo.owner == owner:
-            update_repo = repo
-            break
-    if update_repo is None:
-        logger.critical("%s: unable to find repository to update" %
-                        name)
+           fnmatch.fnmatch(repo.owner,owner) and \
+           fnmatch.fnmatch(repo.name,name):
+            repos.append(repo)
+    if not repos:
+        logger.critical("%s/%s: unable to find repositories to update" %
+                        (owner,name))
         return TOOL_UPDATE_FAIL
-    # Check there is at least one installed revision
-    installed_revisions = [r for r in update_repo.revisions()
-                           if not r.deleted]
-    if not installed_revisions:
-        logger.fatal("%s: no revisions currently installed" % name)
+    # Loop over matching repositories and check for
+    # installed revisions
+    update_repos = []
+    for repo in repos:
+        # Check there is at least one installed revision
+        installed_revisions = [r for r in repo.revisions()
+                               if not r.deleted]
+        if not installed_revisions:
+            logger.debug("%s/%s: no revisions currently installed" %
+                         (repo.owner,repo.name))
+            continue
+        # Find the latest installable revision
+        if check_tool_shed:
+            repo.update_tool_shed_revision_status()
+        if not repo.tool_shed_revisions():
+            logger.debug("%s/%s: no installable revisions found" %
+                         (repo.owner,repo.name))
+            continue
+        # Check there is an update available
+        update_available = True
+        for r in repo.revisions():
+            if not r.deleted and (r.latest_revision and
+                                  not r.tool_shed_has_newer_revision()):
+                logger.debug("%s/%s: version %s already the latest "
+                             "version" %
+                             (repo.owner,repo.name,r.revision_id))
+                update_available = False
+                break
+        # Repository can be updated
+        if update_available:
+            update_repos.append(repo)
+    # Check if there are any tools to update
+    if not update_repos:
+        logger.fatal("%s/%s: no repositories to update" % (owner,name))
         return TOOL_UPDATE_FAIL
-    # Update the toolshed status
-    if check_tool_shed:
-        update_repo.update_tool_shed_revision_status()
-    # Find latest installable revision
-    if not update_repo.tool_shed_revisions():
-        logger.critical("%s: no installable revisions found" % name)
-        return TOOL_UPDATE_FAIL
-    revision = update_repo.tool_shed_revisions()[-1]
-    # Check that there is an update available
-    for r in update_repo.revisions():
-        if not r.deleted and (r.latest_revision and
-                              not r.tool_shed_has_newer_revision()):
-            print("%s: version %s already the latest version" %
-                  (name,r.revision_id))
-            return TOOL_UPDATE_OK
-    # Locate tool panel section for existing tools
-    tool_panel_section = None
-    for tool in get_tools(gi):
-        if tool.tool_repo == update_repo.id:
-            tool_panel_section = tool.panel_section
-            break
-    if tool_panel_section is None:
-        logger.warning("%s: no tool panel section found" % name)
-    #print("Installing update under %s" % tool_panel_section)
-    return install_tool(
-        gi,tool_shed,name,owner,revision,
-        install_tool_dependencies=install_tool_dependencies,
-        install_repository_dependencies=install_repository_dependencies,
-        install_resolver_dependencies=install_resolver_dependencies,
-        tool_panel_section=tool_panel_section,
-        timeout=timeout,poll_interval=poll_interval,
-        no_wait=no_wait)
+    # Report what will be updated and confirm
+    print("The following tool repositories will be updated:\n")
+    for r in update_repos:
+        print("\t%s %s/%s" % (r.tool_shed,r.owner,r.name))
+    print("")
+    if (not no_confirm) and \
+       (not prompt_for_confirmation("Proceed?",default="n")):
+        print("Update cancelled")
+        return TOOL_UPDATE_OK
+    # Loop over repositories and try to update
+    update_status = TOOL_UPDATE_OK
+    for ix,update_repo in enumerate(update_repos):
+        if len(update_repos) > 1:
+            print("[%d/%d]: updating %s/%s" % (ix+1,
+                                               len(update_repos),
+                                               update_repo.owner,
+                                               update_repo.name))
+        #  Get latest revision
+        revision = update_repo.tool_shed_revisions()[-1]
+        # Locate tool panel section for existing tools
+        tool_panel_section = None
+        for tool in get_tools(gi):
+            if tool.tool_repo == update_repo.id:
+                tool_panel_section = tool.panel_section
+                break
+        if tool_panel_section is None:
+            logger.warning("%s/%s: no tool panel section found" %
+                           (update_repo.owner,update_repo.name))
+        #print("Installing update under %s" % tool_panel_section)
+        status = install_tool(
+            gi,update_repo.tool_shed,update_repo.name,
+            update_repo.owner,revision,
+            install_tool_dependencies=install_tool_dependencies,
+            install_repository_dependencies=install_repository_dependencies,
+            install_resolver_dependencies=install_resolver_dependencies,
+            tool_panel_section=tool_panel_section,
+            timeout=timeout,poll_interval=poll_interval,
+            no_wait=no_wait)
+        if status != TOOL_INSTALL_OK:
+            update_status = TOOL_UPDATE_FAIL
+    # Return the final status
+    return update_status
 
 def uninstall_tool(gi,tool_shed,name,owner,revision,
                    remove_from_disk=False,no_confirm=False):
@@ -1348,7 +1395,7 @@ def uninstall_tool(gi,tool_shed,name,owner,revision,
                        and r.name == name
                        and r.owner == owner]
     if not uninstall_repos:
-        logger.fatal("%s/%s: no matching tool installed?" % (owner,name))
+        logger.fatal(f"{owner}/{name}: no matching tool installed?")
         return TOOL_UNINSTALL_FAIL
     elif len(uninstall_repos) > 1:
         logger.fatal("%s/%s: matches multiple installed tools?" %
@@ -1378,7 +1425,7 @@ def uninstall_tool(gi,tool_shed,name,owner,revision,
     # Report and confirm uninstall
     print("\nThe following tools will be uninstalled:\n")
     for r in remove_revisions:
-        print("\t%s %s/%s %s" % (tool_shed,owner,name,r.revision_id))
+        print(f"\t{tool_shed} {owner}/{name} {r.revision_id}")
     print("")
     if (not no_confirm) and \
        (not prompt_for_confirmation("Proceed?",default="n")):
@@ -1388,7 +1435,7 @@ def uninstall_tool(gi,tool_shed,name,owner,revision,
     uninstall_status = TOOL_UNINSTALL_OK
     for revision in remove_revisions:
         try:
-            print("%s/%s: requesting uninstall" % (name,
+            print("{}/{}: requesting uninstall".format(name,
                                                    revision.revision_id))
             tool_shed_client = galaxy.toolshed.ToolShedClient(gi)
             result = tool_shed_client.uninstall_repository_revision(

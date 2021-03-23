@@ -15,6 +15,14 @@ instance:
 * ``-l``: returns extended information for each user (status,
   whether they are an admin user, disk usage and quota size
   and usage).
+* ``--status``: filter list on user status, which can be one of
+  ``active`` (the default), ``deleted`` (only list deleted
+  users which haven't been purged) or ``all`` (list all active,
+  deleted, and purged users).
+* ``--sort``: specify one or more fields to sort the output on;
+  valid fields are ``email``, ``disk_usage``, ``quota``,
+  ``quota_usage``. Multiple fields should be separated by commas
+  (e.g. ``--sort=quota,disk_usage``).
 * ``--name``: filter list on user email (can include glob-style
   wildcards e.g. ``--name="*bloggs*"``).
 
@@ -41,6 +49,20 @@ generated automatically from the email address.
    nebulizer delete_user GALAXY USER@DOMAIN
 
 * ``--purge``: purge the account as well as deleting
+  (or purge an unpurged account which has been previously
+  deleted)
+
+.. note::
+
+   Purging a user account overwrites the email and username
+   for that account with random strings; it also marks the
+   datasets and histories associated with that account as
+   deleted. These data can then be removed from disk by
+   running Galaxy's clean-up scripts.
+
+   For information on the clean-up scripts see the Galaxy
+   documentation at
+   https://galaxyproject.org/admin/config/performance/purge-histories-and-datasets/
 
 Creating batches of users from a template name
 ----------------------------------------------

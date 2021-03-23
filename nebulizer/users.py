@@ -17,7 +17,7 @@ logger = logging.getLogger(__name__)
 
 # Classes
 
-class User(object):
+class User:
     """
     Class wrapping extraction of user data
 
@@ -76,14 +76,128 @@ class User(object):
             except AttributeError:
                 pass
 
+    @property
+    def display_status(self):
+        """
+        Return status based on the user data
+
+        Status will be returned as one of:
+
+        - active
+        - deleted
+        - purged
+
+        or an empty string, depending on the `purged`,
+        `deleted` and `active` flag.
+        """
+        if self.purged:
+            return 'purged'
+        elif self.deleted:
+            return 'deleted'
+        elif self.active:
+            return 'active'
+        else:
+            return ''
+
+    @property
+    def display_quota_percent(self):
+        """
+        Return quota percentage for display
+
+        Percentage will be 'n/a' for unlimited
+        quotas, or a value with a percentage
+        symbol for real quotas.
+        """
+        if self.quota == 'unlimited':
+            return 'n/a'
+        elif self.quota_percent:
+            return "%s%%" % self.quota_percent
+        else:
+            return "0%"
+
+    def sort_key(self,*keys):
+        """
+        Return 'sort key' based on specified keys
+
+        Given one or more keys, returns a tuple
+        with the values for each of those keys
+        for this user (in the specified order),
+        which can then be used in
+        sorting operations.
+
+        Valid keys are:
+
+        - email (normalised email address)
+        - disk_usage (amount of disk space used)
+        - quota (total quota allowance)
+        - quota_usage (percentage of quota used)
+
+        """
+        keys = list(keys)
+        if 'email' not in keys:
+            keys.append('email')
+        sort_key = []
+        for key in keys:
+            if key == 'email':
+                # Normalised email address
+                sort_key.append(
+                    self.email.lower()
+                    if not (self.purged and '@' not in self.email) else '')
+            elif key == 'disk_usage':
+                # Disk usage (high to low)
+                sort_key.append(-self.total_disk_usage)
+            elif key == 'quota':
+                # Quota allowance (high to low)
+                if self.quota:
+                    # Quota is defined, convert from 'nice'
+                    # format to a float
+                    if self.quota.endswith('KB'):
+                        quota = float(self.quota[:-2])*1024
+                    elif self.quota.endswith('GB'):
+                        quota = float(self.quota[:-2])*(1024**2)
+                    elif self.quota.endswith('TB'):
+                        quota = float(self.quota[:-2])*(1024**3)
+                    elif self.quota == 'unlimited':
+                        # Special case: try and make 'unlimited'
+                        # bigger than any other value
+                        quota = 1024.0**6
+                    else:
+                        # Assume it's bytes
+                        quota = float(self.quota)
+                else:
+                    # No quota defined so set to zero
+                    quota = 0.0
+                sort_key.append(-quota)
+            elif key == 'quota_usage':
+                # Percentage of quota used (high to low)
+                if self.quota_percent:
+                    # Quota percentage is defined
+                    if self.quota == 'unlimited':
+                        # Special case: set 'unlimited' to
+                        # zero
+                        quota_usage = 0.0
+                    else:
+                        # Use as-is
+                        quota_usage = -self.quota_percent
+                else:
+                    # No quota percentage defined, so
+                    # set to zero
+                    quota_usage = 0.0
+                sort_key.append(quota_usage)
+            else:
+                raise KeyError("Unknown sort key: '%s'" % key)
+        return tuple(sort_key)
+
 # Functions
 
-def get_users(gi):
+def get_users(gi,status='active'):
     """
     Return list of users in a Galaxy instance
 
     Arguments:
       gi (bioblend.galaxy.GalaxyInstance): Galaxy instance
+      status (bool): only return users with the matching
+        status ('active', 'deleted', 'purged' or 'all')
 
     Returns:
       list: list of User objects.
@@ -91,9 +205,45 @@ def get_users(gi):
     """
     users = []
     user_client = galaxy.users.UserClient(gi)
-    for user_data in user_client.get_users():
-        users.append(User(user_data))
+    # Get active users
+    if status in ('active','all'):
+        for user_data in user_client.get_users():
+            user = User(user_data)
+            user.update(galaxy.users.UserClient(gi).show_user(user.id))
+            users.append(user)
+    # Get deleted and purged users
+    if status in ('deleted','purged','all'):
+        keep_deleted = status in ('deleted','all')
+        keep_purged = status in ('purged','all')
+        for user_data in user_client.get_users(deleted=True):
+            user = User(user_data)
+            user.update(galaxy.users.UserClient(gi).show_user(
+                user.id,
+                deleted=True))
+            if (user.purged and keep_purged) or \
+               (not user.purged and keep_deleted):
+                users.append(user)
     return users
+
+def get_user(gi,email):
+    """
+    Get the user data corresponding to a username email
+
+    Arguments:
+      gi (bioblend.galaxy.GalaxyInstance): Galaxy instance
+      email : email address for the user
+
+    Returns:
+      User: 'User' instance, or None if no match.
+    """
+    try:
+        for u in get_users(gi,status='all'):
+            if fnmatch.fnmatch(u.email,email):
+                return u
+    except ConnectionError as ex:
+        logger.warning("Failed to get user list: {} ({})".format(ex.body,
+                                                             ex.status_code))
+    return None
 
 def get_user_id(gi,email):
     """
@@ -106,17 +256,13 @@ def get_user_id(gi,email):
     Returns:
       String: user ID, or None if no match.
     """
-    user_id = None
     try:
-        for u in get_users(gi):
-            if fnmatch.fnmatch(u.email,email):
-                return u.id
-    except ConnectionError as ex:
-        logger.warning("Failed to get user list: %s (%s)" % (ex.body,
-                                                             ex.status_code))
-    return None
+        return get_user(gi,email).id
+    except AttributeError:
+        return None
 
-def list_users(gi,name=None,long_listing_format=False,show_id=False):
+def list_users(gi,name=None,long_listing_format=False,status='active',
+               sort_by=None,show_id=False):
     """
     List users in Galaxy instance
 
@@ -125,13 +271,19 @@ def list_users(gi,name=None,long_listing_format=False,show_id=False):
       name  : optionally, only list matching emails/usernames
       long_listing_format (boolean): if True then use a
         long listing format when reporting items
+      status (str): list users with matching status: 'active'
+        (default), 'deleted', or 'purged'. Use 'all' to list
+        all accounts regardless of status
+      sort_by (list): list of fields to sort users into order
+        on this field (default sorting is done on user email)
+      show_id (bool): if True then report user's Galaxy ID
 
     """
     # Get user data
     try:
-        users = get_users(gi)
+        users = get_users(gi,status=status)
     except ConnectionError as ex:
-        logger.fatal("Failed to get user list: %s (%s)" % (ex.body,
+        logger.fatal("Failed to get user list: {} ({})".format(ex.body,
                                                            ex.status_code))
         return 1
     # Get Galaxy config data to determine if quotas are enabled
@@ -147,29 +299,31 @@ def list_users(gi,name=None,long_listing_format=False,show_id=False):
         users = [u for u in users if
                  (fnmatch.fnmatch(u.username.lower(),name) or
                   fnmatch.fnmatch(u.email.lower(),name))]
+    # Sort into order
+    if not sort_by:
+        sort_by = ()
+    users.sort(key=lambda u: u.sort_key(*sort_by))
     # Report users
-    users.sort(key=lambda u: u.email.lower())
     output = Reporter()
     for user in users:
-        # Get additional user data
-        user.update(galaxy.users.UserClient(gi).show_user(user.id))
         # Collect data items to report
-        display_items = [user.email,user.username]
+        if user.purged and '@' not in user.email:
+            display_items = ['<purged>','<purged>']
+        else:
+            display_items = [user.email,user.username]
         if long_listing_format:
             # Long listing format includes:
             # - disk usage
             # - quota size (if quotas enabled)
             # - % quota used (if quotas enabled)
-            # - if account is active
+            # - if account status ('active','deleted' etc)
             # - if user is an admin
             display_items.append(user.nice_total_disk_usage)
             if enable_quotas:
                 display_items.extend([user.quota,
-                                      "%s%%" % user.quota_percent
-                                      if user.quota_percent
-                                      else "0%"])
-            display_items.append('active' if user.active else '')
-            display_items.append('admin' if user.is_admin else '')
+                                      user.display_quota_percent])
+            display_items.extend([user.display_status,
+                                  'admin' if user.is_admin else ''])
         if show_id:
             # Also report the internal user ID
             display_items.append(user.id)
@@ -338,7 +492,7 @@ def create_batch_of_users(gi,tsv,only_check=False,mako_template=None):
     # Open file
     print("Reading data from file '%s'" % tsv)
     users = {}
-    for line in open(tsv,'r'):
+    for line in open(tsv):
         # Skip blank or comment lines
         if line.startswith('#') or not line.strip():
             continue
@@ -366,7 +520,7 @@ def create_batch_of_users(gi,tsv,only_check=False,mako_template=None):
             name = get_username_from_login(email)
         if check_new_user_info(gi,email,name):
             users[email] = { 'name': name, 'passwd': passwd }
-            print("%s\t%s\t%s" % (email,'*****',name))
+            print("{}\t{}\t{}".format(email,'*****',name))
     if only_check:
         return 0
     # Make the accounts
@@ -394,27 +548,42 @@ def delete_user(gi,email,purge=False,no_confirm=False):
       0 on success, 1 on failure.
 
     """
-    # Get the ID for the supplied user
-    user_id = get_user_id(gi,email)
-    if user_id is None:
+    # Get the data for the supplied user
+    user = get_user(gi,email)
+    if user is None:
         logger.fatal("No user '%s'" % email)
         return 1
+    # Is user already deleted or purged?
+    if user.purged:
+        logger.fatal("'%s': already deleted and purged" % email)
+        return 0
+    elif user.deleted and not purge:
+        logger.fatal("'%s': already deleted (but you can rerun with "
+                     "--purge)" % email)
+        return 0
     # Prompt user for confirmation
-    if no_confirm or prompt_for_confirmation(
-            "Delete %suser '%s'?" % (" & purge" if purge else '',
-                                     email),
-            default="n"):
+    if not user.deleted:
+        prompt = "Delete {}user '{}'?".format("& purge " if purge else '',
+                                          email)
+    else:
+        prompt = "Purge deleted user '{}'?".format(email)
+    if no_confirm or prompt_for_confirmation(prompt,default="n"):
         try:
-            galaxy.users.UserClient(gi).delete_user(user_id,purge=purge)
-            print("Deleted %suser '%s'" % (" & purged" if purge else '',
+            if not user.deleted:
+                # Need to delete first
+                galaxy.users.UserClient(gi).delete_user(user.id)
+            if purge:
+                # Can only purge a deleted user
+                galaxy.users.UserClient(gi).delete_user(user.id,purge=True)
+            print("Deleted {}user '{}'".format("& purged " if purge else '',
                                            email))
             return 0
         except ConnectionError as ex:
-            logger.fatal("Failed to delete user: %s (%s)" % (ex.body,
+            logger.fatal("Failed to delete user: {} ({})".format(ex.body,
                                                              ex.status_code))
             return 1
     else:
-        print("User '%s' not deleted" % email)
+        print("User '%s' not deleted and/or purged" % email)
         return 0
 
 def check_new_user_info(gi,email,username):

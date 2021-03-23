@@ -13,7 +13,7 @@ from bioblend.galaxy.client import ConnectionError
 
 logger = logging.getLogger(__name__)
 
-class Credentials(object):
+class Credentials:
     """Class for managing credentials for Galaxy instances
 
     Credentials for different galaxy instances can be
@@ -53,7 +53,7 @@ class Credentials(object):
         """
         key_names = []
         if os.path.exists(self._key_file):
-            with open(self._key_file,'r') as fp:
+            with open(self._key_file) as fp:
                 for line in fp:
                     if line.startswith('#') or not line.strip():
                         continue
@@ -78,7 +78,7 @@ class Credentials(object):
             logger.warning("Empty API key")
             return False
         with open(self._key_file,'a') as fp:
-            fp.write("%s\t%s\t%s\n" % (name,url,api_key))
+            fp.write(f"{name}\t{url}\t{api_key}\n")
         return True
 
     def remove_key(self,name):
@@ -158,7 +158,7 @@ class Credentials(object):
           Tuple: consisting of (GALAXY_URL,API_KEY)
         """
         if os.path.exists(self._key_file):
-            with open(self._key_file,'r') as fp:
+            with open(self._key_file) as fp:
                 for line in fp:
                     if line.startswith('#') or not line.strip():
                         continue
@@ -177,7 +177,7 @@ class Credentials(object):
         except KeyError:
             return False
 
-class Reporter(object):
+class Reporter:
     """
     Class for reporting column data
 
@@ -251,13 +251,13 @@ class Reporter(object):
         if not prefix:
             prefix = ''
         for line in output:
-            out_line = "%s%s" % (prefix,delimiter.join(line))
+            out_line = "{}{}".format(prefix,delimiter.join(line))
             if rstrip:
                 out_line = out_line.rstrip()
             print(out_line)
 
 def get_galaxy_instance(galaxy_url,api_key=None,email=None,password=None,
-                        verify_ssl=True):
+                        verify_ssl=True,validate_key=True):
     """
     Return Bioblend GalaxyInstance
 
@@ -289,7 +289,9 @@ def get_galaxy_instance(galaxy_url,api_key=None,email=None,password=None,
     if api_key is None:
         api_key = stored_key
     logger.debug("Connecting to %s" % galaxy_url)
-    if email is not None:
+    if not validate_key:
+        gi = galaxy.GalaxyInstance(url=galaxy_url)
+    elif email is not None:
         gi = galaxy.GalaxyInstance(url=galaxy_url,email=email,
                                    password=password)
     else:
