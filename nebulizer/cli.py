@@ -16,6 +16,7 @@ from .core import prompt_for_confirmation
 from .core import turn_off_urllib3_warnings
 from .core import Credentials
 from .core import Reporter
+from .utils import bytes_to_size
 from . import options
 from . import users
 from . import libraries
@@ -1379,6 +1380,44 @@ def config(context,galaxy,name=None):
     for item in items:
         output.append((item,config[item]))
     output.report(rstrip=True)
+
+@nebulizer.command()
+@click.argument("galaxy")
+@pass_context
+def disk_usage(context,galaxy):
+    """
+    Summarise user disk usage for GALAXY
+
+    Estimates the disk space used by all users
+    by summing up their disk usage according to
+    GALAXY. Note that this might not be accurate.
+
+    If GALAXY has quotas enabled then also gives
+    an estimate of the committed disk space (i.e.
+    space that would be used if all users filled
+    up their allocation).
+    """
+    # Get a Galaxy instance
+    gi = context.galaxy_instance(galaxy)
+    if gi is None:
+        logger.critical("Failed to connect to Galaxy instance")
+        sys.exit(1)
+    # Check if quotas are enabled
+    quotas_enabled = get_galaxy_config(gi)['enable_quotas']
+    # Get disk usage summed over all users
+    try:
+        usage,commitment = users.get_disk_usage(gi)
+        click.echo("Total usage: %s (%d)" % (bytes_to_size(usage),
+                                             usage))
+        if quotas_enabled:
+            click.echo("Commitment : %s (%d)" % (bytes_to_size(commitment),
+                                                 commitment))
+        else:
+            click.echo("Commitment : N/A (quotas not enabled)")
+    except ConnectionError as ex:
+        logger.fatal("Failed to get user list: %s (%s)" % (ex.body,
+                                                           ex.status_code))
+        return 1
 
 @nebulizer.command()
 @click.option('-c','--count',metavar='COUNT',default=0,
