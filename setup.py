@@ -28,7 +28,7 @@ setup(
     license = 'AFL',
     install_requires = ['bioblend>=0.13.0',
                         'mako',
-                        'click<=6.7'],
+                        'click==7.1.2'],
     test_suite = 'nose.collector',
     tests_require = ['nose'],
     platforms="Posix; MacOS X; Windows",
