@@ -1184,7 +1184,7 @@ def quotas(context,galaxy,name,status,long_listing):
                          status=status,
                          long_listing_format=long_listing))
 
-@nebulizer.command(name="quotaadd")
+@nebulizer.command(name="quota_add")
 @click.option('-d','--description',
               help="description of the new quota (will be "
               "the same as the NAME if not supplied).")
@@ -1201,8 +1201,8 @@ def quotas(context,galaxy,name,status,long_listing):
 @click.argument("name")
 @click.argument("quota")
 @pass_context
-def quotaadd(context,galaxy,name,quota,description=None,
-             default_for=None,users=None,groups=None):
+def quota_add(context,galaxy,name,quota,description=None,
+              default_for=None,users=None,groups=None):
     """
     Create new quota.
 
@@ -1252,7 +1252,7 @@ def quotaadd(context,galaxy,name,quota,description=None,
                           users=users,
                           groups=groups))
 
-@nebulizer.command(name="quotamod")
+@nebulizer.command(name="quota_mod")
 @click.option('-n','--name',metavar="NEW_NAME",
               help="new name for the quota.")
 @click.option('-d','--description',metavar="NEW_DESCRIPTION",
@@ -1280,10 +1280,10 @@ def quotaadd(context,galaxy,name,quota,description=None,
 @click.argument("galaxy")
 @click.argument("quota")
 @pass_context
-def quotamod(context,galaxy,quota,name=None,description=None,
-             quota_size=None,default_for=None,add_users=None,
-             remove_users=None,add_groups=None,remove_groups=None,
-             undelete=False):
+def quota_mod(context,galaxy,quota,name=None,description=None,
+              quota_size=None,default_for=None,add_users=None,
+              remove_users=None,add_groups=None,remove_groups=None,
+              undelete=False):
     """
     Modify an existing quota.
 
@@ -1330,13 +1330,13 @@ def quotamod(context,galaxy,quota,name=None,description=None,
                           remove_groups=remove_groups,
                           undelete=undelete))
 
-@nebulizer.command(name="quotadel")
+@nebulizer.command(name="quota_del")
 @click.argument("galaxy")
 @click.argument("quota")
 @click.option('-y','--yes',is_flag=True,
               help="don't ask for confirmation of deletions.")
 @pass_context
-def quotadel(context,galaxy,quota,yes):
+def quota_del(context,galaxy,quota,yes):
     """
     Delete quota.
 
