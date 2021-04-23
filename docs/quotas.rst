@@ -22,11 +22,11 @@ Querying quotas
 Creating and deleting quotas
 ----------------------------
 
-``quotaadd`` defines a new quota:
+``quota_add`` defines a new quota:
 
 ::
 
-   nebulizer quotaadd GALAXY QUOTA_NAME SIZE
+   nebulizer quota_add GALAXY QUOTA_NAME SIZE
 
 ``SIZE`` can either be an amount (e.g. ``10GB``, ``0.2 T``) or
 an amount preceeded by an operation (one of ``+``, ``-`` or
@@ -46,25 +46,25 @@ Users and groups can be associated with the new quota using the
 * ``-g``/``--groups``: associate one or more groups with the
   quota, as a comma-separated list of group names.
 
-``quotadel`` deletes an existing quota:
+``quota_del`` deletes an existing quota:
 
 ::
 
-   nebulizer quotadel GALAXY QUOTA_NAME
+   nebulizer quota_del GALAXY QUOTA_NAME
 
 .. note::
 
    A deleted quota can be restored using the ``--undelete``
-   option of the ``quotamod`` command.
+   option of the ``quota_mod`` command.
 
 Modifying quota definitions
 ---------------------------
 
-``quotamod`` updates a quota definition:
+``quota_mod`` updates a quota definition:
 
 ::
 
-   nebulizer quotamod GALAXY QUOTA_NAME ...
+   nebulizer quota_mod GALAXY QUOTA_NAME ...
 
 Options allow various quota properties to be modified:
 
