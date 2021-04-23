@@ -190,7 +190,7 @@ def nebulizer(context,api_key,username,galaxy_password,
     handle_suppress_warnings(suppress_warnings=context.suppress_warnings)
     handle_ssl_warnings(verify=(not context.no_verify))
 
-@nebulizer.command()
+@nebulizer.command(name="list_keys")
 @click.option("--name",
               help="list only aliases matching name. Can "
               "include glob-style wild-cards.")
@@ -220,7 +220,7 @@ def list_keys(context,name,show_api_keys=False):
         output.append(display_items)
     output.report()
 
-@nebulizer.command()
+@nebulizer.command(name="add_key")
 @click.argument("alias")
 @click.argument("galaxy_url")
 @click.argument("api_key",required=False)
@@ -252,7 +252,7 @@ def add_key(context,alias,galaxy_url,api_key=None):
     if not instances.store_key(alias,galaxy_url,api_key):
         sys.exit(1)
 
-@nebulizer.command()
+@nebulizer.command(name="update_key")
 @click.option('--new-url',
               help="specify new URL for Galaxy instance")
 @click.option('--new-api-key',
@@ -290,7 +290,7 @@ def update_key(context,alias,new_url,new_api_key,fetch_api_key):
                                 new_api_key=new_api_key):
         sys.exit(1)
 
-@nebulizer.command()
+@nebulizer.command(name="remove_key")
 @click.argument("alias")
 @pass_context
 def remove_key(context,alias):
@@ -309,7 +309,7 @@ def remove_key(context,alias):
         if not instances.remove_key(alias):
             sys.exit(1)
 
-@nebulizer.command()
+@nebulizer.command(name="list_users")
 @click.option("--name",
               help="list only users with matching email or user "
               "name. Can include glob-style wild-cards.")
@@ -355,7 +355,7 @@ def list_users(context,galaxy,name,status,long_listing,sort,show_id):
                               status=status,
                               show_id=show_id))
 
-@nebulizer.command()
+@nebulizer.command(name="create_user")
 @click.option('--password','-p',
               help="specify password for new user account "
               "(otherwise program will prompt for password)")
@@ -408,7 +408,7 @@ def create_user(context,galaxy,email,public_name,password,only_check,
                                only_check=only_check,
                                mako_template=message_template))
 
-@nebulizer.command()
+@nebulizer.command(name="create_batch_users")
 @click.option('--password','-p',
               help="specify password for new user accounts "
               "(otherwise program will prompt for password). "
@@ -456,7 +456,7 @@ def create_batch_users(context,galaxy,template,start,end,
                                               start,end,password,
                                               only_check=only_check))
 
-@nebulizer.command()
+@nebulizer.command(name="create_users_from_file")
 @click.option('--check','-c','only_check',is_flag=True,
               help="check user details but don't try to create the "
               "new account.")
@@ -495,7 +495,7 @@ def create_users_from_file(context,galaxy,file,message_template,
                                          only_check=only_check,
                                          mako_template=message_template))
 
-@nebulizer.command()
+@nebulizer.command(name="delete_user")
 @click.argument("galaxy")
 @click.argument("email")
 @click.option('-p','--purge',is_flag=True,
@@ -516,7 +516,7 @@ def delete_user(context,galaxy,email,purge,yes):
         sys.exit(1)
     sys.exit(users.delete_user(gi,email,purge=purge,no_confirm=yes))
 
-@nebulizer.command()
+@nebulizer.command(name="list_tools")
 @click.option('--name',metavar='NAME',
               help="list only tools matching NAME. Can include "
               "glob-style wild-cards.")
@@ -542,7 +542,7 @@ def list_tools(context,galaxy,name,installed_only):
     sys.exit(tools.list_tools(gi,name=name,
                               installed_only=installed_only))
 
-@nebulizer.command()
+@nebulizer.command(name="list_installed_tools")
 @click.option('--name',metavar='NAME',
               help="only list tool repositories matching NAME. Can "
               "include glob-style wild-cards.")
@@ -607,7 +607,7 @@ def list_installed_tools(context,galaxy,name,toolshed,owner,list_tools,
         only_updateable=updateable,
         check_tool_shed=check_toolshed))
 
-@nebulizer.command()
+@nebulizer.command(name="list_tool_panel")
 @click.option('--name',metavar='NAME',
               help="only list tool panel sections where name or "
               "id match NAME. Can include glob-style wild-cards.")
@@ -633,7 +633,7 @@ def list_tool_panel(context,galaxy,name,list_tools):
     sys.exit(tools.list_tool_panel(gi,name=name,
                                    list_tools=list_tools))
 
-@nebulizer.command()
+@nebulizer.command(name="install_tool")
 @click.option('--tool-panel-section',
               help="tool panel section name or id to install "
               "the tool under; if the section doesn't exist "
@@ -706,7 +706,7 @@ def install_tool(context,galaxy,repository,tool_panel_section,
         install_resolver_dependencies=
         (install_resolver_dependencies== 'yes')))
 
-@nebulizer.command()
+@nebulizer.command(name="list_repositories")
 @click.option('--name',metavar='NAME',
               help="only list tool repositories matching NAME. Can "
               "include glob-style wild-cards.")
@@ -755,7 +755,7 @@ def list_repositories(context,galaxy,name,toolshed,owner,updateable):
         only_updateable=updateable,
         tsv=True))
 
-@nebulizer.command()
+@nebulizer.command(name="install_repositories")
 @options.install_tool_dependencies_option(default='yes')
 @options.install_repository_dependencies_option(default='yes')
 @options.install_resolver_dependencies_option(default='yes')
@@ -841,7 +841,7 @@ def install_repositories(context,galaxy,file,
     # Looks like everything worked
     sys.exit(0)
 
-@nebulizer.command()
+@nebulizer.command(name="update_tool")
 @options.install_tool_dependencies_option(default='yes')
 @options.install_repository_dependencies_option(default='yes')
 @options.install_resolver_dependencies_option(default='yes')
@@ -918,7 +918,7 @@ def update_tool(context,galaxy,repository,
                                (install_resolver_dependencies== 'yes'),
                                no_confirm=yes))
 
-@nebulizer.command()
+@nebulizer.command(name="uninstall_tool")
 @click.option('--remove_from_disk',is_flag=True,
               help="remove the uninstalled tool from disk (otherwise "
               "tool is just deactivated).")
@@ -973,7 +973,7 @@ def uninstall_tool(context,galaxy,repository,remove_from_disk,
                                   remove_from_disk=remove_from_disk,
                                   no_confirm=yes))
 
-@nebulizer.command()
+@nebulizer.command(name="search_toolshed")
 @click.option("--toolshed",metavar='TOOLSHED',
               help="specify a toolshed URL to search, or 'main' "
               "(the main Galaxy toolshed, the default) or 'test' "
@@ -1019,7 +1019,7 @@ def search_toolshed(context,toolshed,query_string,galaxy,long_listing):
     sys.exit(search.search_toolshed(toolshed,query_string,gi=gi,
                                     long_listing_format=long_listing))
 
-@nebulizer.command()
+@nebulizer.command(name="list_libraries")
 @click.option('-l','long_listing',is_flag=True,
               help="use a long listing format that includes "
               "descriptions, file sizes, dbkeys and paths)")
@@ -1056,7 +1056,7 @@ def list_libraries(context,galaxy,path,long_listing,show_id):
             long_listing_format=long_listing,
             show_id=show_id))
 
-@nebulizer.command()
+@nebulizer.command(name="create_library")
 @click.option('-d','--description',
               help="description of the new library")
 @click.option('-s','--synopsis',
@@ -1081,7 +1081,7 @@ def create_library(context,galaxy,name,description,synopsis):
                              description=description,
                              synopsis=synopsis)
 
-@nebulizer.command()
+@nebulizer.command(name="create_library_folder")
 @click.option('-d','--description',
               help="description of the new folder")
 @click.argument("galaxy")
@@ -1109,7 +1109,7 @@ def create_library_folder(context,galaxy,path,description):
                                description=description) is None:
         sys.exit(1)
 
-@nebulizer.command()
+@nebulizer.command(name="add_library_datasets")
 @click.option('--file-type',default='auto',
               help="Galaxy data type to assign the files to "
               "(default is 'auto'). Must be a valid Galaxy "
@@ -1154,7 +1154,7 @@ def add_library_datasets(context,galaxy,dest,file,file_type,
                                    file_type=file_type,
                                    dbkey=dbkey)
 
-@nebulizer.command()
+@nebulizer.command(name="quotas")
 @click.option("--name",
               help="list only quotas with matching name. Can "
               "include glob-style wild-cards.")
@@ -1184,7 +1184,7 @@ def quotas(context,galaxy,name,status,long_listing):
                          status=status,
                          long_listing_format=long_listing))
 
-@nebulizer.command()
+@nebulizer.command(name="quotaadd")
 @click.option('-d','--description',
               help="description of the new quota (will be "
               "the same as the NAME if not supplied).")
@@ -1252,7 +1252,7 @@ def quotaadd(context,galaxy,name,quota,description=None,
                           users=users,
                           groups=groups))
 
-@nebulizer.command()
+@nebulizer.command(name="quotamod")
 @click.option('-n','--name',metavar="NEW_NAME",
               help="new name for the quota.")
 @click.option('-d','--description',metavar="NEW_DESCRIPTION",
@@ -1330,7 +1330,7 @@ def quotamod(context,galaxy,quota,name=None,description=None,
                           remove_groups=remove_groups,
                           undelete=undelete))
 
-@nebulizer.command()
+@nebulizer.command(name="quotadel")
 @click.argument("galaxy")
 @click.argument("quota")
 @click.option('-y','--yes',is_flag=True,
@@ -1350,7 +1350,7 @@ def quotadel(context,galaxy,quota,yes):
     # Delete quota
     sys.exit(delete_quota(gi,quota,no_confirm=yes))
 
-@nebulizer.command()
+@nebulizer.command(name="config")
 @click.argument("galaxy")
 @click.option('--name',
               help="only show configuration items that match "
@@ -1380,7 +1380,7 @@ def config(context,galaxy,name=None):
         output.append((item,config[item]))
     output.report(rstrip=True)
 
-@nebulizer.command()
+@nebulizer.command(name="ping")
 @click.option('-c','--count',metavar='COUNT',default=0,
               help="if set then stop after sending COUNT requests "
               "(default is to send requests forever).")
@@ -1446,7 +1446,7 @@ def ping(context,galaxy,count,interval=5,timeout=None):
             break
     sys.exit(status_code)
 
-@nebulizer.command()
+@nebulizer.command(name="whoami")
 @click.argument("galaxy")
 @pass_context
 def whoami(context,galaxy,):
