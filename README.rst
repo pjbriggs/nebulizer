@@ -132,7 +132,6 @@ Nebulizer provides subcommands to perform various administrive tasks:
 
  * ``list_tools``
  * ``list_tool_panel``
- * ``list_installed_tools``
  * ``install_tool``
  * ``update_tool``
  * ``uninstall_tool``

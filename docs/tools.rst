@@ -5,12 +5,12 @@ Managing Tools
 Querying tool information
 -------------------------
 
-``list_installed_tools`` displays information on all the tool
+By default, ``list_tools`` displays information on all the tool
 repositories that are installed in a Galaxy instance:
 
 ::
 
-  nebulizer list_installed_tools GALAXY
+  nebulizer list_tools GALAXY
 
 For each installed repository the details include: repository name,
 toolshed, owner, revision id and changeset, and installation status.
@@ -25,17 +25,23 @@ indicator:
   version) but not installed;
 * ``*`` = latest revision installed
 
+``list_tools`` supports a number of options to modify its
+behaviour, including:
+
 * ``--updateable``: only list tool repositories that have uninstalled
   available updates or upgrades
-* ``--list-tools``: include details of the tools provided by each
-  repository
+* ``--built-ins``: include details of the "built-in" tools within the
+  Galaxy instance (i.e. those not installed from a toolshed)
+
+An alternative 'tool-centric' view of the tools in a Galaxy instance
+can be obtained using the ``--mode=tools`` option.
 
 .. note::
    
-   The ``list_tools`` command displays information on all tools
-   in a Galaxy instance - not just those installed from toolsheds.
-   Normally ``list_installed_tools`` is the command you actually
-   want.
+   This is a new version of the ``list_tools`` which replaces the
+   old ``list_installed_tools`` command (which is no longer
+   available). The ``--mode=tools`` option replicates the output
+   from the old ``list_tools`` command.
 
 ``list_tool_panel`` displays information on the tool panel
 sections in a Galaxy instance:
