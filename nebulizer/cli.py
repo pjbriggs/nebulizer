@@ -649,6 +649,8 @@ def list_tool_panel(context,galaxy,name,list_tools):
 @click.option('--no-wait',is_flag=True,
               help="don't wait for lengthy tool installations to "
               "complete.")
+@click.option('-y','--yes',is_flag=True,
+              help="don't ask for confirmation of installation.")
 @click.argument("galaxy")
 @click.argument("repository",nargs=-1)
 @pass_context
@@ -656,7 +658,7 @@ def install_tool(context,galaxy,repository,tool_panel_section,
                  install_tool_dependencies,
                  install_repository_dependencies,
                  install_resolver_dependencies,
-                 timeout,no_wait):
+                 timeout,no_wait,yes):
     """
     Install tool from toolshed.
 
@@ -704,7 +706,8 @@ def install_tool(context,galaxy,repository,tool_panel_section,
         install_repository_dependencies=
         (install_repository_dependencies== 'yes'),
         install_resolver_dependencies=
-        (install_resolver_dependencies== 'yes')))
+        (install_resolver_dependencies== 'yes'),
+        no_confirm=yes))
 
 @nebulizer.command(name="list_repositories")
 @click.option('--name',metavar='NAME',
