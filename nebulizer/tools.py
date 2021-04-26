@@ -968,7 +968,6 @@ def list_tools(gi,name=None,installed_only=False):
 def list_installed_repositories(gi,name=None,
                                 tool_shed=None,
                                 owner=None,
-                                list_tools=False,
                                 include_deleted=False,
                                 include_builtin=False,
                                 only_updateable=False,
@@ -988,8 +987,6 @@ def list_installed_repositories(gi,name=None,
       owner (str): optional, only list tool repositiories
         with owners who match this string (can include
         wildcards)
-      list_tools (bool): if True then also list the tools
-        provided by the repository
       include_deleted (bool): if True then also include
         repository revisions that are marked as deleted
         (default is to only show those which are not

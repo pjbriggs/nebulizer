@@ -552,20 +552,25 @@ def list_tools(context,galaxy,name,installed_only):
 @click.option('--owner',metavar='OWNER',
               help="only list repositories from matching OWNER. "
               "Can include glob-style wild-cards.")
-@click.option('--list-tools',is_flag=True,
-              help="also list the tools associated with each "
-              "installed repository revision changeset.")
 @click.option('--updateable',is_flag=True,
               help="only show repositories with uninstalled updates "
               "or upgrades.")
+@click.option('--built-in',is_flag=True,
+              help="include built-in tools.")
+@click.option('--mode',
+              type=click.Choice(['repos','tools',]),
+              default='repos',
+              help="set reporting mode: either 'repos' "
+              "(repository-centric view, the default) or 'tools' "
+              "(tool-centric view).")
 @click.option('--check-toolshed',is_flag=True,
               help="check installed revisions directly against those "
               "available in the toolshed. NB this can be extremely "
               "slow.")
 @click.argument("galaxy")
 @pass_context
-def list_installed_tools(context,galaxy,name,toolshed,owner,list_tools,
-                         updateable,check_toolshed):
+def list_installed_tools(context,galaxy,name,toolshed,owner,
+                         updateable,built_in,mode,check_toolshed):
     """
     List installed tool repositories.
 
@@ -589,9 +594,14 @@ def list_installed_tools(context,galaxy,name,toolshed,owner,list_tools,
     toolshed. Note that this option incurs a significant overhead
     when checking a large number of tools.
 
-    If the --list-tools option is specified then additionally
-    after each repository the tools associated with the repository
-    will be listed along with their descriptions and versions.
+    By default the outputs are presented in a 'repository'
+    centric view; the --mode option can be used to switch
+    between this ('repos' mode) or a 'tool'-centric view
+    ('tools' mode).
+
+    If the --built-in option is specified then built-in tools
+    (i.e. tools not installed from a toolshed) will also be
+    included.
     """
     # Get a Galaxy instance
     gi = context.galaxy_instance(galaxy)
@@ -604,6 +614,8 @@ def list_installed_tools(context,galaxy,name,toolshed,owner,list_tools,
         tool_shed=toolshed,
         owner=owner,
         list_tools=list_tools,
+        include_builtin=built_in,
+        mode=mode,
         only_updateable=updateable,
         check_tool_shed=check_toolshed))
 
