@@ -1255,10 +1255,10 @@ def update_tool(gi,tool_shed,name,owner,
     update_status = TOOL_UPDATE_OK
     for ix,update_repo in enumerate(update_repos):
         if len(update_repos) > 1:
-            print("[%d/%d]: updating %s/%s" % (ix+1,
-                                               len(update_repos),
-                                               update_repo.owner,
-                                               update_repo.name))
+            print("\n[%d/%d]: updating %s/%s" % (ix+1,
+                                                 len(update_repos),
+                                                 update_repo.owner,
+                                                 update_repo.name))
         #  Get latest revision
         revision = update_repo.tool_shed_revisions()[-1]
         # Locate tool panel section for existing tools
