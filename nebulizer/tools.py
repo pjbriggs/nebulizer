@@ -1179,8 +1179,8 @@ def update_tool(gi,tool_shed,name,owner,
         revisions against the tool shed, to determine if
         updates are available for the tool (default is
         False i.e. do not check status against toolshed)
-      no_confirm : if True then don't prompt to confirm the
-        uninstall operation.
+      no_confirm (boolean): if True then don't prompt to
+        confirm the update operation.
     """
     # Locate the existing installation
     repos = []
