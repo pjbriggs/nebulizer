@@ -970,8 +970,10 @@ def list_installed_repositories(gi,name=None,
                                 owner=None,
                                 list_tools=False,
                                 include_deleted=False,
+                                include_builtin=False,
                                 only_updateable=False,
                                 check_tool_shed=False,
+                                mode='repos',
                                 tsv=False):
     """
     Print a list of the installed toolshed repositories
@@ -992,6 +994,8 @@ def list_installed_repositories(gi,name=None,
         repository revisions that are marked as deleted
         (default is to only show those which are not
         deleted)
+      include_builtin (bool): if True then also include
+        built-in tools (default is not to omit them)
       only_updateable (bool): if True then only report
         repositories that have uninstalled updates or
         upgrades available (default is to show all
@@ -1001,11 +1005,16 @@ def list_installed_repositories(gi,name=None,
         updates are available for each tool. NB this is
         an expensive operation to perform so is turned
         off by default
+      mode (str): specify the output mode: either 'repos'
+        (the default) for a repository-centric view, or
+        'tools' for a tool-centric view.
       tsv (bool): if True then output in a compact tab
         delimited format listing toolshed, owner,
         repository, changeset and tool panel section
 
     """
+    if mode not in ('repos','tools'):
+        raise ValueError("Unrecognised mode: '%s'" % mode)
     # Get the list of installed repos
     repos = installed_repositories(gi,name=name,
                                    tool_shed=tool_shed,
@@ -1013,6 +1022,12 @@ def list_installed_repositories(gi,name=None,
                                    include_deleted=include_deleted,
                                    only_updateable=only_updateable,
                                    check_tool_shed=check_tool_shed)
+    # Add the built-in tools if requested
+    if include_builtin and not only_updateable:
+        repos.extend(builtin_tools(gi,name=name,as_repos=True))
+        repos = sorted(repos,
+                       key=lambda r: str(r[0].name).lower() if r[0].name
+                       else str(r[2][0].name).lower())
     if tsv:
         # Output format for reinstallation of repositories
         tool_panel = ToolPanel(gi)
@@ -1027,45 +1042,84 @@ def list_installed_repositories(gi,name=None,
                  (r[0].name.startswith("package_") or
                   r[0].name.startswith("data_manager_") or
                   (r[2] and tool_panel.tool_index(r[2][0]) > -1))]
-        # Print details
-        output = Reporter()
-        for r in repos:
-            repo,revision,tools = r
-            if tools:
-                tool_panel_section = tools[0].panel_section
-            else:
-                tool_panel_section = None
-            output.append((repo.tool_shed,
-                           repo.owner,
-                           repo.name,
-                           revision.changeset_revision,
-                           (tool_panel_section
-                            if tool_panel_section else '')))
-        # Write out in TSV format
-        output.report(delimiter='\t')
+    # Set the fields to report
+    if tsv:
+        fields = ('tool_shed',
+                  'owner',
+                  'repo_name',
+                  'changeset_revision',
+                  'tool_panel')
+        delimiter = '\t'
     else:
-        # Denser more verbose format
-        output = Reporter()
-        nrevisions = 0
-        for r in repos:
-            # Print details
-            repo,revision,tools = r
-            output.append(('{} {}'.format(revision.status_indicator,
-                                      repo.name),
-                           repo.tool_shed,
-                           repo.owner,
-                           revision.revision_id,
-                           revision.status))
+        if mode == 'repos':
+            fields = ('status_indicator',
+                      'name',
+                      'tool_shed',
+                      'owner',
+                      'revision_id',
+                      'status',)
+        elif mode == 'tools':
+            fields = ('tool_name',
+                      'tool_version',
+                      'tool_panel',
+                      'tool_shed',
+                      'owner',
+                      'repo_name',
+                      'revision_id')
+        delimiter = None
+    # Generate the output
+    output = Reporter()
+    nrevisions = 0
+    for r in repos:
+        # Get revision details
+        repo,revision,tools = r
+        if mode == 'repos':
+            tools = tools[:1]
+        for tool in tools:
+            # Build line
+            output_line = []
+            for field in fields:
+                if field == 'name':
+                    if repo.name:
+                        output_line.append(repo.name)
+                    else:
+                        output_line.append(tool.name)
+                elif field == 'tool_shed':
+                    output_line.append(repo.tool_shed)
+                elif field == 'owner':
+                    if repo.owner:
+                        output_line.append(repo.owner)
+                    else:
+                        output_line.append("")
+                elif field == 'repo_name':
+                    if repo.name:
+                        output_line.append(repo.name)
+                    else:
+                        output_line.append("")
+                elif field == 'changeset_revision':
+                    output_line.append(revision.changeset_revision)
+                elif field == 'revision_id':
+                    output_line.append(revision.revision_id)
+                elif field == 'status':
+                    output_line.append(revision.status)
+                elif field == 'status_indicator':
+                    output_line.append(revision.status_indicator)
+                elif field == 'tool_name':
+                    output_line.append(tool.name)
+                elif field == 'tool_version':
+                    output_line.append(tool.version)
+                elif field == 'tool_panel':
+                    if tool.panel_section:
+                        output_line.append(tool.panel_section)
+                    else:
+                        output_line.append("")
+                else:
+                    raise KeyError("Unrecognised field: '%s'" % field)
+            output.append(output_line)
             nrevisions += 1
-            # List tools associated with revision
-            if list_tools:
-                for tool in tools:
-                    output.append(("-",
-                                   tool.name,
-                                   tool.version,
-                                   tool.description))
-        # Write to stdout
-        output.report()
+    # Write to stdout
+    output.report(delimiter=delimiter)
+    if not tsv:
         print("total %s" % nrevisions)
 
 def list_tool_panel(gi,name=None,list_tools=False):
