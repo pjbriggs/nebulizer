@@ -261,8 +261,10 @@ class RepositoryRevision:
         2:a60283899c6d
 
         """
-        return ':'.join((self.revision_number,
-                         self.changeset_revision))
+        return ''.join(('%s:' % self.revision_number
+                        if self.revision_number else '',
+                        '%s' % self.changeset_revision
+                        if self.changeset_revision else ''))
 
 class Repository:
     """
