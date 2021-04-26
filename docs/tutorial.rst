@@ -361,7 +361,7 @@ We can list the tools installed in our local Galaxy using:
 
 ::
 
-   nebulizer list_installed_tools local
+   nebulizer list_tools local
 
 Initially there are no tools installed; we can search the
 main Galaxy toolshed for the tools we want to install,
@@ -402,8 +402,8 @@ We can install the latest version of FastQC with
    command to see what tool panel sections are already
    present.
 
-Running ``list_installed_tools`` now shows the tool
-repository is installed:
+Running ``list_tools`` now shows the tool repository is
+installed:
 
 ::
 
@@ -414,8 +414,8 @@ repository is installed:
    The ``*`` next to tool repository indicates that this
    is most recent version.
 
-   Including the ``--list-tools`` option will show the
-   associated tools.
+   Use the ``--mode=tools`` option will list the associated
+   tools instead.
 
 We can install a specific version of a tool repository, for
 example the Trimmomatic tool:
@@ -424,8 +424,8 @@ example the Trimmomatic tool:
 
    nebulizer install_tool local pjbriggs/trimmomatic 51b771646466 --tool-panel-section="NGS tools"
 
-Running ``list_installed_tools`` now shows this tool
-repository is also installed:
+Running ``list_tools`` now shows this tool repository is also
+installed:
 
 ::
 
@@ -436,9 +436,9 @@ Here ``U`` indicates there is a newer revision available
 with a new version of the tool (``u`` indicates a newer
 revision without a tool version update).
 
-Rerunning the ``list_installed_tools`` command with the
-``--updateable`` option filters the list of tool
-repositories to just those with available updates.
+Rerunning the ``list_tools`` command with the ``--updateable``
+option filters the list of tool repositories to just those with
+available updates.
 
 We can update Trimmomatic to the newest version automatically
 by running the ``update_tool`` command:
@@ -460,8 +460,8 @@ tool version:
 
    nebulizer uninstall_tool local pjbriggs/trimmomatic 51b771646466
 
-Running ``list_installed_tools`` shows that the older
-tool repository is no longer present.
+Running ``list_tools`` shows that the older tool repository
+is no longer present.
 
 .. note::
 
