@@ -1196,6 +1196,7 @@ def update_tool(gi,tool_shed,name,owner,
     # Loop over matching repositories and check for
     # installed revisions
     update_repos = []
+    no_update_repos = []
     for repo in repos:
         # Check there is at least one installed revision
         installed_revisions = [r for r in repo.revisions()
@@ -1224,10 +1225,23 @@ def update_tool(gi,tool_shed,name,owner,
         # Repository can be updated
         if update_available:
             update_repos.append(repo)
+        else:
+            no_update_repos.append(repo)
+    # Report matching repos with no updates to install
+    if no_update_repos:
+        print("The following tool repositories are up to date:\n")
+        for r in no_update_repos:
+            print("\t%s %s/%s" % (r.tool_shed,r.owner,r.name))
+        print("")
     # Check if there are any tools to update
     if not update_repos:
-        logger.fatal("%s/%s: no repositories to update" % (owner,name))
-        return TOOL_UPDATE_FAIL
+        if no_update_repos:
+            print("All tools up to date: nothing to do")
+            return TOOL_UPDATE_OK
+        else:
+            logger.fatal("%s/%s: no repositories to update" %
+                         (owner,name))
+            return TOOL_UPDATE_FAIL
     # Report what will be updated and confirm
     print("The following tool repositories will be updated:\n")
     for r in update_repos:
