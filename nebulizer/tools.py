@@ -1524,5 +1524,5 @@ def _install_tool(gi,tool_shed,owner,name,revision,
             logger.critical(f"{owner}/{name}: failed ({install_status})")
             return TOOL_INSTALL_FAIL
     # Reaching here means timed out
-    logger.critical("%/%s: timed out waiting for install" % (owner,name))
+    logger.critical("%s/%s: timed out waiting for install" % (owner,name))
     return TOOL_INSTALL_TIMEOUT
