@@ -781,6 +781,64 @@ def tool_install_status(gi,tool_shed,owner,name,revision=None):
         return rev.error_message
     return rev.status
 
+def builtin_tools(gi,name=None,as_repos=False):
+    """
+    Fetch a list of built-in tools
+
+    Arguments:
+      gi (bioblend.galaxy.GalaxyInstance): Galaxy instance
+      name (str): optional, only list tool repositiories
+        which match this string (can include wildcards)
+      as_repos (bool): if True then return the tool
+        information as a list of 'pseudo-repositories'
+        (i.e. tuples consisting of (repository,revision,tools))
+        to mimic the output of the 'installed_repositories'
+        function). Default is False (return a list of
+        Tool instances).
+
+    Returns:
+      List: either a list of Tool instances, or (if 'as_repos'
+        was set True) a list of tuples consisting of
+        (repository,revision,tools)
+    """
+    # Get list of built-in tools (i.e. tools with no associated
+    # toolshed repository)
+    tools = [t for t in get_tools(gi) if t.tool_repo == '']
+    # Filter on name
+    if name:
+        name = name.lower()
+        tools = [t for t in tools if fnmatch.fnmatch(t.name.lower(),name)]
+    # Return results
+    if not as_repos:
+        # Return list as-is
+        return tools
+    else:
+        # Return as list of 'pseudo-repositories'
+        tool_shed = 'builtin'
+        status = ''
+        return [(Repository({ 'name': None,
+                              'owner': None,
+                              'tool_shed': tool_shed,
+                              'ctx_rev': 0,
+                              'changeset_revision': None,
+                              'installed_changeset_revision': None,
+                              'status': status,
+                              'error_message': None,
+                              'deleted': False,
+                          'tool_shed_status': None }),
+                 RepositoryRevision({ 'name': None,
+                                      'owner': None,
+                                      'tool_shed': tool_shed,
+                                      'ctx_rev': 0,
+                                      'changeset_revision': None,
+                                      'installed_changeset_revision': None,
+                                      'status': status,
+                                      'error_message': None,
+                                      'deleted': False,
+                                      'tool_shed_status': None }),
+                 (t,))
+                for t in tools]
+
 def installed_repositories(gi,name=None,
                            tool_shed=None,
                            owner=None,
