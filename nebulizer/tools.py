@@ -930,52 +930,12 @@ def installed_repositories(gi,name=None,
 
 # Commands
 
-def list_tools(gi,name=None,installed_only=False):
+def list_tools(gi,name=None,tool_shed=None,owner=None,
+               include_deleted=False,include_builtin=False,
+               only_updateable=False,check_tool_shed=False,
+               mode='repos',tsv=False):
     """
-    Print a list of the available tools
-
-    Arguments:
-      gi (bioblend.galaxy.GalaxyInstance): Galaxy instance
-      name (str): optional, only list tools which match this
-        string (can include wildcards)
-      installed_only (bool): if True then only list those
-        tools which are provided by toolshed repositories
-
-    """
-    tools = get_tools(gi)
-    # Filter on name
-    if name:
-        name = name.lower()
-        tools = [t for t in tools
-                 if fnmatch.fnmatch(t.name.lower(),name)]
-    # Filter on installed
-    if installed_only:
-        tools = [t for t in tools if t.tool_repo != '']
-    # Sort into name order
-    tools.sort(key=lambda x: x.name.lower())
-    # Print info
-    output = Reporter()
-    for tool in tools:
-        output.append((
-            tool.name,tool.version,
-            (tool.panel_section if tool.panel_section else ''),
-            tool.tool_repo,
-            (tool.tool_changeset if tool.tool_changeset else ''))
-        )
-    output.report()
-    print("total %s" % len(tools))
-
-def list_installed_repositories(gi,name=None,
-                                tool_shed=None,
-                                owner=None,
-                                include_deleted=False,
-                                include_builtin=False,
-                                only_updateable=False,
-                                check_tool_shed=False,
-                                mode='repos',
-                                tsv=False):
-    """
-    Print a list of the installed toolshed repositories
+    Display information about tools and toolshed repositories
 
     Arguments:
       gi (bioblend.galaxy.GalaxyInstance): Galaxy instance

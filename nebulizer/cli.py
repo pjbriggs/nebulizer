@@ -518,32 +518,6 @@ def delete_user(context,galaxy,email,purge,yes):
 
 @nebulizer.command(name="list_tools")
 @click.option('--name',metavar='NAME',
-              help="list only tools matching NAME. Can include "
-              "glob-style wild-cards.")
-@click.option('--installed','installed_only',is_flag=True,
-              help="only list tools that have been installed from "
-              "a toolshed (default is to list all tools).")
-@click.argument("galaxy")
-@pass_context
-def list_tools(context,galaxy,name,installed_only):
-    """
-    List tools in Galaxy instance.
-
-    Prints details of tools available in GALAXY instance,
-    including: tool name, version, tool panel section, and
-    toolshed repository and revision changeset.
-    """
-    # Get a Galaxy instance
-    gi = context.galaxy_instance(galaxy)
-    if gi is None:
-        logger.critical("Failed to connect to Galaxy instance")
-        sys.exit(1)
-    # List tools
-    sys.exit(tools.list_tools(gi,name=name,
-                              installed_only=installed_only))
-
-@nebulizer.command(name="list_installed_tools")
-@click.option('--name',metavar='NAME',
               help="only list tool repositories matching NAME. Can "
               "include glob-style wild-cards.")
 @click.option('--toolshed',metavar='TOOLSHED',
@@ -569,15 +543,16 @@ def list_tools(context,galaxy,name,installed_only):
               "slow.")
 @click.argument("galaxy")
 @pass_context
-def list_installed_tools(context,galaxy,name,toolshed,owner,
-                         updateable,built_in,mode,check_toolshed):
+def list_tools(context,galaxy,name,toolshed,owner,updateable,built_in,
+               mode,check_toolshed):
     """
-    List installed tool repositories.
+    List information about tools and installed tool repositories.
 
-    Prints details of installed tool repositories in GALAXY
-    instance.
+    Prints details of the tools and installed tool repositories in
+    GALAXY instance.
 
-    For each installed repository the details include: repository
+    In the default 'repository-centric' mode, the installed tool
+    repositories are listed with details including: repository
     name, toolshed, owner, revision id and changeset, and
     installation status.
 
@@ -586,18 +561,18 @@ def list_installed_tools(context,galaxy,name,toolshed,owner,
     installed; 'u' = update available but not installed; 'U' =
     upgrade available but not installed; '*' = latest revision).
 
-    Note that there may still be a newer revision of a tool
+    (Note that there may still be a newer revision of a tool
     available from the toolshed, even when the repository is
     marked as '*'. Use the --check-toolshed option to also
     explicitly check against the toolshed, in which case a '!'
     status indicates that a newer version has been found on
     toolshed. Note that this option incurs a significant overhead
-    when checking a large number of tools.
+    when checking a large number of tools.)
 
-    By default the outputs are presented in a 'repository'
-    centric view; the --mode option can be used to switch
-    between this ('repos' mode) or a 'tool'-centric view
-    ('tools' mode).
+    An alternative 'tool-centric' mode is also available which
+    lists tools according to their names as they appear in the
+    Galaxy tool panel. The --mode option is used to switch
+    between the default 'repos' mode and the 'tools' mode.
 
     If the --built-in option is specified then built-in tools
     (i.e. tools not installed from a toolshed) will also be
@@ -609,11 +584,10 @@ def list_installed_tools(context,galaxy,name,toolshed,owner,
         logger.critical("Failed to connect to Galaxy instance")
         sys.exit(1)
     # List repositories
-    sys.exit(tools.list_installed_repositories(
+    sys.exit(tools.list_tools(
         gi,name=name,
         tool_shed=toolshed,
         owner=owner,
-        list_tools=list_tools,
         include_builtin=built_in,
         mode=mode,
         only_updateable=updateable,
@@ -763,7 +737,7 @@ def list_repositories(context,galaxy,name,toolshed,owner,updateable):
         logger.critical("Failed to connect to Galaxy instance")
         sys.exit(1)
     # List repositories
-    sys.exit(tools.list_installed_repositories(
+    sys.exit(tools.list_tools(
         gi,name=name,
         tool_shed=toolshed,
         owner=owner,
