@@ -1054,8 +1054,8 @@ def install_tool(gi,tool_shed,name,owner,revision=None,
                  install_tool_dependencies=True,
                  install_repository_dependencies=True,
                  install_resolver_dependencies=True,
-                 timeout=600,
-                 poll_interval=10,no_wait=False):
+                 timeout=600, poll_interval=10,
+                 no_wait=False,no_confirm=False):
     """
     Install a tool repository into a Galaxy instance
 
@@ -1095,34 +1095,15 @@ def install_tool(gi,tool_shed,name,owner,revision=None,
       no_wait (boolean): optional, if True then don't wait
         for tool installation to complete (default is False
         i.e. do wait for tool to finish installing).
-
+      no_confirm (boolean): if True then don't prompt to
+        confirm the install operation.
     """
-    # Locate the repository on the toolshed
-    print("Toolshed  :\t%s" % tool_shed)
-    print("Repository:\t%s" % name)
-    print("Owner     :\t%s" % owner)
+    # Deal with repository revision
     if revision is not None:
         # Normalise revision if necessary
         if ':' in revision:
             revision = revision.split(':')[1]
-        print("Revision  :\t%s" % revision)
-    else:
-        print("Revision  :\t<not specified>")
-    # Information on dependency installation
-    print("Install tool dependencies from toolshed      : "
-          "%s" % ('yes' if install_tool_dependencies else 'no'))
-    print("Install repository dependencies from toolshed: "
-          "%s" % ('yes' if install_repository_dependencies else 'no'))
-    print("Install dependencies using resolver          : "
-          "%s" % ('yes' if install_resolver_dependencies else 'no'))
-    # Check if tool is already installed
-    install_status = tool_install_status(gi,tool_shed,owner,name,
-                                         revision)
-    if install_status.startswith("Installed"):
-        print("{}: already installed (status is \"{}\")".format(name,
-                                                            install_status))
-        return TOOL_INSTALL_OK
-    # Get available revisions
+    # Get available revisions from toolshed
     revisions = get_revisions_from_toolshed(tool_shed,name,owner)
     if not revisions:
         logger.critical("%s: no installable revisions found" % name)
@@ -1137,104 +1118,26 @@ def install_tool(gi,tool_shed,name,owner,revision=None,
     else:
         # Set revision to the most recent
         revision = revisions[-1]
-        print("Installing newest revision (%s)" % revision)
-    # Check if tool is already installed
-    install_status = tool_install_status(gi,tool_shed,owner,name,
-                                         revision)
-    if install_status.startswith("Installed"):
-        print("{}: already installed (status is \"{}\")".format(name,
-                                                            install_status))
+    # Report what will be installed and confirm
+    print("The following tool repository will be installed:\n")
+    print("\t%s %s/%s %s" % (tool_shed,owner,name,revision))
+    print("")
+    if (not no_confirm) and \
+       (not prompt_for_confirmation("Proceed?",default="n")):
+        print("Install cancelled")
         return TOOL_INSTALL_OK
-    # Look up tool panel section
-    tool_panel_section_id = None
-    new_tool_panel_section = None
-    if tool_panel_section is None:
-        print("Installing into top level tool panel (no section specified)")
-    else:
-        # Look for an existing section which matches the
-        # supplied name or id
-        for section in get_tool_panel_sections(gi):
-            if tool_panel_section == section.id or \
-               tool_panel_section == section.name:
-                # Found existing tool panel section
-                tool_panel_section_id = section.id
-                print("Installing into existing tool panel section: "
-                      "'%s' (id '%s')" % (section.name,
-                                          tool_panel_section_id))
-                break
-        if not tool_panel_section_id:
-            # No matching section exists, make a new one
-            print("Installing into new tool panel section: '%s'" %
-                  tool_panel_section)
-            new_tool_panel_section = tool_panel_section
-    # Get toolshed URL
-    tool_shed_url = normalise_toolshed_url(tool_shed)
-    print("Toolshed URL: %s" % tool_shed_url)
-    # Attempt to install
-    print("%s: requesting installation" % name)
-    try:
-        tool_shed_client = galaxy.toolshed.ToolShedClient(gi)
-        tool_shed_client.install_repository_revision(
-            tool_shed_url,name,owner,revision,
-            install_tool_dependencies=install_tool_dependencies,
-            install_repository_dependencies=install_repository_dependencies,
-            install_resolver_dependencies=install_resolver_dependencies,
-            tool_panel_section_id=tool_panel_section_id,
-            new_tool_panel_section_label=new_tool_panel_section)
-    except ConnectionError as connection_error:
-        # Handle API error
-        logger.debug("Got error from Galaxy API on attempted install "
-                     "(ignored)")
-        logger.debug("Status code: %s" % connection_error.status_code)
-        if connection_error.body:
-            try:
-                logger.debug("Message    : \"%s\"" %
-                             json.loads(connection_error.body)["err_msg"])
-            except Exception as ex:
-                # Unable to decode JSON, report and ignore
-                logger.debug("Unable to extract error message: %s" % ex)
-    except Exception as ex:
-        # Handle general error
-        logger.debug("Error while requesting tool installation "
-                     "(ignored)")
-        logger.debug("Exception: %s" % ex)
-    # Monitor installation status
-    if not no_wait:
-        print("Galaxy connection closed: monitoring installation")
-    ntries = 0
-    prev_status_msg = None
-    while (ntries*poll_interval) < timeout:
-        install_status = tool_install_status(gi,tool_shed,owner,
-                                             name,revision)
-        if install_status.startswith("Installed"):
-            print("{}: installed (status is \"{}\")".format(name,
-                                                        install_status))
-            return TOOL_INSTALL_OK
-        elif install_status.startswith("Installing") or \
-             install_status == "New" or \
-             install_status == "Cloning" or \
-             install_status == "Never installed" or \
-             install_status == "?":
-            if no_wait:
-                # Don't wait for install to complete
-                print("%s: still installing (status is \"%s\")" %
-                      (name,install_status))
-                print("Not waiting for install to complete")
-                return TOOL_INSTALL_PENDING
-            # Monitor the tool installation status
-            ntries += 1
-            status_msg = "{}: installing (status is \"{}\")".format(name,
-                                                                install_status)
-            if status_msg != prev_status_msg:
-                print(status_msg)
-                prev_status_msg = status_msg
-            time.sleep(poll_interval)
-        else:
-            logger.critical(f"{name}: failed ({install_status})")
-            return TOOL_INSTALL_FAIL
-    # Reaching here means timed out
-    logger.critical("%s: timed out waiting for install" % name)
-    return TOOL_INSTALL_TIMEOUT
+    # Perform installation
+    return _install_tool(gi,tool_shed,owner,name,revision,
+                         tool_panel_section=tool_panel_section,
+                         install_tool_dependencies=\
+                         install_tool_dependencies,
+                         install_repository_dependencies=\
+                         install_repository_dependencies,
+                         install_resolver_dependencies=\
+                         install_resolver_dependencies,
+                         timeout=timeout,
+                         poll_interval=poll_interval,
+                         no_wait=no_wait)
 
 def update_tool(gi,tool_shed,name,owner,
                 install_tool_dependencies=True,
@@ -1457,3 +1360,158 @@ def uninstall_tool(gi,tool_shed,name,owner,revision,
             logger.warning("Exception: %s" % ex)
             uninstall_status = TOOL_UNINSTALL_FAIL
     return uninstall_status
+
+def _install_tool(gi,tool_shed,owner,name,revision,
+                  tool_panel_section=None,
+                  install_tool_dependencies=True,
+                  install_repository_dependencies=True,
+                  install_resolver_dependencies=True,
+                  timeout=600,poll_interval=10,
+                  no_wait=False):
+    """
+    Internal: perform tool installation
+
+    Arguments:
+      gi (bioblend.galaxy.GalaxyInstance): Galaxy instance
+      tool_shed (str): URL for the toolshed to install the
+        tool from
+      name (str): name of the tool repository
+      owner (str): name of the tool repository owner
+      revision (str): revision changeset specifying
+        the tool version to install
+      tool_panel_section (str): optional, one of: None
+        (tool will be installed at top-level i.e. not within
+        a section), an existing section ID or name (tool
+        will be installed in existing section), or the name
+        of a new tool panel section (this will be created
+        before installing tool).
+      install_tool_dependencies (bool): optional, if True
+        then install tool dependencies from the toolshed
+        if possible (default).
+      install_repository_dependencies (bool): optional, if
+        True then install repository dependencies from the
+        toolshed if possible (default).
+      install_resolver_dependencies (bool): optional, if
+        True then install dependencies using a resolver
+        which supports this (e.g. conda) (default).
+      timeout (int): optional, sets the maximum time (in
+        seconds) to wait for a tool to complete installing
+        before giving up (default is 600s). Ignored if
+        'no_wait' is True.
+      poll_interval (int): optional, sets the time interval
+        for polling Galaxy to check if a tool has completed
+        installing (default is to check every 10s). Ignored
+        if 'no_wait' is True.
+      no_wait (boolean): optional, if True then don't wait
+        for tool installation to complete (default is False
+        i.e. do wait for tool to finish installing).
+    """
+    print("Requesting tool installation:\n")
+    print("Toolshed  :\t%s" % tool_shed)
+    print("Repository:\t%s" % name)
+    print("Owner     :\t%s" % owner)
+    print("Revision  :\t%s" % revision)
+    # Deal with tool panel section
+    tool_panel_section_id = None
+    new_tool_panel_section_label = None
+    if not tool_panel_section:
+        # No tool panel section
+        print("Tool panel:\tTop level (no section specified)")
+    else:
+        # Look for an existing tool panel section which matches the
+        # supplied name or id
+        for section in get_tool_panel_sections(gi):
+            if tool_panel_section == section.id or \
+               tool_panel_section == section.name:
+                # Found existing tool panel section
+                tool_panel_section_id = section.id
+                print("Tool panel:\t'%s'" % section.name)
+                break
+        if not tool_panel_section_id:
+            # New section
+            print("Tool panel:\t'%s' (new)" % tool_panel_section)
+            new_tool_panel_section_label = tool_panel_section
+    # Information on dependency installation
+    print("Install tool dependencies from toolshed      : "
+          "%s" % ('yes' if install_tool_dependencies else 'no'))
+    print("Install repository dependencies from toolshed: "
+          "%s" % ('yes' if install_repository_dependencies else 'no'))
+    print("Install dependencies using resolver          : "
+          "%s" % ('yes' if install_resolver_dependencies else 'no'))
+    # Get toolshed URL
+    tool_shed_url = normalise_toolshed_url(tool_shed)
+    # Check if tool is already installed
+    install_status = tool_install_status(gi,tool_shed,owner,name,
+                                         revision)
+    if install_status.startswith("Installed"):
+        print("\n{}/{}: a version is already installed from {} "
+              "(status is \"{}\"); try update instead?".format(
+                  owner,
+                  name,
+                  tool_shed,
+                  install_status))
+        return TOOL_INSTALL_OK
+    # Attempt to install
+    print("\n%s/%s: requesting installation from %s\n" % (owner,
+                                                          name,
+                                                          tool_shed))
+    try:
+        tool_shed_client = galaxy.toolshed.ToolShedClient(gi)
+        tool_shed_client.install_repository_revision(
+            tool_shed_url,name,owner,revision,
+            install_tool_dependencies=install_tool_dependencies,
+            install_repository_dependencies=install_repository_dependencies,
+            install_resolver_dependencies=install_resolver_dependencies,
+            tool_panel_section_id=tool_panel_section_id,
+            new_tool_panel_section_label=new_tool_panel_section_label)
+    except ConnectionError as connection_error:
+        # Handle API error
+        logger.debug("Got error from Galaxy API on attempted install "
+                     "(ignored)")
+        logger.debug("Status code: %s" % connection_error.status_code)
+        if connection_error.body:
+            try:
+                logger.debug("Message    : \"%s\"" %
+                             json.loads(connection_error.body)["err_msg"])
+            except Exception as ex:
+                # Unable to decode JSON, report and ignore
+                logger.debug("Unable to extract error message: %s" % ex)
+    except Exception as ex:
+        # Handle general error
+        logger.debug("Error while requesting tool installation "
+                     "(ignored)")
+        logger.debug("Exception: %s" % ex)
+    # Monitor installation status
+    if not no_wait:
+        print("Galaxy connection closed: monitoring installation")
+    ntries = 0
+    prev_status_msg = None
+    while (ntries*poll_interval) < timeout:
+        install_status = tool_install_status(gi,tool_shed,owner,
+                                             name,revision)
+        if install_status.startswith("Installed"):
+            print("{}/{}: {}".format(owner,name,install_status))
+            return TOOL_INSTALL_OK
+        elif install_status.startswith("Installing") or \
+             install_status == "New" or \
+             install_status == "Cloning" or \
+             install_status == "Never installed" or \
+             install_status == "?":
+            if no_wait:
+                # Don't wait for install to complete
+                print("{}/{}: {}".format(owner,name,install_status))
+                print("Not waiting for install to complete")
+                return TOOL_INSTALL_PENDING
+            # Monitor the tool installation status
+            ntries += 1
+            status_msg = "{}/{}: {}".format(owner,name,install_status)
+            if status_msg != prev_status_msg:
+                print(status_msg)
+                prev_status_msg = status_msg
+            time.sleep(poll_interval)
+        else:
+            logger.critical(f"{owner}/{name}: failed ({install_status})")
+            return TOOL_INSTALL_FAIL
+    # Reaching here means timed out
+    logger.critical("%/%s: timed out waiting for install" % (owner,name))
+    return TOOL_INSTALL_TIMEOUT
