@@ -1253,17 +1253,14 @@ def update_tool(gi,tool_shed,name,owner,
             if tool.tool_repo == update_repo.id:
                 tool_panel_section = tool.panel_section
                 break
-        if tool_panel_section is None:
-            logger.warning("%s/%s: no tool panel section found" %
-                           (update_repo.owner,update_repo.name))
-        #print("Installing update under %s" % tool_panel_section)
-        status = install_tool(
-            gi,update_repo.tool_shed,update_repo.name,
-            update_repo.owner,revision,
+        # Install the update
+        status = _install_tool(
+            gi,update_repo.tool_shed,update_repo.owner,
+            update_repo.name,revision,
+            tool_panel_section=tool_panel_section,
             install_tool_dependencies=install_tool_dependencies,
             install_repository_dependencies=install_repository_dependencies,
             install_resolver_dependencies=install_resolver_dependencies,
-            tool_panel_section=tool_panel_section,
             timeout=timeout,poll_interval=poll_interval,
             no_wait=no_wait)
         if status != TOOL_INSTALL_OK:
