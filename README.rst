@@ -137,6 +137,13 @@ Nebulizer provides subcommands to perform various administrive tasks:
  * ``uninstall_tool``
  * ``search_toolshed``
 
+`Managing quotas <https://nebulizer.readthedocs.io/en/latest/quotas.html>`_:
+
+ * ``quotas``
+ * ``quota_add``
+ * ``quota_mod``
+ * ``quota_del``
+
 `Querying Galaxy instances <https://nebulizer.readthedocs.io/en/latest/querying_galaxy.html>`_:
 
  * ``ping`` (check if a Galaxy instance is alive)
