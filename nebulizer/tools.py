@@ -933,7 +933,7 @@ def installed_repositories(gi,name=None,
 def list_tools(gi,name=None,tool_shed=None,owner=None,
                include_deleted=False,include_builtin=False,
                only_updateable=False,check_tool_shed=False,
-               mode='repos',tsv=False):
+               mode='repos'):
     """
     Display information about tools and toolshed repositories
 
@@ -965,12 +965,8 @@ def list_tools(gi,name=None,tool_shed=None,owner=None,
       mode (str): specify the output mode: either 'repos'
         (the default) for a repository-centric view, or
         'tools' for a tool-centric view.
-      tsv (bool): if True then output in a compact tab
-        delimited format listing toolshed, owner,
-        repository, changeset and tool panel section
-
     """
-    if mode not in ('repos','tools'):
+    if mode not in ('repos','tools','export'):
         raise ValueError("Unrecognised mode: '%s'" % mode)
     # Get the list of installed repos
     repos = installed_repositories(gi,name=name,
@@ -980,15 +976,40 @@ def list_tools(gi,name=None,tool_shed=None,owner=None,
                                    only_updateable=only_updateable,
                                    check_tool_shed=check_tool_shed)
     # Add the built-in tools if requested
+    if mode == 'export' and include_builtin:
+        logger.warning("--built-in option ignored for 'export' mode")
+        include_builtin = False
     if include_builtin and not only_updateable:
         repos.extend(builtin_tools(gi,name=name,as_repos=True))
         repos = sorted(repos,
                        key=lambda r: str(r[0].name).lower() if r[0].name
                        else str(r[2][0].name).lower())
-    if tsv:
-        # Output format for reinstallation of repositories
+    # Default delimiter in output
+    delimiter = None
+    # Set the fields to report
+    if mode == 'repos':
+        fields = ('status_indicator',
+                  'name',
+                  'tool_shed',
+                  'owner',
+                  'revision_id',
+                  'status',)
+    elif mode == 'tools':
+        fields = ('tool_name',
+                  'tool_version',
+                  'tool_panel',
+                  'tool_shed',
+                  'owner',
+                  'repo_name',
+                  'revision_id')
+    elif mode == 'export':
+        fields = ('tool_shed',
+                  'owner',
+                  'repo_name',
+                  'changeset_revision',
+                  'tool_panel')
+        # Sort tools into tool order for output
         tool_panel = ToolPanel(gi)
-        # Sort into tool panel order
         repos = sorted(repos,
                        key=lambda r:
                        tool_panel.tool_index(r[2][0])
@@ -999,31 +1020,8 @@ def list_tools(gi,name=None,tool_shed=None,owner=None,
                  (r[0].name.startswith("package_") or
                   r[0].name.startswith("data_manager_") or
                   (r[2] and tool_panel.tool_index(r[2][0]) > -1))]
-    # Set the fields to report
-    if tsv:
-        fields = ('tool_shed',
-                  'owner',
-                  'repo_name',
-                  'changeset_revision',
-                  'tool_panel')
+        # Tab delimited output
         delimiter = '\t'
-    else:
-        if mode == 'repos':
-            fields = ('status_indicator',
-                      'name',
-                      'tool_shed',
-                      'owner',
-                      'revision_id',
-                      'status',)
-        elif mode == 'tools':
-            fields = ('tool_name',
-                      'tool_version',
-                      'tool_panel',
-                      'tool_shed',
-                      'owner',
-                      'repo_name',
-                      'revision_id')
-        delimiter = None
     # Generate the output
     output = Reporter()
     nrevisions = 0
@@ -1076,7 +1074,7 @@ def list_tools(gi,name=None,tool_shed=None,owner=None,
             nrevisions += 1
     # Write to stdout
     output.report(delimiter=delimiter)
-    if not tsv:
+    if mode != 'export':
         print("total %s" % nrevisions)
 
 def list_tool_panel(gi,name=None,list_tools=False):

@@ -202,12 +202,12 @@ For example:
   toolshed.g2.bx.psu.edu	devteam	bowtie_wrappers	9ca609a2a421	NGS: Mapping
 
 
-``list_repositories`` can generate a list of tool repositories
-already installed in a Galaxy instance in this format:
+``list_tools --mode=export`` can generate a list of tool repositories
+already installed in a Galaxy instance in this format, e.g.:
 
 ::
 
-   nebulizer list_repositories GALAXY
+   nebulizer list_tools GALAXY --mode=export
 
 By combining these two commands it is possible to 'clone' the
 installed tools from one Galaxy instance into another.
@@ -217,5 +217,5 @@ instance into a local Galaxy:
 
 ::
 
-  nebulizer list_repositories https://palfinder.ls.manchester.ac.uk > palfinder.tsv
+  nebulizer list_tools https://palfinder.ls.manchester.ac.uk --mode=export > palfinder.tsv
   nebulizer install_repositories http://127.0.0.1 palfinder.tsv

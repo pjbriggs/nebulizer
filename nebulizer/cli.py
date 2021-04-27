@@ -532,11 +532,12 @@ def delete_user(context,galaxy,email,purge,yes):
 @click.option('--built-in',is_flag=True,
               help="include built-in tools.")
 @click.option('--mode',
-              type=click.Choice(['repos','tools',]),
+              type=click.Choice(['repos','tools','export']),
               default='repos',
               help="set reporting mode: either 'repos' "
-              "(repository-centric view, the default) or 'tools' "
-              "(tool-centric view).")
+              "(repository-centric view, the default), 'tools' "
+              "(tool-centric view) or 'export' (tab-delimited "
+              "format for use with 'install_tool').")
 @click.option('--check-toolshed',is_flag=True,
               help="check installed revisions directly against those "
               "available in the toolshed. NB this can be extremely "
@@ -569,14 +570,22 @@ def list_tools(context,galaxy,name,toolshed,owner,updateable,built_in,
     toolshed. Note that this option incurs a significant overhead
     when checking a large number of tools.)
 
-    An alternative 'tool-centric' mode is also available which
-    lists tools according to their names as they appear in the
-    Galaxy tool panel. The --mode option is used to switch
-    between the default 'repos' mode and the 'tools' mode.
+    Different reporting modes are available: the default is a
+    'repository-centric' mode, alternatively a 'tool-centric'
+    mode (which lists tools according to their names as they appear
+    in the Galaxy tool panel) and an 'export' mode (which produces
+    output suitable for use with 'install_tool') are also available.
+    The --mode option is used to switch between the default 'repos'
+    mode and the alternative 'tools' and 'export' modes.
+
+    In export mode the output is a set of tab-delimited values, with
+    each line consisting of:
+
+    TOOLSHED|OWNER|REPOSITORY|CHANGESET|TOOL_PANEL_SECTION
 
     If the --built-in option is specified then built-in tools
     (i.e. tools not installed from a toolshed) will also be
-    included.
+    included. (NB this option is ignored in 'export' mode.)
     """
     # Get a Galaxy instance
     gi = context.galaxy_instance(galaxy)
@@ -694,55 +703,6 @@ def install_tool(context,galaxy,repository,tool_panel_section,
         install_resolver_dependencies=
         (install_resolver_dependencies== 'yes'),
         no_confirm=yes))
-
-@nebulizer.command(name="list_repositories")
-@click.option('--name',metavar='NAME',
-              help="only list tool repositories matching NAME. Can "
-              "include glob-style wild-cards.")
-@click.option('--toolshed',metavar='TOOLSHED',
-              help="only list repositories installed from toolshed "
-              "matching TOOLSHED. Can include glob-style wild-cards.")
-@click.option('--owner',metavar='OWNER',
-              help="only list repositories from matching OWNER. "
-              "Can include glob-style wild-cards.")
-@click.option('--updateable',is_flag=True,
-              help="only show repositories with uninstalled updates "
-              "or upgrades.")
-@click.argument("galaxy")
-@pass_context
-def list_repositories(context,galaxy,name,toolshed,owner,updateable):
-    """
-    List installed tool repos for (re)install.
-
-    Prints details of installed tool repositories in GALAXY
-    instance in a format suitable for input into the
-    'install_repositories' command.
-
-    The output is a set of tab-delimited values, with each line
-    consisting of:
-
-    TOOLSHED|OWNER|REPOSITORY|CHANGESET|TOOL_PANEL_SECTION
-
-    TOOL_PANEL_SECTION will be empty if the repository was
-    installed outside of any section in the tool panel.
-
-    The repositories are ordered according to their position
-    in the tool panel. Note that non-package and
-    non-data-manager repositories which cannot be located
-    within the tool panel will not be listed.
-    """
-    # Get a Galaxy instance
-    gi = context.galaxy_instance(galaxy)
-    if gi is None:
-        logger.critical("Failed to connect to Galaxy instance")
-        sys.exit(1)
-    # List repositories
-    sys.exit(tools.list_tools(
-        gi,name=name,
-        tool_shed=toolshed,
-        owner=owner,
-        only_updateable=updateable,
-        tsv=True))
 
 @nebulizer.command(name="install_repositories")
 @options.install_tool_dependencies_option(default='yes')
