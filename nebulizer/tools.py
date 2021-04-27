@@ -643,8 +643,8 @@ def handle_repository_spec(repo_spec):
 
     The specification can be any of the forms:
 
-    - ('https://toolshed.g2.bx.psu.edu/view/devteam/fastqc/e7b2202befea',)
-    - (https://toolshed.g2.bx.psu.edu/view/devteam/fastqc',)
+    - ('https://toolshed.g2.bx.psu.edu/view/devteam/fastqc/e7b2202befea')
+    - ('https://toolshed.g2.bx.psu.edu/view/devteam/fastqc')
     - ('devteam/fastqc/e7b2202befea',)
     - ('devteam/fastqc',)
     - ('toolshed.g2.bx.psu.edu','devteam','fastqc','e7b2202befea')
