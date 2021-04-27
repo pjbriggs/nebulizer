@@ -518,32 +518,6 @@ def delete_user(context,galaxy,email,purge,yes):
 
 @nebulizer.command(name="list_tools")
 @click.option('--name',metavar='NAME',
-              help="list only tools matching NAME. Can include "
-              "glob-style wild-cards.")
-@click.option('--installed','installed_only',is_flag=True,
-              help="only list tools that have been installed from "
-              "a toolshed (default is to list all tools).")
-@click.argument("galaxy")
-@pass_context
-def list_tools(context,galaxy,name,installed_only):
-    """
-    List tools in Galaxy instance.
-
-    Prints details of tools available in GALAXY instance,
-    including: tool name, version, tool panel section, and
-    toolshed repository and revision changeset.
-    """
-    # Get a Galaxy instance
-    gi = context.galaxy_instance(galaxy)
-    if gi is None:
-        logger.critical("Failed to connect to Galaxy instance")
-        sys.exit(1)
-    # List tools
-    sys.exit(tools.list_tools(gi,name=name,
-                              installed_only=installed_only))
-
-@nebulizer.command(name="list_installed_tools")
-@click.option('--name',metavar='NAME',
               help="only list tool repositories matching NAME. Can "
               "include glob-style wild-cards.")
 @click.option('--toolshed',metavar='TOOLSHED',
@@ -552,27 +526,34 @@ def list_tools(context,galaxy,name,installed_only):
 @click.option('--owner',metavar='OWNER',
               help="only list repositories from matching OWNER. "
               "Can include glob-style wild-cards.")
-@click.option('--list-tools',is_flag=True,
-              help="also list the tools associated with each "
-              "installed repository revision changeset.")
 @click.option('--updateable',is_flag=True,
               help="only show repositories with uninstalled updates "
               "or upgrades.")
+@click.option('--built-in',is_flag=True,
+              help="include built-in tools.")
+@click.option('--mode',
+              type=click.Choice(['repos','tools','export']),
+              default='repos',
+              help="set reporting mode: either 'repos' "
+              "(repository-centric view, the default), 'tools' "
+              "(tool-centric view) or 'export' (tab-delimited "
+              "format for use with 'install_tool').")
 @click.option('--check-toolshed',is_flag=True,
               help="check installed revisions directly against those "
               "available in the toolshed. NB this can be extremely "
               "slow.")
 @click.argument("galaxy")
 @pass_context
-def list_installed_tools(context,galaxy,name,toolshed,owner,list_tools,
-                         updateable,check_toolshed):
+def list_tools(context,galaxy,name,toolshed,owner,updateable,built_in,
+               mode,check_toolshed):
     """
-    List installed tool repositories.
+    List information about tools and installed tool repositories.
 
-    Prints details of installed tool repositories in GALAXY
-    instance.
+    Prints details of the tools and installed tool repositories in
+    GALAXY instance.
 
-    For each installed repository the details include: repository
+    In the default 'repository-centric' mode, the installed tool
+    repositories are listed with details including: repository
     name, toolshed, owner, revision id and changeset, and
     installation status.
 
@@ -581,17 +562,30 @@ def list_installed_tools(context,galaxy,name,toolshed,owner,list_tools,
     installed; 'u' = update available but not installed; 'U' =
     upgrade available but not installed; '*' = latest revision).
 
-    Note that there may still be a newer revision of a tool
+    (Note that there may still be a newer revision of a tool
     available from the toolshed, even when the repository is
     marked as '*'. Use the --check-toolshed option to also
     explicitly check against the toolshed, in which case a '!'
     status indicates that a newer version has been found on
     toolshed. Note that this option incurs a significant overhead
-    when checking a large number of tools.
+    when checking a large number of tools.)
 
-    If the --list-tools option is specified then additionally
-    after each repository the tools associated with the repository
-    will be listed along with their descriptions and versions.
+    Different reporting modes are available: the default is a
+    'repository-centric' mode, alternatively a 'tool-centric'
+    mode (which lists tools according to their names as they appear
+    in the Galaxy tool panel) and an 'export' mode (which produces
+    output suitable for use with 'install_tool') are also available.
+    The --mode option is used to switch between the default 'repos'
+    mode and the alternative 'tools' and 'export' modes.
+
+    In export mode the output is a set of tab-delimited values, with
+    each line consisting of:
+
+    TOOLSHED|OWNER|REPOSITORY|CHANGESET|TOOL_PANEL_SECTION
+
+    If the --built-in option is specified then built-in tools
+    (i.e. tools not installed from a toolshed) will also be
+    included. (NB this option is ignored in 'export' mode.)
     """
     # Get a Galaxy instance
     gi = context.galaxy_instance(galaxy)
@@ -599,11 +593,12 @@ def list_installed_tools(context,galaxy,name,toolshed,owner,list_tools,
         logger.critical("Failed to connect to Galaxy instance")
         sys.exit(1)
     # List repositories
-    sys.exit(tools.list_installed_repositories(
+    sys.exit(tools.list_tools(
         gi,name=name,
         tool_shed=toolshed,
         owner=owner,
-        list_tools=list_tools,
+        include_builtin=built_in,
+        mode=mode,
         only_updateable=updateable,
         check_tool_shed=check_toolshed))
 
@@ -643,6 +638,9 @@ def list_tool_panel(context,galaxy,name,list_tools):
 @options.install_tool_dependencies_option(default='yes')
 @options.install_repository_dependencies_option(default='yes')
 @options.install_resolver_dependencies_option(default='yes')
+@click.option('--file',metavar='TSV_FILE',
+              type=click.File('rt'),
+              help="install tools specified in TSV_FILE.")
 @click.option('--timeout',metavar='TIMEOUT',default=600,
               help="wait up to TIMEOUT seconds for tool installations"
               "to complete (default is 600).")
@@ -658,9 +656,9 @@ def install_tool(context,galaxy,repository,tool_panel_section,
                  install_tool_dependencies,
                  install_repository_dependencies,
                  install_resolver_dependencies,
-                 timeout,no_wait,yes):
+                 file,timeout,no_wait,yes):
     """
-    Install tool from toolshed.
+    Install tool(s) from toolshed.
 
     Installs the specified tool from REPOSITORY into GALAXY,
     where REPOSITORY can be as one of:
@@ -683,107 +681,17 @@ def install_tool(context,galaxy,repository,tool_panel_section,
     Installation will fail if the specified revision is
     not installable, or if no installable revisions are
     found.
-    """
-    # Get the tool repository details
-    try:
-        toolshed,owner,repository,revision = \
-            tools.handle_repository_spec(repository)
-    except Exception as ex:
-        logger.fatal(ex)
-        sys.exit(1)
-    # Get a Galaxy instance
-    gi = context.galaxy_instance(galaxy)
-    if gi is None:
-        logger.critical("Failed to connect to Galaxy instance")
-        sys.exit(1)
-    # Install tool
-    sys.exit(tools.install_tool(
-        gi,toolshed,repository,owner,revision=revision,
-        tool_panel_section=tool_panel_section,
-        timeout=timeout,no_wait=no_wait,
-        install_tool_dependencies=
-        (install_tool_dependencies == 'yes'),
-        install_repository_dependencies=
-        (install_repository_dependencies== 'yes'),
-        install_resolver_dependencies=
-        (install_resolver_dependencies== 'yes'),
-        no_confirm=yes))
 
-@nebulizer.command(name="list_repositories")
-@click.option('--name',metavar='NAME',
-              help="only list tool repositories matching NAME. Can "
-              "include glob-style wild-cards.")
-@click.option('--toolshed',metavar='TOOLSHED',
-              help="only list repositories installed from toolshed "
-              "matching TOOLSHED. Can include glob-style wild-cards.")
-@click.option('--owner',metavar='OWNER',
-              help="only list repositories from matching OWNER. "
-              "Can include glob-style wild-cards.")
-@click.option('--updateable',is_flag=True,
-              help="only show repositories with uninstalled updates "
-              "or upgrades.")
-@click.argument("galaxy")
-@pass_context
-def list_repositories(context,galaxy,name,toolshed,owner,updateable):
-    """
-    List installed tool repos for (re)install.
-
-    Prints details of installed tool repositories in GALAXY
-    instance in a format suitable for input into the
-    'install_repositories' command.
-
-    The output is a set of tab-delimited values, with each line
-    consisting of:
-
-    TOOLSHED|OWNER|REPOSITORY|CHANGESET|TOOL_PANEL_SECTION
-
-    TOOL_PANEL_SECTION will be empty if the repository was
-    installed outside of any section in the tool panel.
-
-    The repositories are ordered according to their position
-    in the tool panel. Note that non-package and
-    non-data-manager repositories which cannot be located
-    within the tool panel will not be listed.
-    """
-    # Get a Galaxy instance
-    gi = context.galaxy_instance(galaxy)
-    if gi is None:
-        logger.critical("Failed to connect to Galaxy instance")
-        sys.exit(1)
-    # List repositories
-    sys.exit(tools.list_installed_repositories(
-        gi,name=name,
-        tool_shed=toolshed,
-        owner=owner,
-        only_updateable=updateable,
-        tsv=True))
-
-@nebulizer.command(name="install_repositories")
-@options.install_tool_dependencies_option(default='yes')
-@options.install_repository_dependencies_option(default='yes')
-@options.install_resolver_dependencies_option(default='yes')
-@click.option('--timeout',metavar='TIMEOUT',default=600,
-              help="wait up to TIMEOUT seconds for tool installations"
-              "to complete (default is 600).")
-@click.option('--no-wait',is_flag=True,
-              help="don't wait for lengthy tool installations to "
-              "complete.")
-@click.argument("galaxy")
-@click.argument("file",type=click.File('r'))
-@pass_context
-def install_repositories(context,galaxy,file,
-                         install_tool_dependencies,
-                         install_repository_dependencies,
-                         install_resolver_dependencies,
-                         timeout,no_wait):
-    """
-    Install tool repositories listed in a file.
-
-    Installs the tools specified in FILE into GALAXY.
-
-    FILE should be a tab-delimited file with the columns:
+    Alternatively multiple tools can be installed in a
+    single invocation of the command by specifying the
+    --file option instead of a repository, in which case
+    TSV_FILE should be a tab-delimited file with the
+    columns:
 
     TOOLSHED|OWNER|REPOSITORY|REVISON|SECTION
+
+    (This is the format generated by 'list_tools
+    --mode=export'.)
 
     If the REVISION field is blank then nebulizer will
     attempt to install the latest revision; if the
@@ -791,58 +699,86 @@ def install_repositories(context,galaxy,file,
     installed at the top level of the tool panel (i.e.
     not in any section).
     """
+    if repository:
+        # Single repository specification
+        try:
+            toolshed,owner,repository,revision = \
+                tools.handle_repository_spec(repository)
+        except Exception as ex:
+            logger.fatal(ex)
+            sys.exit(1)
+    else:
+        if file is None:
+            logger.fatal("Need to supply either a repository "
+                         "spec or a file (via --file)")
+            sys.exit(1)
     # Get a Galaxy instance
     gi = context.galaxy_instance(galaxy)
     if gi is None:
         logger.critical("Failed to connect to Galaxy instance")
         sys.exit(1)
-    # Keep a list of failed tool installs
-    failed_install = []
-    # Install tools
-    for line in file:
-        if line.startswith('#'):
-            continue
-        print(line.rstrip('\n'))
-        line = line.rstrip('\n').split('\t')
-        try:
-            toolshed,owner,repository = line[:3]
-        except ValueError:
-            logger.critical("Couldn't parse line")
-            sys.exit(1)
-        try:
-            revision = line[3]
-            if not revision:
+    # Install tool(s)
+    if repository:
+        # Single repository
+        sys.exit(tools.install_tool(
+            gi,toolshed,repository,owner,revision=revision,
+            tool_panel_section=tool_panel_section,
+            timeout=timeout,no_wait=no_wait,
+            install_tool_dependencies=
+            (install_tool_dependencies == 'yes'),
+            install_repository_dependencies=
+            (install_repository_dependencies== 'yes'),
+            install_resolver_dependencies=
+            (install_resolver_dependencies== 'yes'),
+            no_confirm=yes))
+    else:
+        # Multiple repositories from the file
+        failed_install = []
+        # Install tools
+        for line in file:
+            if line.startswith('#'):
+                continue
+            print(line.rstrip('\n'))
+            line = line.rstrip('\n').split('\t')
+            try:
+                toolshed,owner,repository = [x.strip() for x in line[:3]]
+            except ValueError:
+                logger.critical("Couldn't parse line")
+                sys.exit(1)
+            try:
+                revision = line[3]
+                if not revision:
+                    revision = None
+            except IndexError:
                 revision = None
-        except KeyError:
-            revision = None
-        try:
-            tool_panel_section = line[4]
-            if not tool_panel_section:
+            try:
+                tool_panel_section = line[4]
+                if not tool_panel_section:
+                    tool_panel_section = None
+            except IndexError:
                 tool_panel_section = None
-        except KeyError:
-            tool_panel_section = None
-        status = tools.install_tool(gi,
-                                    toolshed,repository,owner,
-                                    revision=revision,
-                                    tool_panel_section=tool_panel_section,
-                                    install_tool_dependencies=
-                                    (install_tool_dependencies == 'yes'),
-                                    install_repository_dependencies=
-                                    (install_repository_dependencies== 'yes'),
-                                    install_resolver_dependencies=
-                                    (install_resolver_dependencies== 'yes'),
-                                    timeout=timeout,no_wait=no_wait)
-        if status != tools.TOOL_INSTALL_OK:
-            failed_install.append(line)
-    # List any failed tool installations
-    if failed_install:
-        logger.error("Some requested tool repositories couldn't be "
-                     "installed")
-        for repo in failed_install:
-            click.echo('\t'.join(repo))
-        sys.exit(1)
-    # Looks like everything worked
-    sys.exit(0)
+            status = tools.install_tool(
+                gi,toolshed,repository,owner,revision=revision,
+                tool_panel_section=tool_panel_section,
+                timeout=timeout,no_wait=no_wait,
+                install_tool_dependencies=
+                (install_tool_dependencies == 'yes'),
+                install_repository_dependencies=
+                (install_repository_dependencies== 'yes'),
+                install_resolver_dependencies=
+                (install_resolver_dependencies== 'yes'),
+                no_confirm=yes)
+            if status != tools.TOOL_INSTALL_OK:
+                failed_install.append(line)
+        # List any failed tool installations
+        if failed_install:
+            logger.error("Some requested tool repositories couldn't be "
+                         "installed")
+            for repo in failed_install:
+                click.echo('\t'.join(repo))
+            sys.exit(1)
+        # Looks like everything worked
+        sys.exit(0)
 
 @nebulizer.command(name="update_tool")
 @options.install_tool_dependencies_option(default='yes')

@@ -220,7 +220,7 @@ class Reporter:
         Number of lines stored
         """
         return len(self._content)
-    def report(self,delimiter='  ',padding=True,prefix=None,
+    def report(self,delimiter=None,padding=True,prefix=None,
                rstrip=True):
         """
         Pretty-print the data
@@ -235,6 +235,8 @@ class Reporter:
             whitespace from lines
         """
         output = []
+        if delimiter is None:
+            delimiter = '  '
         if padding:
             for line in self._content:
                 # Apply padding to all but the last field

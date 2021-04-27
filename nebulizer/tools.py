@@ -261,8 +261,10 @@ class RepositoryRevision:
         2:a60283899c6d
 
         """
-        return ':'.join((self.revision_number,
-                         self.changeset_revision))
+        return ''.join(('%s:' % self.revision_number
+                        if self.revision_number else '',
+                        '%s' % self.changeset_revision
+                        if self.changeset_revision else ''))
 
 class Repository:
     """
@@ -781,6 +783,64 @@ def tool_install_status(gi,tool_shed,owner,name,revision=None):
         return rev.error_message
     return rev.status
 
+def builtin_tools(gi,name=None,as_repos=False):
+    """
+    Fetch a list of built-in tools
+
+    Arguments:
+      gi (bioblend.galaxy.GalaxyInstance): Galaxy instance
+      name (str): optional, only list tool repositiories
+        which match this string (can include wildcards)
+      as_repos (bool): if True then return the tool
+        information as a list of 'pseudo-repositories'
+        (i.e. tuples consisting of (repository,revision,tools))
+        to mimic the output of the 'installed_repositories'
+        function). Default is False (return a list of
+        Tool instances).
+
+    Returns:
+      List: either a list of Tool instances, or (if 'as_repos'
+        was set True) a list of tuples consisting of
+        (repository,revision,tools)
+    """
+    # Get list of built-in tools (i.e. tools with no associated
+    # toolshed repository)
+    tools = [t for t in get_tools(gi) if t.tool_repo == '']
+    # Filter on name
+    if name:
+        name = name.lower()
+        tools = [t for t in tools if fnmatch.fnmatch(t.name.lower(),name)]
+    # Return results
+    if not as_repos:
+        # Return list as-is
+        return tools
+    else:
+        # Return as list of 'pseudo-repositories'
+        tool_shed = 'builtin'
+        status = ''
+        return [(Repository({ 'name': None,
+                              'owner': None,
+                              'tool_shed': tool_shed,
+                              'ctx_rev': 0,
+                              'changeset_revision': None,
+                              'installed_changeset_revision': None,
+                              'status': status,
+                              'error_message': None,
+                              'deleted': False,
+                          'tool_shed_status': None }),
+                 RepositoryRevision({ 'name': None,
+                                      'owner': None,
+                                      'tool_shed': tool_shed,
+                                      'ctx_rev': 0,
+                                      'changeset_revision': None,
+                                      'installed_changeset_revision': None,
+                                      'status': status,
+                                      'error_message': None,
+                                      'deleted': False,
+                                      'tool_shed_status': None }),
+                 (t,))
+                for t in tools]
+
 def installed_repositories(gi,name=None,
                            tool_shed=None,
                            owner=None,
@@ -870,51 +930,12 @@ def installed_repositories(gi,name=None,
 
 # Commands
 
-def list_tools(gi,name=None,installed_only=False):
+def list_tools(gi,name=None,tool_shed=None,owner=None,
+               include_deleted=False,include_builtin=False,
+               only_updateable=False,check_tool_shed=False,
+               mode='repos'):
     """
-    Print a list of the available tools
-
-    Arguments:
-      gi (bioblend.galaxy.GalaxyInstance): Galaxy instance
-      name (str): optional, only list tools which match this
-        string (can include wildcards)
-      installed_only (bool): if True then only list those
-        tools which are provided by toolshed repositories
-
-    """
-    tools = get_tools(gi)
-    # Filter on name
-    if name:
-        name = name.lower()
-        tools = [t for t in tools
-                 if fnmatch.fnmatch(t.name.lower(),name)]
-    # Filter on installed
-    if installed_only:
-        tools = [t for t in tools if t.tool_repo != '']
-    # Sort into name order
-    tools.sort(key=lambda x: x.name.lower())
-    # Print info
-    output = Reporter()
-    for tool in tools:
-        output.append((
-            tool.name,tool.version,
-            (tool.panel_section if tool.panel_section else ''),
-            tool.tool_repo,
-            (tool.tool_changeset if tool.tool_changeset else ''))
-        )
-    output.report()
-    print("total %s" % len(tools))
-
-def list_installed_repositories(gi,name=None,
-                                tool_shed=None,
-                                owner=None,
-                                list_tools=False,
-                                include_deleted=False,
-                                only_updateable=False,
-                                check_tool_shed=False,
-                                tsv=False):
-    """
-    Print a list of the installed toolshed repositories
+    Display information about tools and toolshed repositories
 
     Arguments:
       gi (bioblend.galaxy.GalaxyInstance): Galaxy instance
@@ -926,12 +947,12 @@ def list_installed_repositories(gi,name=None,
       owner (str): optional, only list tool repositiories
         with owners who match this string (can include
         wildcards)
-      list_tools (bool): if True then also list the tools
-        provided by the repository
       include_deleted (bool): if True then also include
         repository revisions that are marked as deleted
         (default is to only show those which are not
         deleted)
+      include_builtin (bool): if True then also include
+        built-in tools (default is not to omit them)
       only_updateable (bool): if True then only report
         repositories that have uninstalled updates or
         upgrades available (default is to show all
@@ -941,11 +962,12 @@ def list_installed_repositories(gi,name=None,
         updates are available for each tool. NB this is
         an expensive operation to perform so is turned
         off by default
-      tsv (bool): if True then output in a compact tab
-        delimited format listing toolshed, owner,
-        repository, changeset and tool panel section
-
+      mode (str): specify the output mode: either 'repos'
+        (the default) for a repository-centric view, or
+        'tools' for a tool-centric view.
     """
+    if mode not in ('repos','tools','export'):
+        raise ValueError("Unrecognised mode: '%s'" % mode)
     # Get the list of installed repos
     repos = installed_repositories(gi,name=name,
                                    tool_shed=tool_shed,
@@ -953,10 +975,41 @@ def list_installed_repositories(gi,name=None,
                                    include_deleted=include_deleted,
                                    only_updateable=only_updateable,
                                    check_tool_shed=check_tool_shed)
-    if tsv:
-        # Output format for reinstallation of repositories
+    # Add the built-in tools if requested
+    if mode == 'export' and include_builtin:
+        logger.warning("--built-in option ignored for 'export' mode")
+        include_builtin = False
+    if include_builtin and not only_updateable:
+        repos.extend(builtin_tools(gi,name=name,as_repos=True))
+        repos = sorted(repos,
+                       key=lambda r: str(r[0].name).lower() if r[0].name
+                       else str(r[2][0].name).lower())
+    # Default delimiter in output
+    delimiter = None
+    # Set the fields to report
+    if mode == 'repos':
+        fields = ('status_indicator',
+                  'name',
+                  'tool_shed',
+                  'owner',
+                  'revision_id',
+                  'status',)
+    elif mode == 'tools':
+        fields = ('tool_name',
+                  'tool_version',
+                  'tool_panel',
+                  'tool_shed',
+                  'owner',
+                  'repo_name',
+                  'revision_id')
+    elif mode == 'export':
+        fields = ('tool_shed',
+                  'owner',
+                  'repo_name',
+                  'changeset_revision',
+                  'tool_panel')
+        # Sort tools into tool order for output
         tool_panel = ToolPanel(gi)
-        # Sort into tool panel order
         repos = sorted(repos,
                        key=lambda r:
                        tool_panel.tool_index(r[2][0])
@@ -967,45 +1020,61 @@ def list_installed_repositories(gi,name=None,
                  (r[0].name.startswith("package_") or
                   r[0].name.startswith("data_manager_") or
                   (r[2] and tool_panel.tool_index(r[2][0]) > -1))]
-        # Print details
-        output = Reporter()
-        for r in repos:
-            repo,revision,tools = r
-            if tools:
-                tool_panel_section = tools[0].panel_section
-            else:
-                tool_panel_section = None
-            output.append((repo.tool_shed,
-                           repo.owner,
-                           repo.name,
-                           revision.changeset_revision,
-                           (tool_panel_section
-                            if tool_panel_section else '')))
-        # Write out in TSV format
-        output.report(delimiter='\t')
-    else:
-        # Denser more verbose format
-        output = Reporter()
-        nrevisions = 0
-        for r in repos:
-            # Print details
-            repo,revision,tools = r
-            output.append(('{} {}'.format(revision.status_indicator,
-                                      repo.name),
-                           repo.tool_shed,
-                           repo.owner,
-                           revision.revision_id,
-                           revision.status))
+        # Tab delimited output
+        delimiter = '\t'
+    # Generate the output
+    output = Reporter()
+    nrevisions = 0
+    for r in repos:
+        # Get revision details
+        repo,revision,tools = r
+        if mode == 'repos':
+            tools = tools[:1]
+        for tool in tools:
+            # Build line
+            output_line = []
+            for field in fields:
+                if field == 'name':
+                    if repo.name:
+                        output_line.append(repo.name)
+                    else:
+                        output_line.append(tool.name)
+                elif field == 'tool_shed':
+                    output_line.append(repo.tool_shed)
+                elif field == 'owner':
+                    if repo.owner:
+                        output_line.append(repo.owner)
+                    else:
+                        output_line.append("")
+                elif field == 'repo_name':
+                    if repo.name:
+                        output_line.append(repo.name)
+                    else:
+                        output_line.append("")
+                elif field == 'changeset_revision':
+                    output_line.append(revision.changeset_revision)
+                elif field == 'revision_id':
+                    output_line.append(revision.revision_id)
+                elif field == 'status':
+                    output_line.append(revision.status)
+                elif field == 'status_indicator':
+                    output_line.append(revision.status_indicator)
+                elif field == 'tool_name':
+                    output_line.append(tool.name)
+                elif field == 'tool_version':
+                    output_line.append(tool.version)
+                elif field == 'tool_panel':
+                    if tool.panel_section:
+                        output_line.append(tool.panel_section)
+                    else:
+                        output_line.append("")
+                else:
+                    raise KeyError("Unrecognised field: '%s'" % field)
+            output.append(output_line)
             nrevisions += 1
-            # List tools associated with revision
-            if list_tools:
-                for tool in tools:
-                    output.append(("-",
-                                   tool.name,
-                                   tool.version,
-                                   tool.description))
-        # Write to stdout
-        output.report()
+    # Write to stdout
+    output.report(delimiter=delimiter)
+    if mode != 'export':
         print("total %s" % nrevisions)
 
 def list_tool_panel(gi,name=None,list_tools=False):
