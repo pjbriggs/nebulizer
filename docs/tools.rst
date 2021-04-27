@@ -181,12 +181,12 @@ search the main toolshed for Deeptools related tools:
 Bulk tool repository management
 -------------------------------
 
-``install_repositories`` installs the tool repositories listed in
+``install_tool --file`` installs the tool repositories listed in
 a tab-delimited file into a Galaxy instance:
 
 ::
 
-   nebulizer install_repositories GALAXY TOOLS_FILE
+   nebulizer install_tool GALAXY TOOLS_FILE
 
 ``TOOLS_FILE`` must be a tab-delimited list of repositories,
 one repository per line in the format:
@@ -218,4 +218,10 @@ instance into a local Galaxy:
 ::
 
   nebulizer list_tools https://palfinder.ls.manchester.ac.uk --mode=export > palfinder.tsv
-  nebulizer install_repositories http://127.0.0.1 palfinder.tsv
+  nebulizer install_tool http://127.0.0.1 --file palfinder.tsv
+
+.. warning::
+
+   Bulk installation of tools in this manner should be used with
+   caution, especially when installing into a Galaxy instance
+   which already has installed tools.
