@@ -125,7 +125,7 @@ tool repository name and/or owner e.g. ``devteam/*`` or
 .. warning::
 
    By default checks on the availability of updates for tools
-   performed by the ``list_installed_tools`` and ``update_tool``
+   performed by the ``list_tools`` and ``update_tool``
    commands are done using information cached by the Galaxy
    instance in question. As a result these commands may not
    always indicate when updates are available.

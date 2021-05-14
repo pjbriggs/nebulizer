@@ -20,7 +20,7 @@ local instance:
 
    # Get the Galaxy source and put into a new directory
    # called 'galaxy_for_demo'
-   git clone -b release_20.01 https://github.com/galaxyproject/galaxy.git galaxy_for_demo
+   git clone -b release_21.01 https://github.com/galaxyproject/galaxy.git galaxy_for_demo
    
    # Move into the source directory
    cd galaxy_for_demo
@@ -64,12 +64,13 @@ Then start Galaxy running:
 
 .. note::
 
-   This step is likely to take 5-10 minutes the first
-   time it is run; subsequently start up of the local
-   Galaxy should be much quicker.
+   This step can take some time when it's first run;
+   however once Galaxy has installed its dependencies
+   and performed its initial configuration then subsequent
+   startups of the demo Galaxy should be much quicker.
 
-   Use ``ctrl-C`` to stop Galaxy running, and repeat
-   this command to start it up again.
+   Use ``ctrl-C`` to stop Galaxy running, and repeat this
+   command to start it up again.
 
 Once Galaxy is running you can connect to it by pointing a
 web browser to http://127.0.0.1:8080/
@@ -414,7 +415,7 @@ installed:
    The ``*`` next to tool repository indicates that this
    is most recent version.
 
-   Use the ``--mode=tools`` option will list the associated
+   Use the ``--mode=tools`` option to list the associated
    tools instead.
 
 We can install a specific version of a tool repository, for
