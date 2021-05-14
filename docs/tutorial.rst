@@ -415,7 +415,7 @@ installed:
    The ``*`` next to tool repository indicates that this
    is most recent version.
 
-   Use the ``--mode=tools`` option will list the associated
+   Use the ``--mode=tools`` option to list the associated
    tools instead.
 
 We can install a specific version of a tool repository, for
