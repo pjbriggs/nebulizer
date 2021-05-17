@@ -2,6 +2,59 @@ History
 -------
 
 -------------------
+v0.7.0 (2021-05-17)
+-------------------
+
+**Breaking changes:**
+
+ * Dropped support for Python 2.7: ``nebulizer`` now needs
+   Python 3.6+
+   (`PR #102 <https://github.com/pjbriggs/nebulizer/pull/102>`_)
+ * Substantial refactoring and simplification of the tool
+   managament commands
+   (`PR #113 <https://github.com/pjbriggs/nebulizer/pull/113>`_):
+   - Now only ``list_tools``, ``install_tool``, ``update_tool``
+     and ``delete_tool`` commands are supported
+   - ``list_installed_tools`` renamed to ``list_tools``
+   - old functionality of ``list_tools`` replaced by
+     ``list_tools --mode=tools``
+   - ``list_repositories`` command dropped; functionality
+     replaced by ``list_tools --mode=export``
+   - ``install_repositories`` command dropped; functionality
+     replaced by ``install_tool --file=...``
+
+**New commands:**
+
+ * New ``quota``, ``quota_add``, ``quota_mod`` and ``quota_del``
+   commands for managing quotas
+   (`PR #66 <https://github.com/pjbriggs/nebulizer/pull/66>`_)
+
+**Updates to existing commands:**
+
+ * ``-l`` option for ``search_toolshed`` includes the shed URL
+   (`PR #91 <https://github.com/pjbriggs/nebulizer/pull/91>`_)
+ * ``update_tool`` allows use of wildcards (i.e. ``*``) when
+   specifying tool repository names and owners, to enable
+   multiple tool repositories to updated at once
+   (`PR #92 <https://github.com/pjbriggs/nebulizer/pull/92>`_)
+ * New ``--status`` option for ``list_users`` command allows
+   deleted and purged user accounts to also be listed
+   (`PR #97 <https://github.com/pjbriggs/nebulizer/pull/97>`_)
+ * New ``--sort`` option for ``list_users`` command allows
+   sorting of listed accounts by disk usage, quota and quota
+   usage
+   (`PR #104 <https://github.com/pjbriggs/nebulizer/pull/104>`_)
+
+**Bug fixes:**
+
+ * Fix to using the ``--purge`` option of the ``delete_user``
+   command (previously it wasn't possible to purge accounts)
+   (`PR #98 <https://github.com/pjbriggs/nebulizer/pull/98>`_)
+ * Remove requirement to specify an account or API key on
+   Galaxy server when using the ``ping`` and ``config`` commands
+   (`PR #100 <https://github.com/pjbriggs/nebulizer/pull/100>`_)
+
+-------------------
 v0.6.0 (2020-07-14)
 -------------------
 
