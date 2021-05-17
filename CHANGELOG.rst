@@ -8,7 +8,7 @@ v0.7.0 (2021-05-17)
 **Breaking changes:**
 
  * Dropped support for Python 2.7: ``nebulizer`` now needs
-   Python 3.6+
+   Python 3.6+ (thanks to Hugo van Kemenade @hugovk)
    (`PR #102 <https://github.com/pjbriggs/nebulizer/pull/102>`_)
  * Substantial refactoring and simplification of the tool
    managament commands
@@ -53,6 +53,12 @@ v0.7.0 (2021-05-17)
  * Remove requirement to specify an account or API key on
    Galaxy server when using the ``ping`` and ``config`` commands
    (`PR #100 <https://github.com/pjbriggs/nebulizer/pull/100>`_)
+
+**Other updates:**
+
+ * Added support for Python 3.9 (thanks to Hugo van Kemenade
+   @hugovk)
+   (`PR #108 <https://github.com/pjbriggs/nebulizer/pull/108>`_)
 
 -------------------
 v0.6.0 (2020-07-14)
