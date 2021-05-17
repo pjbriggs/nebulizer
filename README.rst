@@ -151,3 +151,15 @@ Nebulizer provides subcommands to perform various administrive tasks:
 
 See the `tutorial <https://nebulizer.readthedocs.io/en/latest/users.html>`_
 for a walkthrough some of these commands.
+
+------------
+Contributors
+------------
+
+Nebulizer has been developed by Peter Briggs @pjbriggs, with
+contributions from:
+
+ * Hugo van Kemenade (`@hugovk <https://github.com/hugovk>`_)
+
+Thanks to Peter van Heuseden (`@pvanheus <https://github.com/pvanheus>`_)
+for porting Nebulizer into Bioconda.
