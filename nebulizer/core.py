@@ -399,10 +399,7 @@ def prompt_for_confirmation(question,default=None):
                         default)
     while True:
         sys.stdout.write(question + prompt)
-        try:
-            choice = input().lower()
-        except NameError:
-            choice = raw_input().lower()
+        choice = input().lower()
         if default is not None and choice == '':
             return responses[default.lower()]
         elif choice in responses:

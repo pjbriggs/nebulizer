@@ -15,8 +15,8 @@ library.
 .. image:: https://badge.fury.io/py/nebulizer.svg
    :target: https://pypi.python.org/pypi/nebulizer/
 
-.. image:: https://travis-ci.org/pjbriggs/nebulizer.svg?branch=master
-    :target: https://travis-ci.org/pjbriggs/nebulizer
+.. image:: https://github.com/pjbriggs/nebulizer/workflows/Python%20CI/badge.svg
+   :target: https://github.com/pjbriggs/nebulizer/actions?query=workflow%3A%22Python+CI%22
 
 * Free software: Academic Free License version 3.0
 * Documentation: https://nebulizer.readthedocs.io

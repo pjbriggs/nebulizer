@@ -1355,7 +1355,7 @@ def ping(context,galaxy,count,interval=5,timeout=None):
             else:
                 status_code,response_time = ping_galaxy_instance(gi)
                 if status_code != 0:
-                    msg = "failed (error code %s)" % status[0]
+                    msg = "failed (error code %s)" % status_code
                 else:
                     msg = "ok"
                 click.echo("%s: status = %s time = %.3f (ms)" %

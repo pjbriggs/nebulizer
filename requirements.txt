@@ -1,0 +1,3 @@
+bioblend>=0.15.0
+mako
+click==7.1.2
