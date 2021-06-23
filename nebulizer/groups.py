@@ -73,7 +73,7 @@ def get_groups(gi):
     group_client = galaxy.groups.GroupsClient(gi)
     # Get (undeleted) groups
     for group_data in group_client.get_groups():
-        group = Group(user_data)
+        group = Group(group_data)
         group.update(group_client.show_group(group.id))
         groups.append(group)
     return groups
