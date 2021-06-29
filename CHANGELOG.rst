@@ -2,6 +2,15 @@ History
 -------
 
 -------------------
+v0.7.1 (2021-06-29)
+-------------------
+
+ * Pin required ``bioblend`` version to 0.15.0
+   (`PR #40 <https://github.com/pjbriggs/nebulizer/pull/120>`_).
+ * Switched CI tests to Github Actions
+   (`PR #40 <https://github.com/pjbriggs/nebulizer/pull/118>`_).
+
+-------------------
 v0.7.0 (2021-05-17)
 -------------------
 
