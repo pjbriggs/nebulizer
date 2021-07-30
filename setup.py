@@ -13,7 +13,7 @@ import codecs
 import os.path
 
 # Installation requirements
-install_requires = ['bioblend==0.15.0',
+install_requires = ['bioblend==0.16.0',
                     'mako',
                     'click==7.1.2',]
 
