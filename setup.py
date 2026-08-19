@@ -4,7 +4,7 @@ Description
 Setup script to install nebulizer: command line utilities for managing
 users, tools and data libraries in Galaxy instances via the API
 
-Copyright (C) University of Manchester 2015-2021 Peter Briggs
+Copyright (C) University of Manchester 2015-2026 Peter Briggs
 
 """
 
@@ -55,7 +55,7 @@ setup(
     test_suite = 'nose.collector',
     tests_require = ['nose'],
     platforms="Posix; MacOS X; Windows",
-    python_requires=">=3.6",
+    python_requires=">=3.8",
     classifiers=[
         "Development Status :: 4 - Beta",
         "Environment :: Console",
@@ -67,8 +67,6 @@ setup(
         "Topic :: Scientific/Engineering",
         "Topic :: Scientific/Engineering :: Bio-Informatics",
         "Programming Language :: Python :: 3",
-        'Programming Language :: Python :: 3.6',
-        'Programming Language :: Python :: 3.7',
         'Programming Language :: Python :: 3.8',
         'Programming Language :: Python :: 3.9',
         "Programming Language :: Python :: 3 :: Only",
