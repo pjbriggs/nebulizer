@@ -302,10 +302,10 @@ def get_galaxy_instance(galaxy_url,api_key=None,email=None,password=None,
     if not get_galaxy_config(gi):
         return None
     user = get_current_user(gi)
-    if user is not None:
+    if user is not None and 'email' in user:
         logger.debug("Connected as user %s" % user['email'])
     else:
-        logger.debug("Unable to determine associated user")
+        logger.debug("Unable to determine associated user name")
     return gi
 
 def get_galaxy_config(gi):
