@@ -2,6 +2,18 @@ History
 -------
 
 -------------------
+v0.7.2 (2026-08-19)
+-------------------
+
+ * Add support for Python verions 3.10, 3.11 and 3.12 in CI tests
+   (`PR #40 <https://github.com/pjbriggs/nebulizer/pull/126>`_).
+ * Drop support for Python verions 3.6 and 3.7 in CI tests
+   (`PR #40 <https://github.com/pjbriggs/nebulizer/pull/125>`_).
+ * Fix bug in ``ping`` command when interacting with Galaxy
+   version 24.0
+   (`PR #40 <https://github.com/pjbriggs/nebulizer/pull/124>`_).
+
+-------------------
 v0.7.1 (2021-06-29)
 -------------------
 
